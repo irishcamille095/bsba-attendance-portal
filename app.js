@@ -43,21 +43,20 @@ app.use(session({
 app.get('/login', (req, res) => res.render('login'));
 
 app.post('/login', async (req, res) => {
-    const { studentId, password } = req.body;
+    const { username, password } = req.body;
 
-    // 1. Check Emergency Bypass FIRST
-    if (studentId === "ADMIN" && password === "1234") {
-        req.session.user = { id: "ADMIN", name: "BSBA Adviser", role: "adviser" };
-        return res.redirect('/dashboard');
-    }
+    try {
+        // Find the user in the cloud database instead of the JSON file
+        const user = await User.findOne({ username: username, password: password });
 
-    // 2. If not admin, check the JSON file
-    const user = users.find(u => u.id === studentId && u.password === password);
-    if (user) {
-        req.session.user = user;
-        res.redirect('/dashboard');
-    } else {
-        res.send("Invalid credentials. <a href='/login'>Try again</a>");
+        if (user) {
+            req.session.user = user;
+            res.redirect('/dashboard');
+        } else {
+            res.send('<h1>Invalid Login</h1><a href="/">Try again</a>');
+        }
+    } catch (err) {
+        res.status(500).send("Login error occurred.");
     }
 });
 
@@ -217,5 +216,51 @@ app.get('/view-attendance', async (req, res) => {
         res.render('report', { logs: allLogs });
     } catch (err) {
         res.send("Error loading attendance logs.");
+    }
+});
+
+const UserSchema = new mongoose.Schema({
+    username: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+    name: String,
+    role: String, // 'student', 'officer', or 'adviser'
+    id: String
+});
+const User = mongoose.model('User', UserSchema);
+
+async function migrateUsers() {
+    try {
+        const userData = JSON.parse(fs.readFileSync('./data/users.json'));
+        for (let u of userData) {
+            // ONLY try to save if the user actually has a username
+            if (u.username) { 
+                const exists = await User.findOne({ username: u.username });
+                if (!exists) {
+                    await User.create(u);
+                    console.log(`👤 Migrated: ${u.username}`);
+                }
+            } else {
+                console.log("⚠️ Skipping a blank or invalid user in JSON");
+            }
+        }
+        console.log("✅ Database is ready!");
+    } catch (e) {
+        console.log("Migration error:", e);
+    }
+}
+
+app.post('/change-password', async (req, res) => {
+    if (!req.session.user) return res.redirect('/');
+    
+    const { newPassword } = req.body;
+    
+    try {
+        await User.findOneAndUpdate(
+            { username: req.session.user.username },
+            { password: newPassword }
+        );
+        res.send("Password updated permanently in the cloud!");
+    } catch (err) {
+        res.send("Error updating password.");
     }
 });
