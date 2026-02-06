@@ -78,6 +78,39 @@ app.get('/dashboard', async (req, res) => {
 
 // Admin Route to show the QR Code on a screen
 
+app.get('/register', (req, res) => {
+    res.render('register'); 
+});
+
+app.post('/update-user-role', async (req, res) => {
+    const { targetUsername, newRole } = req.body;
+
+    try {
+        // --- THIS IS THE CATCH ---
+        const currentTargetUser = await User.findOne({ username: targetUsername });
+
+        if (!currentTargetUser) {
+            return res.send("❌ Error: That Student ID does not exist in our database.");
+        }
+        // -------------------------
+
+        // Now the rest of your "Safety Lock" code follows...
+        if (currentTargetUser.role === 'adviser' && newRole !== 'adviser') {
+            const adviserCount = await User.countDocuments({ role: 'adviser' });
+            if (adviserCount <= 1) {
+                return res.send("❌ Access Denied: You are the last Adviser!");
+            }
+        }
+
+        await User.findOneAndUpdate({ username: targetUsername }, { role: newRole });
+        res.redirect('/dashboard');
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("An error occurred on the server.");
+    }
+});
+
 app.get('/logout', (req, res) => {
     req.session.destroy();
     res.redirect('/login');
