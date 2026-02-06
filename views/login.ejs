@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BSBA-MM Login</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
+        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 320px; text-align: center; border-top: 6px solid #800000; }
+        h2 { color: #800000; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #800000; color: #FFD700; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        button:hover { background: #600000; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>BSBA-MM Portal</h2>
+        <form action="/login" method="POST">
+            <input type="text" name="studentId" placeholder="Student ID (e.g. 2024-001)" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</body>
+</html>
+
+<form action="/login" method="POST">
+    <button type="submit">Login</button>
+</form>
+
+<p style="margin-top: 15px;">
+    No account? <a href="/signup" style="color: #800000; font-weight: bold;">Sign up here</a>
+</p>

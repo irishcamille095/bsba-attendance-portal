@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BSBA Scanner</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { text-align: center; font-family: sans-serif; background: #000; color: white; padding: 20px; }
+        #reader { width: 100%; max-width: 400px; margin: auto; border: 2px solid #800000; }
+        .btn-back { display: block; margin-top: 20px; color: white; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h3>Scan Officer's QR Code</h3>
+    <div id="reader"></div>
+    <a href="/dashboard" class="btn-back">Cancel Scan</a>
+
+    <script>
+        function onScanSuccess(decodedText) {
+            // When QR is found, send to server
+            window.location.href = "/mark-attendance?code=" + decodedText;
+        }
+        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+</body>
+</html>

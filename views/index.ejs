@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BSBA-MM Student Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; background: #f4f4f4; }
+        /* Sidebar Navigation */
+        .sidebar { width: 250px; height: 100vh; background: #800000; color: white; padding: 20px; position: fixed; }
+        .sidebar h2 { color: #FFD700; border-bottom: 2px solid #FFD700; padding-bottom: 10px; }
+        .sidebar a { display: block; color: white; text-decoration: none; padding: 15px 0; border-bottom: 1px solid #a00000; }
+        .sidebar a:hover { color: #FFD700; }
+        
+        /* Main Content Area */
+        .main { margin-left: 290px; padding: 40px; width: 100%; }
+        .header { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .announcement-item { border-left: 5px solid #800000; padding: 10px; margin: 10px 0; background: #fff9f9; }
+        .btn-logout { background: #800000; color: white; padding: 10px; border-radius: 5px; text-decoration: none; float: right; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/my-attendance">My Attendance</a>
+    <a href="/profile">My Profile</a>
+    
+    <% if (user.role === 'adviser' || user.role === 'officer') { %>
+        <hr style="border: 0.5px solid #555; margin: 10px 0;">
+        <a href="/view-attendance" style="color: #ffcc00; font-weight: bold;">
+            📋 Master Attendance List
+        </a>
+    <% } %>
+    <a href="/logout">Logout</a>
+</div>
+
+    <div class="main">
+        <div class="header">
+            <a href="/logout" class="btn-logout">Logout</a>
+            <h1>Welcome back, <%= user.name %>!</h1>
+            <p>Student ID: <b><%= user.id %></b></p>
+        </div>
+
+        <div class="card">
+            <h3>📢 Latest Announcements</h3>
+            <% if (announcements.length > 0) { %>
+                <% announcements.forEach(post => { %>
+                    <div class="announcement-item">
+                        <h4><%= post.title %></h4>
+                        <p><%= post.content %></p>
+                        <small>Posted on: <%= post.date %></small>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <p>No new announcements for today.</p>
+            <% } %>
+        </div>
+    </div>
+
+</body>
+</html>
+
+<div class="attendance-box" style="text-align: center;">
+    <h4>Attendance Portal</h4>
+
+    <% if (qrCodeImage) { %>
+        <% if (user.role === 'adviser' || user.role === 'officer') { %>
+            <p style="color: green;"><b>Broadcasting: <%= currentSession %></b></p>
+            <img src="<%= qrCodeImage %>" style="width: 180px; border: 2px solid #800000;">
+            <a href="/close-qr" style="display: block; margin-top: 10px; color: #800000;">Stop Session</a>
+        <% } else { %>
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px;">
+                <p>🔔 <b><%= currentSession %></b> is now OPEN!</p>
+                <a href="/scan" style="background: #800000; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">📸 Scan Now</a>
+            </div>
+        <% } %>
+
+    <% } else { %>
+        <% if (user.role === 'adviser' || user.role === 'officer') { %>
+            <form action="/generate-event-qr" method="POST">
+                <select name="sessionType" style="padding: 8px; width: 100%; margin-bottom: 10px;">
+                    <option value="AM IN">Morning - IN</option>
+                    <option value="AM OUT">Morning - OUT</option>
+                    <option value="PM IN">Afternoon - IN</option>
+                    <option value="PM OUT">Afternoon - OUT</option>
+                </select>
+                <button type="submit" style="background: #800000; color: white; width: 100%; padding: 10px; border: none; cursor: pointer;">Generate Session QR</button>
+            </form>
+        <% } else { %>
+            <p>No active session. Please wait for the Officer.</p>
+        <% } %>
+    <% } %>
+</div>

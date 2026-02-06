@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Master Attendance List</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f4f4f4; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #800000; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .back-btn { display: inline-block; margin-bottom: 20px; text-decoration: none; color: #800000; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+    <h2>📋 Master Attendance List (Real-time Cloud Data)</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Student ID</th>
+                <th>Session</th>
+                <th>Date</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% logs.forEach(log => { %>
+                <tr>
+                    <td><%= log.studentName %></td>
+                    <td><%= log.studentId %></td>
+                    <td><strong><%= log.sessionType %></strong></td>
+                    <td><%= log.date %></td>
+                    <td><%= log.time %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</body>
+</html>

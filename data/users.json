@@ -1,0 +1,14 @@
+[
+  {
+    "id": "2024-001",
+    "name": "Juan Dela Cruz",
+    "password": "123",
+    "role": "student"
+  },
+  {
+    "id": "OFFICER-01",
+    "name": "Maria Clara",
+    "password": "456",
+    "role": "officer"
+  }
+]
