@@ -62,6 +62,10 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.get('/', (req, res) => {
+    res.redirect('/login'); 
+});
+
 app.get('/dashboard', async (req, res) => {
     if (!req.session.user) return res.redirect('/');
     
