@@ -33,12 +33,14 @@ const Attendance = mongoose.model('Attendance', AttendanceSchema);
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-
+app.set('view engine', 'ejs');
 app.use(session({
     secret: 'bsba-mm-secret-key',
     resave: false,
     saveUninitialized: true
 }));
+
+
 
 app.get('/login', (req, res) => res.render('login'));
 
@@ -60,15 +62,14 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.get('/dashboard', (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
+app.get('/dashboard', async (req, res) => {
+    if (!req.session.user) return res.redirect('/');
+    
+    // Fetch announcements from MongoDB
+    const announcements = await Announcement.find().sort({ date: -1 });
 
-    res.render('index', { 
-        user: req.session.user, 
-        announcements: announcements, 
-        qrCodeImage: currentEventQR,    // Sending the QR
-        currentSession: currentSession  // SENDING THE SESSION NAME (Fixes the error!)
-    });
+    // This "renders" the views/dashboard.ejs file
+    res.render('dashboard', { user: req.session.user, announcements: announcements });
 });
 
 // Admin Route to show the QR Code on a screen
@@ -264,3 +265,28 @@ app.post('/change-password', async (req, res) => {
         res.send("Error updating password.");
     }
 });
+
+const AnnouncementSchema = new mongoose.Schema({
+    message: String,
+    date: { type: Date, default: Date.now },
+    author: String
+});
+const Announcement = mongoose.model('Announcement', AnnouncementSchema);
+
+app.post('/post-announcement', async (req, res) => {
+    // Only Officers/Advisers should be able to post
+    if (!req.session.user || req.session.user.role === 'student') {
+        return res.status(403).send("Unauthorized");
+    }
+
+    try {
+        await Announcement.create({
+            message: req.body.message,
+            author: req.session.user.name
+        });
+        res.redirect('/dashboard');
+    } catch (err) {
+        res.send("Error posting announcement.");
+    }
+});
+

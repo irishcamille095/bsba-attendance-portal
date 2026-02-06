@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BSBA Portal - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
+        .container { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); }
+        .announcement-box { background: #fff8e1; border: 1px solid #ffe082; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; }
+        button { background: #800000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome, <%= user.name %>!</h1>
+        <p>Role: <b><%= user.role.toUpperCase() %></b></p>
+
+        <div class="announcement-box">
+            <h3>📢 Announcements</h3>
+            <% if (user.role === 'officer') { %>
+                <form action="/post-announcement" method="POST">
+                    <input type="text" name="message" placeholder="New announcement..." required style="width: 70%;">
+                    <button type="submit">Post</button>
+                </form>
+                <hr>
+            <% } %>
+            
+            <% announcements.forEach(a => { %>
+                <p>• <%= a.message %> <br><small style="color:gray;"><%= a.date.toLocaleTimeString() %></small></p>
+            <% }) %>
+        </div>
+
+        <br>
+        <a href="/logout"><button style="background:gray;">Logout</button></a>
+    </div>
+</body>
+</html>
