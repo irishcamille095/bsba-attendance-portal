@@ -1,37 +1,367 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>BSBA Portal - Dashboard</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BSBA-MM Portal</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
-        .container { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); }
-        .announcement-box { background: #fff8e1; border: 1px solid #ffe082; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left; }
-        button { background: #800000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        /* THEME: YELLOW & BLACK */
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f4f4; display: flex; }
+        
+        /* Sidebar */
+        .sidebar { width: 250px; background: #000; color: #ffcc00; height: 100vh; position: fixed; padding: 20px; border-right: 4px solid #ffcc00; }
+        .sidebar h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; text-align: center; }
+        
+        /* Main Content */
+        .content { flex: 1; margin-left: 290px; padding: 40px; }
+        header { border-bottom: 3px solid #000; margin-bottom: 30px; }
+
+        /* Button Grid (The Menu) */
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
+        .menu-card { 
+            background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 40px 20px; 
+            border-radius: 15px; cursor: pointer; text-align: center; font-weight: bold; font-size: 1.1em;
+            transition: 0.3s;
+        }
+        .menu-card:hover { background: #ffcc00; color: #000; transform: translateY(-5px); }
+
+        /* Sections (Hidden by Default) */
+        .portal-section { display: none; background: white; padding: 30px; border-radius: 15px; border: 2px solid #000; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .back-btn { background: #000; color: #ffcc00; border: 1px solid #ffcc00; padding: 10px 20px; cursor: pointer; margin-bottom: 20px; display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome, <%= user.name %>!</h1>
-        <p>Role: <b><%= user.role.toUpperCase() %></b></p>
 
-        <div class="announcement-box">
-            <h3>📢 Announcements</h3>
-            <% if (user.role === 'officer') { %>
-                <form action="/post-announcement" method="POST">
-                    <input type="text" name="message" placeholder="New announcement..." required style="width: 70%;">
-                    <button type="submit">Post</button>
-                </form>
-                <hr>
-            <% } %>
-            
-            <% announcements.forEach(a => { %>
-                <p>• <%= a.message %> <br><small style="color:gray;"><%= a.date.toLocaleTimeString() %></small></p>
-            <% }) %>
+    <div class="sidebar" style="position: fixed; left: 0; top: 0; width: 250px; height: 100vh; background: #000; padding: 20px; z-index: 1000;">
+    <h2 style="color: #ffcc00;">BSBA-MM</h2>
+    <p style="color: #fff;">User: <strong><%= user.name %></strong></p>
+    <p style="color: #fff;">Role: <strong><%= user.role %></strong></p>
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+    <button onclick="toggleSection('attendance-records')">📊 View Master Attendance</button>
+<% } %>
+
+<% if (user.role === 'student') { %>
+    <button onclick="toggleSection('my-attendance')">📅 My Attendance History</button>
+<% } %>
+    <hr style="border: 1px solid #ffcc00;">
+    
+    <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
+        <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #ffcc00; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; display: block;">
+            🚪 Logout
+        </button>
+    </form>
+</div>
+
+    <div class="content">
+        <header>
+            <h1>Marketing Management Portal</h1>
+        </header>
+
+        <button id="backBtn" class="back-btn" onclick="showMenu()">⬅️ Back to Menu</button>
+
+        <div id="mainMenu" class="menu-grid">
+            <div class="menu-card" onclick="openSection('announcements')">📢<br>Announcements</div>
+            <div class="menu-card" onclick="openSection('congrats')">🏆<br>Achievements</div>
+            <div class="menu-card" onclick="openSection('about-dept')">📖<br>About the Department</div>
+            <div class="menu-card" onclick="openSection('files')">📂<br>Downloads</div>
+            <div class="menu-card" onclick="openSection('attendance')">📸<br>Attendance</div>
         </div>
 
-        <br>
-        <a href="/logout"><button style="background:gray;">Logout</button></a>
+        <div id="announcements" class="portal-section">
+    <h2>📢 Announcements</h2>
+
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+        <div style="background: #eee; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <h3>Post New Update</h3>
+            <form action="/post-announcement" method="POST" enctype="multipart/form-data">
+                <input type="text" name="title" placeholder="Announcement Title" required>
+                <textarea name="message" placeholder="Write your message here..." required></textarea>
+                <input type="file" name="image" accept="image/*">
+                <button type="submit" class="post-btn">Post to Portal</button>
+            </form>
+        </div>
+    <% } %>
+
+    <div id="announcementList">
+    <% announcements.forEach(post => { %>
+        <div class="card" style="border-left: 8px solid #ffcc00; margin-bottom: 15px; position: relative;">
+            
+            <% if (user.role === 'officer' || user.role === 'adviser') { %>
+                <form action="/delete-announcement" method="POST" 
+                      onsubmit="return confirm('Delete this announcement?');" 
+                      style="position: absolute; top: 10px; right: 10px;">
+                    <input type="hidden" name="announcementId" value="<%= post._id %>">
+                    <button type="submit" style="background:none; border:none; cursor:pointer; font-size: 1.2em;">🗑️</button>
+                </form>
+            <% } %>
+
+            <h3><%= post.title %></h3>
+            <p><%= post.message %></p>
+            
+            <% if (post.imageUrl) { %>
+                <img src="<%= post.imageUrl %>" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">
+            <% } %>
+
+            <p style="font-size: 0.8em; color: #666; margin-top: 10px;">
+                Posted by: <strong><%= post.author %></strong> on <%= post.date.toDateString() %>
+            </p>
+        </div>
+    <% }) %> 
     </div>
+
+        
+    </div> <div id="attendance" class="portal-section" style="display: none;">
+        <h2>📸 Attendance System</h2>
+        <% if (user.role === 'officer' || user.role === 'adviser') { %>
+            <div style="background: #000; color: #ffcc00; padding: 20px; border-radius: 10px; text-align: center;">
+                <h3>Generate Session QR</h3>
+                <form action="/generate-qr" method="POST">
+                     <label style="color: white;">Event Name:</label>
+    <input type="text" name="eventName" placeholder="e.g., Monthly Meeting Feb" required style="background: #333; color: white; padding: 10px; margin-bottom: 10px;">
+                    <select name="sessionType" style="padding: 10px; width: 80%; margin-bottom: 10px;">
+                        <option value="AM_IN">Morning Check-In</option>
+                        <option value="AM_OUT">Morning Check-Out</option>
+                        <option value="PM_IN">Afternoon Check-In</option>
+                        <option value="PM_OUT">Afternoon Check-Out</option>
+                    </select>
+                    <button type="submit" class="menu-card" style="padding: 10px 20px; width: auto;">Generate QR</button>
+                </form>
+                <hr style="border: 1px solid #ffcc00; margin: 20px 0;">
+                <a href="/view-active-qr" style="color: #ffcc00; text-decoration: none; font-weight: bold;">🔄 Re-open Active QR</a>
+            </div>
+        <% } else { %>
+            <div style="text-align: center;">
+                <p>Scan the QR code provided by the officer to mark your attendance.</p>
+                <a href="/scanner" class="menu-card" style="display:inline-block; text-decoration:none; padding: 15px;">Open Camera Scanner</a>
+            </div>
+        <% } %>
+    </div>
+
+    <div id="congrats" class="portal-section" style="display: none;">
+    <h2>🏆 Achievements</h2>
+    
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+        <div style="background: #222; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #ffcc00;">
+            <h4 style="color: #ffcc00; margin-top: 0;">Admin: Update Achievements</h4>
+            <form action="/update-achievements" method="POST" enctype="multipart/form-data">
+                <textarea name="message" style="width: 100%; padding: 10px;" placeholder="Enter achievement text..."></textarea>
+                <input type="file" name="achievementImage" accept="image/*" style="color: white; margin-top: 10px;">
+                <button type="submit" style="background: #ffcc00; border: none; padding: 5px 15px; cursor: pointer; margin-top: 10px;">Update Achievement</button>
+            </form>
+        </div>
+    <% } %>
+
+    <div class="achievements-container">
+    <% achievements.forEach(item => { %>
+        <div style="position: relative; background: #111; padding: 20px; border: 1px solid #ffcc00; margin-bottom: 10px;">
+            
+            <% if (user.role === 'officer' || user.role === 'adviser') { %>
+                <form action="/delete-achievement/<%= item._id %>" method="POST" style="position: absolute; top: 10px; right: 10px;">
+                    <button type="submit" style="background: none; border: none; color: #ff4444; cursor: pointer; font-size: 1.2em;">🗑️</button>
+                </form>
+            <% } %>
+
+            <% if (item.imageUrl) { %>
+                <img src="<%= item.imageUrl %>" style="max-width: 100%; border-radius: 8px; margin-bottom: 10px">
+            <% } %>
+            <p><%= item.content %></p>
+            <small>Posted by: <%= item.updatedBy %></small>
+        </div>
+    <% }) %>
+</div>
+</div>
+
+<div id="about-dept" class="portal-section" style="display: none;">
+    <h2 onclick="toggleSection('history-content')" style="cursor:pointer; color: #ffcc00;">📜 History (Click to View)</h2>
+    <div id="history-content" style="display: none; margin-bottom: 20px;">
+        <% if (user.role === 'officer' || user.role === 'adviser') { %>
+            <form action="/add-history" method="POST" enctype="multipart/form-data">
+                <textarea name="message" placeholder="Add history text..." required></textarea>
+                <input type="file" name="historyImage" accept="image/*">
+                <button type="submit">Add History Entry</button>
+            </form>
+        <% } %>
+        <% historyEntries.forEach(item => { %>
+            <div style="border: 1px solid #444; padding: 10px; position: relative;">
+                <% if (user.role === 'officer' || user.role === 'adviser') { %>
+                    <form action="/delete-history/<%= item._id %>" method="POST" style="position: absolute; right: 5px; top: 5px;">
+                        <button type="submit" style="background:none; border:none; color:red; cursor:pointer;">🗑️</button>
+                    </form>
+                <% } %>
+                <% if (item.imageUrl) { %><img src="<%= item.imageUrl %>" style="width:100px;"><% } %>
+                <p><%= item.content %></p>
+            </div>
+        <% }) %>
+    </div>
+
+    <h2 onclick="toggleSection('officer-content')" style="cursor:pointer; color: #ffcc00;">👥 Current Officers (Click to View)</h2>
+    <div id="officer-content" style="display: none; padding: 20px; background: #111; border: 1px solid #444;">
+    
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+        <form action="/add-officer" method="POST" enctype="multipart/form-data">
+    <input type="text" name="name" placeholder="Officer Name" required>
+    <input type="text" name="position" placeholder="Position" required>
+    <input type="file" name="officerImage" accept="image/*"> <button type="submit">Add Officer</button>
+</form>
+    <% } %>
+
+    <div class="officers-grid" style="display: flex; flex-wrap: wrap; gap: 20px;">
+        <% officers.forEach(officer => { %>
+    <div class="officer-card" style="border: 1px solid #ffcc00; padding: 15px; margin: 10px; background: #222; border-radius: 8px; text-align: center; color: white;">
+        
+        <% if (officer.imageUrl) { %>
+            <img src="<%= officer.imageUrl %>" alt="Officer" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #ffcc00; margin-bottom: 10px;">
+        <% } else { %>
+            <div style="width: 100px; height: 100px; border-radius: 50%; background: #444; margin: 0 auto 10px auto; display: flex; align-items: center; justify-content: center;">👤</div>
+        <% } %>
+
+        <h3 style="color: #ffcc00; margin: 5px 0;"><%= officer.name %></h3>
+        <p style="color: #ffffff; font-weight: bold; margin: 0;"><%= officer.position %></p>
+
+        <% if (user.role === 'officer' || user.role === 'adviser') { %>
+            <form action="/delete-officer/<%= officer._id %>" method="POST" style="margin-top: 10px;">
+                <button type="submit" style="background: red; color: white; border: none; padding: 5px; cursor: pointer; border-radius: 4px;">Delete</button>
+            </form>
+        <% } %>
+    </div>
+<% }) %>
+    </div>
+</div>
+<script>
+function toggleSection(id) {
+    const x = document.getElementById(id);
+    x.style.display = (x.style.display === "none") ? "block" : "none";
+}
+</script>
+
+</div>
+<div id="files" class="portal-section" style="display: none;">
+    <h2 style="color: #ffcc00;">📁 Department Downloads</h2>
+
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+        <div style="background: #222; padding: 15px; border: 1px solid #ffcc00; margin-bottom: 20px;">
+            <h4 style="color: #fff;">Upload New File</h4>
+            <form action="/upload-file" method="POST" enctype="multipart/form-data">
+                <input type="text" name="displayName" placeholder="File Name (e.g., Syllabus)" required>
+                <input type="file" name="file" required>
+                <button type="submit" style="background: #ffcc00; cursor: pointer;">📤 Upload File</button>
+            </form>
+        </div>
+    <% } %>
+
+    <div class="file-list">
+        <% files.forEach(file => { %>
+            <div style="background: #111; padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: white;">📄 <%= file.displayName %></span>
+                
+                <a href="/uploads/<%= file.filename %>" download="<%= file.displayName %>" style="background: #28a745; color: white; padding: 5px 10px; text-decoration: none; border-radius: 5px;">
+                    📥 Download
+                </a>
+            </div>
+        <% }) %>
+    </div>
+</div>
+
+<div id="attendance-records" class="portal-section" style="display: none;">
+    <h2 style="color: #ffcc00;">📊 Master Attendance List</h2>
+    <table style="width: 100%; border-collapse: collapse; color: white;">
+        <thead>
+            <tr style="border-bottom: 2px solid #ffcc00;">
+                <th>Student Name</th>
+                <th>Event</th>
+                <th>Time</th>
+                <th>Session ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% allAttendance.forEach(record => { %>
+                <tr style="border-bottom: 1px solid #333;">
+                    <td><%= record.studentName %></td>
+                    <td><%= record.eventName %></td>
+                    <td><%= new Date(record.timestamp).toLocaleString() %></td>
+                    <td style="font-size: 0.8em; color: #888;"><%= record.sessionId %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>
+
+<div id="my-attendance" class="portal-section" style="display: none;">
+    <h2 style="color: #ffcc00;">📅 My Attendance History</h2>
+    <div class="attendance-cards">
+        <% myAttendance.forEach(record => { %>
+            <div style="background: #222; border-left: 5px solid #ffcc00; padding: 10px; margin-bottom: 10px;">
+                <h4 style="margin: 0;"><%= record.eventName %></h4>
+                <p style="margin: 5px 0; font-size: 0.9em; color: #ccc;">
+                    Checked in at: <%= new Date(record.timestamp).toLocaleString() %>
+                </p>
+                <small style="color: #666;">Ref: <%= record.sessionId %></small>
+            </div>
+        <% }) %>
+    </div>
+</div>
+
+<div id="attendance-records" class="portal-section" style="display: none;">
+    <h2 style="color: #ffcc00;">📊 Master Attendance List</h2>
+    <table style="width: 100%; border-collapse: collapse; color: white; background: #111;">
+        <thead>
+            <tr style="border-bottom: 2px solid #ffcc00; text-align: left;">
+                <th>Student Name</th>
+                <th>Event</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% allAttendance.forEach(record => { %>
+                <tr style="border-bottom: 1px solid #333;">
+                    <td><%= record.studentName %></td>
+                    <td><%= record.eventName %></td>
+                    <td><%= new Date(record.timestamp).toLocaleString() %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>
+
+<div id="my-attendance" class="portal-section" style="display: none;">
+    <h2 style="color: #ffcc00;">📅 My Attendance History</h2>
+    <% myAttendance.forEach(record => { %>
+        <div style="background: #222; border-left: 5px solid #ffcc00; padding: 15px; margin-bottom: 10px;">
+            <h4 style="margin: 0; color: #ffcc00;"><%= record.eventName %></h4>
+            <p style="margin: 5px 0; color: #fff;">Status: Present</p>
+            <small style="color: #888;"><%= new Date(record.timestamp).toLocaleString() %></small>
+        </div>
+    <% }) %>
+</div>
+
+ <script>
+    function openSection(id) {
+        // 1. Hide the main menu grid
+        const mainMenu = document.getElementById('mainMenu');
+        if (mainMenu) mainMenu.style.setProperty('display', 'none', 'important');
+
+        // 2. Hide ALL portal sections first
+        document.querySelectorAll('.portal-section').forEach(section => {
+            section.style.setProperty('display', 'none', 'important');
+        });
+
+        // 3. Show the specific section we want
+        const targetSection = document.getElementById(id);
+        if (targetSection) {
+            targetSection.style.setProperty('display', 'block', 'important');
+            // 4. Show the Back to Menu button
+            document.getElementById('backBtn').style.display = 'block';
+        } else {
+            console.error("Section with ID " + id + " not found!");
+        }
+    }
+
+    function showMenu() {
+        // Show menu and hide sections
+        document.getElementById('mainMenu').style.display = 'grid';
+        document.querySelectorAll('.portal-section').forEach(s => s.style.display = 'none');
+        document.getElementById('backBtn').style.display = 'none';
+    }
+</script>
 </body>
 </html>

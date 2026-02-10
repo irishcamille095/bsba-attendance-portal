@@ -11,15 +11,24 @@
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>Create Student Account</h2>
-        <form action="/signup" method="POST">
-            <input type="text" name="name" placeholder="Full Name (ex. Juan Dela Cruz)" required>
-            <input type="text" name="studentId" placeholder="Student ID (ex. 2024-001)" required>
-            <input type="password" name="password" placeholder="Create Password" required>
-            <button type="submit">Register Now</button>
-        </form>
-        <p><a href="/login" style="text-decoration:none; color:#555; font-size:0.8em;">Back to Login</a></p>
+    <div class="login-box">
+    <h2>Create Account</h2>
+    <form action="/signup" method="POST">
+    <input type="text" name="name" placeholder="Full Name" required>
+    <input type="text" name="studentId" placeholder="Student ID" required>
+    <input type="password" name="password" placeholder="Password" required>
+    
+    <select name="role" required>
+        <option value="student">Student</option>
+        <option value="officer">Officer</option>
+        <option value="adviser">Adviser</option>
+    </select>
+    
+    <button type="submit">Register</button>
+</form>
+
+    </form>
+    <div class="signup-link">
+        <a href="/login">Back to Login</a>
     </div>
-</body>
-</html>
+</div>
