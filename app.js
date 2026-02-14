@@ -53,14 +53,22 @@ function isAuthenticated(req, res, next) {
 
 // ... after your User model ...
 
-const attendanceSessionSchema = new mongoose.Schema({
-    type: String, // AM_IN, AM_OUT, PM_IN, PM_OUT
-    date: { type: Date, default: Date.now },
-    token: String,
-    active: { type: Boolean, default: true }
+const AttendanceSessionSchema = new mongoose.Schema({
+    eventName: String,
+    folderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder' }, // The link to the folder
+    type: String,
+    date: Date,
+    token: String
 });
 
-const AttendanceSession = mongoose.model('AttendanceSession', attendanceSessionSchema);
+const AttendanceSession = mongoose.model('AttendanceSession', AttendanceSessionSchema);
+
+const FolderSchema = new mongoose.Schema({
+    name: String, // e.g., "2nd Sem 2026"
+    createdBy: String,
+    createdAt: { type: Date, default: Date.now }
+});
+const Folder = mongoose.model('Folder', FolderSchema);
 
 // ... NOW come your routes like app.get('/dashboard') ...
 
@@ -163,6 +171,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
         const officers = await Officer.find();
         const historyEntries = await History.find();
         const files = await File.find();
+        const folders = await Folder.find({});
         
         // 2. Fetch the Attendance data you just added
         const allAttendance = await Attendance.find().sort({ timestamp: -1 });
@@ -177,7 +186,9 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
             historyEntries, 
             files,
             allAttendance, // This fixes the Reference Error!
-            myAttendance
+            myAttendance,
+            user: req.session.user,
+            folders: folders
         });
     } catch (err) {
         console.error("Dashboard Loading Error:", err);
@@ -288,23 +299,16 @@ app.listen(PORT, () => {
 });
 
 app.post('/generate-qr', isAuthenticated, async (req, res) => {
-    try {
-        // 1. Capture the event name from your input label
-        const { eventName, sessionType } = req.body; 
-        const today = new Date().setHours(0,0,0,0);
+    const { eventName, sessionType, folderId } = req.body; // Grab the folder selection
 
-        // 2. Add 'eventName' to the creation logic
-        const newSession = await AttendanceSession.create({
-            eventName: eventName, // This saves what you typed!
-            type: sessionType,
-            date: today,
-            token: Math.random().toString(36).substring(7)
-        });
-
-        res.render('show-qr', { session: newSession });
-    } catch (err) {
-        res.status(500).send("Error creating session: " + err.message);
-    }
+    const newSession = await AttendanceSession.create({
+        eventName: eventName,
+        folderId: folderId, // File it into the chosen folder
+        type: sessionType,
+        date: new Date(),
+        token: Math.random().toString(36).substring(7)
+    });
+    res.render('show-qr', { session: newSession });
 });
 
 app.get('/close-qr', (req, res) => {
@@ -337,10 +341,9 @@ app.get('/view-active-qr', isAuthenticated, async (req, res) => {
     }
 });
 
-// Show the scanner page
-app.get('/scan', (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
-    res.render('scanner');
+// This is the page that actually opens the camera
+app.get('/attendance', isAuthenticated, (req, res) => {
+    res.render('scanner'); // Ensure you have a file named 'scanner.ejs'
 });
 
 // Record the attendance
@@ -379,6 +382,90 @@ app.get('/attendance-report', (req, res) => {
     if (req.session.user.role === 'student') return res.redirect('/dashboard');
     
     res.render('report', { logs: attendanceLogs });
+});
+
+app.get('/folder-details/:folderId', isAuthenticated, async (req, res) => {
+    try {
+        const folder = await Folder.findById(req.params.folderId);
+        
+        // 1. Get all unique events that belong to this folder
+        const sessions = await AttendanceSession.find({ folderId: req.params.folderId });
+
+        // 2. Check if the user clicked a specific event (e.g., ?event=Monthly%20Meeting)
+        const selectedEvent = req.query.event;
+        let records = [];
+
+        if (selectedEvent) {
+            // 3. Only fetch attendance records if an event was selected
+            records = await Attendance.find({ 
+                eventName: selectedEvent 
+            }).sort({ timestamp: -1 });
+        }
+
+        // 4. Send everything to folder-view.ejs
+        res.render('folder-view', { 
+            folder, 
+            sessions, 
+            records, 
+            selectedEvent, 
+            user: req.session.user 
+        });
+    } catch (err) {
+        console.error("Error loading folder details:", err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+// Student View: Show ONLY my attendance in a folder
+app.get('/my-folder-attendance/:folderId', isAuthenticated, async (req, res) => {
+    const user = req.session.user;
+    const sessions = await AttendanceSession.find({ folderId: req.params.folderId });
+    const myRecords = await Attendance.find({ 
+        studentId: user.studentId,
+        eventName: { $in: sessions.map(s => s.eventName) }
+    }).sort({ timestamp: -1 });
+
+    res.render('folder-view', { folder: { name: "My Records" }, records: myRecords, user });
+});
+
+// Route to create a new Semester folder
+app.post('/create-folder', isAuthenticated, async (req, res) => {
+    try {
+        await Folder.create({ name: req.body.folderName });
+        res.redirect('/dashboard'); // Refresh the page to show the new folder
+    } catch (err) {
+        res.status(500).send("Error creating folder");
+    }
+});
+
+// Route to delete a folder
+app.get('/delete-folder/:id', isAuthenticated, async (req, res) => {
+    try {
+        await Folder.findByIdAndDelete(req.params.id);
+        res.redirect('/dashboard');
+    } catch (err) {
+        res.status(500).send("Error deleting folder");
+    }
+});
+
+app.get('/delete-event/:sessionId', isAuthenticated, async (req, res) => {
+    try {
+        // 1. Find the session first to get the event name
+        const session = await AttendanceSession.findById(req.params.sessionId);
+        
+        if (session) {
+            // 2. Delete all attendance records associated with this event name
+            await Attendance.deleteMany({ eventName: session.eventName });
+            
+            // 3. Delete the session itself
+            await AttendanceSession.findByIdAndDelete(req.params.sessionId);
+        }
+
+        res.redirect('back'); // Refresh the page to show it's gone
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error deleting event");
+    }
 });
 
 app.get('/view-attendance', async (req, res) => {
@@ -656,5 +743,59 @@ app.get('/test-attendance', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send("Error creating test data: " + err.message);
+    }
+});
+
+app.get('/download-attendance/:folderId', isAuthenticated, async (req, res) => {
+    try {
+        const eventName = req.query.event;
+        const records = await Attendance.find({ eventName }).sort({ userName: 1 });
+
+        // Create CSV Header
+        let csvContent = "Student Name,Session Type,Timestamp\n";
+
+        // Add records to CSV
+        records.forEach(r => {
+            csvContent += `${r.userName},${r.sessionType},${new Date(r.timestamp).toLocaleString()}\n`;
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=${eventName}_Attendance.csv`);
+        res.status(200).send(csvContent);
+    } catch (err) {
+        res.status(500).send("Error generating download");
+    }
+});
+
+app.get('/my-attendance/:folderId', isAuthenticated, async (req, res) => {
+    try {
+        const folder = await Folder.findById(req.params.folderId);
+        
+        // 1. Get all events in this folder
+        const sessions = await AttendanceSession.find({ folderId: req.params.folderId });
+
+        // 2. Check if the student clicked a specific event card
+        const selectedEvent = req.query.event;
+        let records = [];
+
+        if (selectedEvent) {
+            // 3. ONLY fetch records belonging to THIS specific student for this event
+            records = await Attendance.find({ 
+                eventName: selectedEvent,
+                studentId: req.session.user.studentId // Filters for the logged-in student only
+            }).sort({ timestamp: -1 });
+        }
+
+        // 4. Use the SAME folder-view.ejs file (it already handles the layout)
+        res.render('folder-view', { 
+            folder, 
+            sessions, 
+            records, 
+            selectedEvent, 
+            user: req.session.user 
+        });
+    } catch (err) {
+        console.error("Student attendance error:", err);
+        res.status(500).send("Error loading your attendance.");
     }
 });

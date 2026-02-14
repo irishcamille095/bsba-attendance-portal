@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= folder.name %> - Attendance Records</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 8px solid #800000; }
+        .nav-links { margin-bottom: 25px; display: flex; gap: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .nav-links a { text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.3s; }
+        .btn-back { color: #800000; }
+        .btn-dash { color: #666; }
+        .event-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .event-card { flex: 1; display: block; padding: 15px; background: #fff; border: 1px solid #ddd; border-left: 6px solid #800000; text-decoration: none; color: #333; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        .event-card:hover { transform: translateX(5px); background: #fdfdfd; }
+        .btn-delete-event { background: #fee; color: #800000; padding: 14px; border-radius: 6px; text-decoration: none; border: 1px solid #800000; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+        .btn-delete-event:hover { background: #800000; color: white; }
+        .btn-download { background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 0.8rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid #ddd; }
+        th { background-color: #800000; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border: 1px solid #ddd; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="nav-links">
+            <a href="javascript:history.back()" class="btn-back">← Back</a>
+            <a href="/dashboard" class="btn-dash">🏠 Back to Dashboard</a>
+        </div>
+
+        <h1>📁 <%= folder.name %></h1>
+
+        <% if (!selectedEvent) { %>
+            <h3>Select an Event:</h3>
+            <div style="margin-top: 20px;">
+                <% if (sessions && sessions.length > 0) { %>
+                    <% sessions.forEach(session => { %>
+                        <div class="event-row">
+                            <a href="/folder-details/<%= folder._id %>?event=<%= encodeURIComponent(session.eventName) %>" class="event-card">
+                                📅 <%= session.eventName %>
+                            </a>
+
+                            <% if (user.role === 'officer' || user.role === 'adviser') { %>
+                                <a href="/delete-event/<%= session._id %>" class="btn-delete-event" 
+                                   onclick="return confirm('WARNING: This will delete the entire event and ALL student records inside it. Continue?')">
+                                   🗑️
+                                </a>
+                            <% } %>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p style="color: #777; font-style: italic;">No events found in this folder yet.</p>
+                <% } %>
+            </div>
+
+        <% } else { %>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #800000; margin-bottom: 15px; padding-bottom: 10px;">
+                <h2 style="margin: 0;">Event: <%= selectedEvent %></h2>
+                
+                <a href="/download-attendance/<%= folder._id %>?event=<%= encodeURIComponent(selectedEvent) %>" class="btn-download">
+                    📥 Download CSV
+                </a>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Type</th>
+                        <th>Date/Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (records && records.length > 0) { %>
+                        <% records.forEach(record => { %>
+                            <tr>
+                                <td><%= record.userName %></td>
+                                <td><%= record.sessionType %></td>
+                                <td><%= new Date(record.timestamp).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) %></td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="3" style="padding: 30px; text-align: center; color: #777;">No attendance records found for this event.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        <% } %>
+    </div>
+
+</body>
+</html>

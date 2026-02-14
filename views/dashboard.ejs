@@ -28,10 +28,39 @@
         /* Sections (Hidden by Default) */
         .portal-section { display: none; background: white; padding: 30px; border-radius: 15px; border: 2px solid #000; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .back-btn { background: #000; color: #ffcc00; border: 1px solid #ffcc00; padding: 10px 20px; cursor: pointer; margin-bottom: 20px; display: none; }
+
+        /* Mobile Adjustments */
+@media (max-width: 768px) {
+    .mobile-toggle { 
+        display: block !important; /* Shows the hamburger button on phones */
+    }
+
+    .sidebar {
+        left: -250px; /* Moves sidebar off-screen by default */
+        transition: 0.3s;
+        height: 100vh;
+        width: 250px;
+        position: fixed;
+        z-index: 999;
+        overflow-y: auto; /* Fixes the cut-off issue so you can scroll the menu */
+    }
+
+    /* This class will be added by JavaScript when you click the button */
+    .sidebar.active {
+        left: 0; 
+    }
+
+    .content {
+        margin-left: 0 !important; /* Content takes full width on phone */
+        width: 100%;
+        padding-top: 60px;
+    }
+}
     </style>
 </head>
 <body>
 
+    <button class="mobile-toggle" onclick="toggleSidebar()">☰ Menu</button>
     <div class="sidebar" style="position: fixed; left: 0; top: 0; width: 250px; height: 100vh; background: #000; padding: 20px; z-index: 1000;">
     <h2 style="color: #ffcc00;">BSBA-MM</h2>
     <p style="color: #fff;">User: <strong><%= user.name %></strong></p>
@@ -112,30 +141,88 @@
         
     </div> <div id="attendance" class="portal-section" style="display: none;">
         <h2>📸 Attendance System</h2>
-        <% if (user.role === 'officer' || user.role === 'adviser') { %>
-            <div style="background: #000; color: #ffcc00; padding: 20px; border-radius: 10px; text-align: center;">
-                <h3>Generate Session QR</h3>
-                <form action="/generate-qr" method="POST">
-                     <label style="color: white;">Event Name:</label>
-    <input type="text" name="eventName" placeholder="e.g., Monthly Meeting Feb" required style="background: #333; color: white; padding: 10px; margin-bottom: 10px;">
-                    <select name="sessionType" style="padding: 10px; width: 80%; margin-bottom: 10px;">
-                        <option value="AM_IN">Morning Check-In</option>
-                        <option value="AM_OUT">Morning Check-Out</option>
-                        <option value="PM_IN">Afternoon Check-In</option>
-                        <option value="PM_OUT">Afternoon Check-Out</option>
-                    </select>
-                    <button type="submit" class="menu-card" style="padding: 10px 20px; width: auto;">Generate QR</button>
-                </form>
+       <% if (user.role === 'officer' || user.role === 'adviser') { %>
+    <form action="/generate-qr" method="POST" style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px;">
+        <h3 style="color: #800000; margin-top: 0;">Generate Attendance QR</h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Event Name:</label>
+                <input type="text" name="eventName" placeholder="e.g. Monthly Meeting" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+            </div>
+
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Assign to Semester Folder:</label>
+                <select name="folderId" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                    <option value="" disabled selected>-- Select a Folder --</option>
+                    <% folders.forEach(folder => { %>
+                        <option value="<%= folder._id %>"><%= folder.name %></option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Session Type:</label>
+                <select name="sessionType" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                    <option value="AM_IN">Morning Check-In (AM IN)</option>
+                    <option value="AM_OUT">Morning Check-Out (AM OUT)</option>
+                    <option value="PM_IN">Afternoon Check-In (PM IN)</option>
+                    <option value="PM_OUT">Afternoon Check-Out (PM OUT)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="menu-card" style="background: #800000; color: white; padding: 15px; cursor: pointer; border: none; font-weight: bold; width: 100%;">
+                GENERATE QR CODE
+            </button>
+        </div>
+    </form>
                 <hr style="border: 1px solid #ffcc00; margin: 20px 0;">
                 <a href="/view-active-qr" style="color: #ffcc00; text-decoration: none; font-weight: bold;">🔄 Re-open Active QR</a>
+    
+    <div class="filing-container" style="background: #f4f4f4; padding: 20px; border-radius: 10px;">
+            <h3 style="color: #800000;">📂 Master Attendance Filing</h3>
+            
+            <form action="/create-folder" method="POST" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="text" name="folderName" placeholder="New Semester/Folder Name" required style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                <button type="submit" style="background: #800000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">+ Create</button>
+            </form>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+                <% folders.forEach(folder => { %>
+                    <div class="folder-card" style="background: white; border: 1px solid #800000; padding: 15px; border-radius: 8px; text-align: center; position: relative;">
+                        <span style="font-size: 2.5rem; display: block;">📁</span>
+                        <strong style="font-size: 0.9rem;"><%= folder.name %></strong>
+                        
+                        <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 0.8rem;">
+                            <a href="/folder-details/<%= folder._id %>" style="color: blue; text-decoration: none;">Open</a>
+                            <a href="/delete-folder/<%= folder._id %>" style="color: red; text-decoration: none;" onclick="return confirm('Delete this folder?')">Delete</a>
+                        </div>
+                    </div>
+                <% }) %>
             </div>
+        </div>
+
         <% } else { %>
-            <div style="text-align: center;">
-                <p>Scan the QR code provided by the officer to mark your attendance.</p>
-                <a href="/scanner" class="menu-card" style="display:inline-block; text-decoration:none; padding: 15px;">Open Camera Scanner</a>
+            <div style="text-align: center; padding: 20px;">
+    <p>Scan the QR code provided by the officer to mark your attendance.</p>
+    <a href="/attendance" class="menu-card" style="display: inline-block; background: #800000; color: #ffcc00; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+        📸 Open Camera Scanner
+    </a>
+   <div class="filing-container" style="background: #f4f4f4; padding: 20px; border-radius: 10px;">
+            <h3 style="color: #800000;">📊 My Attendance Section</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+                <% folders.forEach(folder => { %>
+                    <div class="folder-card" style="background: white; border: 1px solid #800000; padding: 15px; border-radius: 8px; text-align: center;">
+                        <span style="font-size: 2.5rem; display: block;">📁</span>
+                        <strong style="font-size: 0.9rem;"><%= folder.name %></strong>
+                        <a href="/my-attendance/<%= folder._id %>" style="display: block; margin-top: 10px; color: blue; text-decoration: none; font-size: 0.8rem;">View Records</a>
+                    </div>
+                <% }) %>
             </div>
-        <% } %>
-    </div>
+        </div>
+    <% } %>
+
+</div> 
 
     <div id="congrats" class="portal-section" style="display: none;">
     <h2>🏆 Achievements</h2>
@@ -362,6 +449,12 @@ function toggleSection(id) {
         document.querySelectorAll('.portal-section').forEach(s => s.style.display = 'none');
         document.getElementById('backBtn').style.display = 'none';
     }
+
+    function toggleSidebar() {
+    // This looks for your sidebar and adds/removes the 'active' class
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('active');
+}
 </script>
 </body>
 </html>
