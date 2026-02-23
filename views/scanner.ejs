@@ -12,83 +12,273 @@
             font-family: 'Segoe UI', sans-serif; 
             background: #000; 
             color: #ffcc00; 
-            padding: 10px;
+            padding: 0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            position: relative;
         }
-        h1 { margin-bottom: 5px; font-size: 1.5em; }
-        p { margin-bottom: 15px; color: #aaa; }
-        #reader { 
-            width: 100%; 
-            max-width: 500px; 
-            border: 3px solid #ffcc00;
-            border-radius: 10px;
-            margin: 20px auto;
-        }
-        .session-info {
-            background: #222;
-            padding: 12px 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            border-left: 5px solid #ffcc00;
+        
+        .header-container {
             width: 100%;
-            max-width: 500px;
+            padding: 5px 10px;
+            text-align: center;
+            position: relative;
         }
-        .session-info p { margin: 5px 0; }
-        .btn-back { 
-            display: inline-block;
-            margin-top: 15px; 
-            color: #ffcc00; 
+        
+        .btn-back-top {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ffcc00;
             text-decoration: none;
             font-weight: bold;
             border: 2px solid #ffcc00;
-            padding: 12px 20px;
-            border-radius: 5px;
+            padding: 6px 10px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1em;
+            font-size: 0.85em;
             transition: all 0.3s ease;
+            background: transparent;
         }
-        .btn-back:hover, .btn-back:active {
+        
+        .btn-back-top:hover, .btn-back-top:active {
             background: #ffcc00;
             color: #000;
         }
+        
+        .header-meta {
+            font-size: 0.75em;
+            color: #aaa;
+            margin: 0;
+            padding: 0;
+            line-height: 1.2;
+        }
+        
+        h1 { 
+            margin: 3px 0 0 0; 
+            font-size: 1.15em;
+            padding: 0;
+            color: #ffcc00;
+        }
+        
+        
+        .scanner-container {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 5px;
+            overflow: hidden;
+        }
+        
+        #reader { 
+            width: 100%; 
+            max-width: 500px;
+            height: auto;
+            flex: 1;
+            border: 3px solid #ffcc00;
+            border-radius: 10px;
+            margin: 0;
+            object-fit: cover;
+        }
+        
+        .btn-back { 
+            display: none;
+        }
+        
+        /* Success Overlay Styles */
+        .success-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .success-overlay.show {
+            display: flex;
+        }
+        
+        .success-content {
+            background: #1a5f1a;
+            border: 3px solid #00ff00;
+            border-radius: 15px;
+            padding: 40px 30px;
+            text-align: center;
+            animation: scaleIn 0.4s ease-in;
+        }
+        
+        .checkmark {
+            font-size: 4em;
+            color: #00ff00;
+            margin-bottom: 15px;
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        .success-text {
+            font-size: 1.5em;
+            color: #00ff00;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
         @media (max-width: 768px) {
-            body { padding: 5px; }
-            h1 { font-size: 1.3em; }
+            body { padding: 0; }
+            .header-container { padding: 5px 50px 5px 10px; }
+            h1 { font-size: 1em; }
+            .header-meta { font-size: 0.7em; }
+            .scanner-container {
+                padding: 5px;
+                gap: 8px;
+            }
             #reader { max-width: 100%; }
-            .btn-back { padding: 12px 15px; }
+            .btn-back { 
+                padding: 8px 15px; 
+                font-size: 0.85em;
+                margin: 5px auto;
+            }
+            .btn-back-top {
+                padding: 6px 10px;
+                font-size: 0.8em;
+            }
+            .camera-select {
+                font-size: 0.8em;
+                padding: 6px;
+            }
+            .success-content {
+                padding: 30px 20px;
+            }
+            .checkmark {
+                font-size: 3em;
+                margin-bottom: 10px;
+            }
+            .success-text {
+                font-size: 1.2em;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>🔍 Student Scanner</h1>
-    <p style="color: #aaa;">Scan student MM-ID QR codes</p>
+    <div class="header-container">
+        <a href="/dashboard" class="btn-back-top">← Back</a>
+        <p class="header-meta" id="dateSession"><span id="currentDate"></span></p>
+        <h1 id="eventName">Event Scanner</h1>
+    </div>
     
-    <div class="session-info" id="sessionInfo" style="display:none;">
-        <p>Session: <span id="sessionName"></span></p>
+    <div class="scanner-container">
+        <div id="reader"></div>
     </div>
 
-    <div id="reader"></div>
-    <a href="/dashboard" class="btn-back">✕ Cancel</a>
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-content">
+            <div class="checkmark">✓</div>
+            <p class="success-text">Success!</p>
+        </div>
+    </div>
 
     <script>
-        const sessionId = new URLSearchParams(window.location.search).get('sessionId');
+        const folderId = new URLSearchParams(window.location.search).get('folderId');
+        const eventName = new URLSearchParams(window.location.search).get('eventName') || 'Event Scanner';
+        const sessionType = new URLSearchParams(window.location.search).get('sessionType') || '';
+        let scanInProgress = false;
         
-        if (sessionId) {
-            document.getElementById('sessionInfo').style.display = 'block';
-            document.getElementById('sessionName').textContent = sessionId;
+        // Set current date
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        
+        // Update header
+        if (eventName) {
+            document.getElementById('dateSession').textContent = `${dateStr} • ${sessionType}`;
+            document.getElementById('eventName').textContent = eventName;
+        } else {
+            document.getElementById('dateSession').textContent = dateStr;
+        }
+
+        function playBeep(duration = 200, frequency = 800) {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration / 1000);
+            } catch (e) {
+                console.log("Audio not available, continuing without sound");
+            }
+        }
+
+        // Vibration feedback
+        function triggerVibration() {
+            if (navigator.vibrate) {
+                navigator.vibrate(200);
+            }
+        }
+
+        // Show success overlay
+        function showSuccessOverlay() {
+            const overlay = document.getElementById('successOverlay');
+            overlay.classList.add('show');
+            
+            // Play feedback
+            playBeep(200, 800);
+            triggerVibration();
+            
+            // Hide overlay after 2 seconds
+            setTimeout(() => {
+                overlay.classList.remove('show');
+            }, 2000);
         }
 
         function onScanSuccess(decodedText) {
-            // When QR is found, send to server with sessionId
-            if (sessionId) {
-                window.location.href = "/mark-attendance?code=" + decodedText + "&sessionId=" + sessionId;
-            } else {
-                window.location.href = "/mark-attendance?code=" + decodedText;
-            }
+            // Prevent multiple rapid scans
+            if (scanInProgress) return;
+            scanInProgress = true;
+            
+            // Show success feedback
+            showSuccessOverlay();
+            
+            // Redirect after 2 seconds
+            setTimeout(() => {
+                window.location.href = "/mark-attendance?code=" + decodedText + "&folderId=" + folderId + "&eventName=" + eventName + "&sessionType=" + sessionType;
+            }, 2000);
         }
 
         function onScanError(error) {

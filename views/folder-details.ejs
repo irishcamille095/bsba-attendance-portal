@@ -203,6 +203,16 @@
             margin-top: 20px;
         }
 
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
+        }
+
+        .table-wrapper table {
+            min-width: 600px;
+        }
+
         th { 
             background-color: #1a1a1a;
             color: #ffcc00;
@@ -784,6 +794,7 @@
             <% if (user.role === 'student') { %>
                 <% const myRecord = (attendanceData || []).find(r => r.studentId === user.studentId); %>
                 <% if (myRecord) { %>
+                    <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
@@ -806,11 +817,13 @@
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 <% } else { %>
                     <p style="color: #777; font-style: italic; padding: 20px; text-align: center;">You have not recorded your attendance for this event yet.</p>
                 <% } %>
             <% } else { %>
                 <% if (attendanceData && attendanceData.length > 0) { %>
+                    <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
@@ -845,6 +858,7 @@
                             <% }) %>
                         </tbody>
                     </table>
+                    </div>
                 <% } else { %>
                     <p style="color: #777; font-style: italic; padding: 20px; text-align: center;">No attendance records found for this event yet.</p>
                 <% } %>

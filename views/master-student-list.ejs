@@ -329,6 +329,26 @@
             border-color: #dc3545;
         }
 
+        .back-btn {
+            background: #000;
+            color: #ffcc00;
+            border: 2px solid #ffcc00;
+            padding: 12px 20px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            display: inline-block;
+            font-weight: bold;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+            max-width: 200px;
+        }
+
+        .back-btn:hover {
+            background: #ffcc00;
+            color: #000;
+        }
+
         .stats {
             background: white;
             padding: 15px;
@@ -375,7 +395,10 @@
 
         .modal-content {
             background-color: white;
-            margin: 5% auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             padding: 30px;
             border-radius: 10px;
             width: 80%;
@@ -407,6 +430,28 @@
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
+        }
+
+        #searchResults table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #searchResults th {
+            background: #000;
+            color: #ffcc00;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #ffcc00;
+        }
+
+        #searchResults td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #searchResults tr:hover {
+            background: #f8f9fa;
         }
 
         @media (max-width: 768px) {
@@ -551,8 +596,6 @@
         
         <hr style="border: 1px solid #ffcc00; margin: 15px 0;">
         
-        <a href="/dashboard" style="text-decoration: none; color: #ffcc00; display: block; margin-bottom: 10px; font-weight: bold;">← Back to Dashboard</a>
-        
         <form action="/logout" method="POST" style="margin-top: 20px;">
             <button type="submit" class="logout-btn">🚪 Logout</button>
         </form>
@@ -565,6 +608,8 @@
             <p>Manage all 300 student ID slots (MM-001 to MM-300)</p>
         </header>
 
+        <a href="/dashboard" class="back-btn" style="text-decoration: none; display: inline-block;">⬅️ Back to Menu</a>
+
         <!-- Controls -->
         <div class="controls">
             <div class="search-box">
@@ -575,9 +620,11 @@
                     onkeyup="filterTable()"
                 >
             </div>
-            <button class="btn btn-primary" onclick="exportData()">📥 Export CSV</button>
             <a href="/download-all-qrs" class="btn btn-primary" style="display:inline-block; text-decoration:none; text-align:center;">📄 Download All Student QR Cards</a>
         </div>
+
+        <!-- Search Results Container -->
+        <div id="searchResults" style="display: none; background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); margin-bottom: 20px; overflow: hidden;"></div>
 
         <!-- Table -->
         <div class="table-container">
@@ -611,17 +658,9 @@
                                 <% } %>
                             </td>
                             <td>
-                                <% if (student.qrCode) { %>
-                                    <img 
-                                        src="<%= student.qrCode %>" 
-                                        alt="QR <%= student.mmId %>"
-                                        class="qr-code"
-                                        onclick="showQRModal('<%= student.qrCode %>', '<%= student.mmId %>')"
-                                        title="Click to expand"
-                                    >
-                                <% } else { %>
-                                    <div class="qr-placeholder">—</div>
-                                <% } %>
+                                <div class="qr-placeholder" data-mmid="<%= student.mmId %>" onclick="loadAndShowQR('<%= student.mmId %>')">
+                                    <span style="cursor: pointer; color: #ffcc00;">Click to load</span>
+                                </div>
                             </td>
                             <td>
                                 <% if (student.isAssigned && student.corPath) { %>
@@ -659,16 +698,33 @@
             </div>
             <div class="stat-card">
                 <div class="stat-label">Assigned</div>
-                <div class="stat-value" id="assignedCount"><%= students.filter(s => s.isAssigned).length %></div>
+                <div class="stat-value"><%= totalAssigned %></div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Available</div>
-                <div class="stat-value" id="availableCount"><%= students.filter(s => !s.isAssigned).length %></div>
+                <div class="stat-value"><%= 300 - totalAssigned %></div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Officers</div>
-                <div class="stat-value" id="officerCount"><%= students.filter(s => s.role === 'officer').length %></div>
+                <div class="stat-label">Page</div>
+                <div class="stat-value"><%= page %> / <%= totalPages %></div>
             </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+            <% if (page > 1) { %>
+                <a href="/admin/students?page=1" class="btn btn-secondary">⏮️ First</a>
+                <a href="/admin/students?page=<%= page - 1 %>" class="btn btn-secondary">◀ Previous</a>
+            <% } %>
+            
+            <span style="padding: 12px 24px; background: #f0f0f0; border-radius: 8px; align-self: center;">
+                Page <%= page %> of <%= totalPages %> (50 students per page)
+            </span>
+            
+            <% if (page < totalPages) { %>
+                <a href="/admin/students?page=<%= page + 1 %>" class="btn btn-secondary">Next ▶</a>
+                <a href="/admin/students?page=<%= totalPages %>" class="btn btn-secondary">Last ⏭️</a>
+            <% } %>
         </div>
     </div>
 
@@ -683,6 +739,48 @@
     </div>
 
     <script>
+        // QR Code cache to avoid fetching the same code twice
+        const qrCache = {};
+
+        // Lazy-load QR code on demand
+        async function loadAndShowQR(mmId) {
+            try {
+                // Check cache first
+                if (qrCache[mmId]) {
+                    showQRModal(qrCache[mmId], mmId);
+                    return;
+                }
+
+                // Fetch QR code from server
+                const response = await fetch(`/api/student-qr/${mmId}`);
+                if (!response.ok) {
+                    alert('Error loading QR code');
+                    return;
+                }
+
+                const data = await response.json();
+                qrCache[mmId] = data.qrCode; // Cache it
+                
+                // Update the placeholder with actual image
+                const placeholder = document.querySelector(`[data-mmid="${mmId}"]`);
+                if (placeholder) {
+                    const img = document.createElement('img');
+                    img.src = data.qrCode;
+                    img.alt = `QR ${mmId}`;
+                    img.className = 'qr-code';
+                    img.onclick = function() { showQRModal(data.qrCode, mmId); };
+                    img.title = 'Click to expand';
+                    placeholder.replaceWith(img);
+                }
+
+                // Show QR in modal
+                showQRModal(data.qrCode, mmId);
+            } catch (error) {
+                console.error('Error loading QR code:', error);
+                alert('Error loading QR code');
+            }
+        }
+
         // QR Modal functions
         function showQRModal(qrCode, mmId) {
             document.getElementById('qrModal').style.display = 'block';
@@ -758,39 +856,70 @@
         function filterTable() {
             const input = document.getElementById('searchInput');
             const filter = input.value.toLowerCase();
-            const table = document.getElementById('studentTable');
-            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-
-            for (let i = 0; i < rows.length; i++) {
-                const id = rows[i].getAttribute('data-id').toLowerCase();
-                const name = rows[i].getAttribute('data-name').toLowerCase();
-                
-                if (id.includes(filter) || name.includes(filter)) {
-                    rows[i].style.display = '';
-                } else {
-                    rows[i].style.display = 'none';
-                }
-            }
-        }
-
-        // Export CSV
-        function exportData() {
-            let csv = 'Student ID,Name,Role\n';
-            const rows = document.getElementById('studentTable').getElementsByTagName('tbody')[0].getElementsByTagName('tr');
             
-            for (let row of rows) {
-                if (row.style.display !== 'none') {
-                    const mmId = row.cells[0].textContent;
-                    const name = row.cells[1].textContent;
-                    const role = row.cells[2].textContent;
-                    csv += `${mmId},"${name}",${role}\n`;
+            // If search box is empty, show all rows on current page
+            if (!filter) {
+                const table = document.getElementById('studentTable');
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                for (let i = 0; i < rows.length; i++) {
+                    rows[i].style.display = '';
                 }
+                document.getElementById('searchResults').style.display = 'none';
+                document.querySelector('.table-container').style.display = 'block';
+                return;
             }
 
-            const link = document.createElement('a');
-            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-            link.download = 'student-list.csv';
-            link.click();
+            // Search across all 300 slots using API
+            fetch(`/api/search-students?q=${encodeURIComponent(filter)}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Search results:', data);
+                    const resultsDiv = document.getElementById('searchResults');
+                    
+                    if (data.results.length === 0) {
+                        resultsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #666; font-size: 1.1em;">No results found for "' + filter + '"</div>';
+                        resultsDiv.style.display = 'block';
+                        document.querySelector('.table-container').style.display = 'none';
+                        return;
+                    }
+
+                    // Build results HTML with proper table styling
+                    let html = '<div style="padding: 20px;">' +
+                               '<div style="margin-bottom: 15px; font-weight: bold; font-size: 1.1em; color: #000;">Search Results: Found ' + data.results.length + ' match(es)</div>' +
+                               '<div style="overflow-x: auto;">' +
+                               '<table style="width: 100%; border-collapse: collapse; background: white;">' +
+                               '<thead>' +
+                               '<tr style="background: #000; color: #ffcc00;">' +
+                               '<th style="padding: 12px; text-align: left; border-bottom: 2px solid #ffcc00;">MM-ID</th>' +
+                               '<th style="padding: 12px; text-align: left; border-bottom: 2px solid #ffcc00;">Name</th>' +
+                               '<th style="padding: 12px; text-align: center; border-bottom: 2px solid #ffcc00;">Page</th>' +
+                               '<th style="padding: 12px; text-align: left; border-bottom: 2px solid #ffcc00;">Action</th>' +
+                               '</tr>' +
+                               '</thead>' +
+                               '<tbody>';
+                    
+                    data.results.forEach((result, index) => {
+                        const bgColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                        html += '<tr style="background: ' + bgColor + '; border-bottom: 1px solid #ddd;">' +
+                                '<td style="padding: 12px; font-weight: bold; color: #800000;">' + result.mmId + '</td>' +
+                                '<td style="padding: 12px; color: #333;">' + (result.name || '(Empty Slot)') + '</td>' +
+                                '<td style="padding: 12px; text-align: center; color: #333;">' + result.page + '</td>' +
+                                '<td style="padding: 12px;"><a href="/admin/students?page=' + result.page + '" style="background: #000; color: #ffcc00; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block; border: 2px solid #ffcc00; transition: all 0.3s ease;">Go to Page</a></td>' +
+                                '</tr>';
+                    });
+                    
+                    html += '</tbody></table></div></div>';
+                    resultsDiv.innerHTML = html;
+                    resultsDiv.style.display = 'block';
+                    document.querySelector('.table-container').style.display = 'none';
+                    
+                    console.log('Results displayed successfully');
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    document.getElementById('searchResults').innerHTML = '<div style="padding: 20px; color: #c00;">Error performing search: ' + error.message + '</div>';
+                    document.getElementById('searchResults').style.display = 'block';
+                });
         }
 
         // Mobile sidebar and header functionality

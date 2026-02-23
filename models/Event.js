@@ -15,4 +15,7 @@ const EventSchema = new mongoose.Schema({
     }]
 });
 
+// Ensure unique event name per folder combination
+EventSchema.index({ name: 1, folderId: 1 }, { unique: true });
+
 module.exports = mongoose.model('Event', EventSchema);

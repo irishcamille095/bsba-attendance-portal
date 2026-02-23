@@ -12,13 +12,17 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
     "ejs": "^4.0.1",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "mongoose": "^9.1.6",
     "multer": "^2.0.2",
     "nodemailer": "^8.0.1",
+    "pdfkit": "^0.13.0",
     "qrcode": "^1.5.4",
-    "pdfkit": "^0.13.0"
+    "web-push": "^3.6.7"
   }
 }

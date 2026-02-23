@@ -1,13 +1,22 @@
 const mongoose = require('mongoose');
+const express = require('express');
+const session = require('express-session');
+const fs = require('fs');
+const QRCode = require('qrcode');
+const PDFDocument = require('pdfkit');
+const webpush = require('web-push');
+
+const app = express();
 
 // Paste your link here. 
 // IMPORTANT: Replace <password> with the password you created in MongoDB!
-mongoose.connect('mongodb+srv://irishcamille095:February095@cluster0.c33gokn.mongodb.net/?appName=Cluster0')
+const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://irishcamille095:February095@cluster0.c33gokn.mongodb.net/?appName=Cluster0';
+
+mongoose.connect(mongoURI)
     .then(async () => {
         console.log('✅ Connected to MongoDB Cloud!');
         // Initialize student ID pool when DB connects
         const StudentIDPool = require('./models/StudentIDPool');
-        const QRCode = require('qrcode');
         
         async function initializeStudentIDPool() {
             try {
@@ -44,21 +53,57 @@ mongoose.connect('mongodb+srv://irishcamille095:February095@cluster0.c33gokn.mon
         }
         
         await initializeStudentIDPool();
+        
+        // START THE SERVER AFTER MONGODB CONNECTS
+        const PORT = process.env.PORT || 3000;
+        app.listen(PORT, () => {
+            console.log("-----------------------------------------");
+            console.log(`🚀 SERVER IS LIVE: http://localhost:${PORT}`);
+            console.log("-----------------------------------------");
+        });
     })
-    .catch(err => console.error('❌ Could not connect:', err));
-
-const express = require('express');
-const session = require('express-session');
-const fs = require('fs');
-const QRCode = require('qrcode');
-const PDFDocument = require('pdfkit');
-const app = express();
+    .catch(err => {
+        console.error('❌ Could not connect to MongoDB:', err.message);
+        console.error('📌 Connection String:', mongoURI);
+        console.error('⚠️  Please check:');
+        console.error('   1. MongoDB credentials are correct');
+        console.error('   2. Cluster is running and accepting connections');
+        console.error('   3. IP address is whitelisted in MongoDB Atlas');
+        process.exit(1);
+    });
 
 // --- THE "DATABASE" (Create these ONLY ONCE at the top) ---
 let announcements = [];
 let attendanceLogs = [];
 let currentEventQR = ''; // Make sure this exists
 let currentSession = ''; // ADD THIS LINE RIGHT HERE
+
+// --- CACHING FOR PERFORMANCE ---
+let cachedAvailableIDs = null; // Cache for MM-001 to MM-300 available list
+let lastAvailableIDsUpdate = null; // Track when cache was last updated
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+// Function to refresh available IDs cache
+async function refreshAvailableIDsCache() {
+    try {
+        const fullRange = Array.from({ length: 300 }, (_, i) => `MM-${String(i + 1).padStart(3, '0')}`);
+        const usersWithMM = await User.find({ mmId: { $exists: true } }).select('mmId').lean();
+        const assignedIDs = new Set(usersWithMM.map(u => u.mmId));
+        cachedAvailableIDs = fullRange.filter(id => !assignedIDs.has(id));
+        lastAvailableIDsUpdate = Date.now();
+        console.log('✅ Available IDs cache refreshed:', cachedAvailableIDs.length, 'available');
+    } catch (err) {
+        console.error('❌ Error refreshing available IDs cache:', err);
+    }
+}
+
+// Function to get available IDs (use cache if fresh, otherwise recalculate)
+async function getAvailableIDs() {
+    if (!cachedAvailableIDs || !lastAvailableIDsUpdate || Date.now() - lastAvailableIDsUpdate > CACHE_DURATION) {
+        await refreshAvailableIDsCache();
+    }
+    return cachedAvailableIDs || [];
+}
 
 const AttendanceSchema = new mongoose.Schema({
     studentId: String,   // The student's MM-ID
@@ -76,6 +121,53 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads')); // This lets the browser see your photos
 app.use(express.static('public'));
+// --- Web Push / Service Worker Support ---
+const PushSubscription = require('./models/PushSubscription');
+
+let vapidKeys = {
+    publicKey: process.env.VAPID_PUBLIC_KEY,
+    privateKey: process.env.VAPID_PRIVATE_KEY
+};
+
+if (!vapidKeys.publicKey || !vapidKeys.privateKey) {
+    vapidKeys = webpush.generateVAPIDKeys();
+    console.log('⚠️ Generated ephemeral VAPID keys. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in env to persist.');
+    console.log('VAPID Public Key:', vapidKeys.publicKey);
+}
+
+webpush.setVapidDetails('mailto:admin@example.com', vapidKeys.publicKey, vapidKeys.privateKey);
+
+app.get('/vapidPublicKey', (req, res) => {
+    res.json({ publicKey: vapidKeys.publicKey });
+});
+
+app.post('/subscribe', async (req, res) => {
+    try {
+        const sub = req.body;
+        if (!sub || !sub.endpoint) return res.status(400).send('Invalid subscription');
+        // Avoid duplicates by endpoint
+        const exists = await PushSubscription.findOne({ 'subscription.endpoint': sub.endpoint });
+        if (!exists) {
+            await PushSubscription.create({ subscription: sub });
+        }
+        res.status(201).send('Subscribed');
+    } catch (err) {
+        console.error('Subscribe error', err);
+        res.status(500).send('Error');
+    }
+});
+
+app.post('/unsubscribe', async (req, res) => {
+    try {
+        const { endpoint } = req.body;
+        if (!endpoint) return res.status(400).send('Missing endpoint');
+        await PushSubscription.deleteMany({ 'subscription.endpoint': endpoint });
+        res.send('Unsubscribed');
+    } catch (err) {
+        console.error('Unsubscribe error', err);
+        res.status(500).send('Error');
+    }
+});
 app.set('view engine', 'ejs');
 app.use(session({
     secret: 'bsba-mm-secret-key',
@@ -111,6 +203,9 @@ const AttendanceSessionSchema = new mongoose.Schema({
     date: Date,
     token: String
 });
+
+// Ensure unique event name per folder combination
+AttendanceSessionSchema.index({ eventName: 1, folderId: 1 }, { unique: true });
 
 const AttendanceSession = mongoose.model('AttendanceSession', AttendanceSessionSchema);
 
@@ -449,14 +544,6 @@ app.get('/view-attendance', isAuthenticated, async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-    console.log("-----------------------------------------");
-    console.log(`🚀 SERVER IS LIVE: http://localhost:${PORT}`);
-    console.log("-----------------------------------------");
-});
-
 // GET version for dashboard form submission
 app.get('/generate-qr', isAuthenticated, async (req, res) => {
     const { eventName, sessionType, folderId } = req.query;
@@ -526,13 +613,13 @@ app.get('/attendance', isAuthenticated, (req, res) => {
         return res.redirect('/dashboard');
     }
     
-    const { sessionId } = req.query;
-    res.render('scanner', { sessionId, user: req.session.user }); // Ensure you have a file named 'scanner.ejs'
+    const { folderId, eventName, sessionType } = req.query;
+    res.render('scanner', { folderId, eventName, sessionType, user: req.session.user }); // Ensure you have a file named 'scanner.ejs'
 });
 
 // Record the attendance - Now scans student MM-ID instead of event QR
 app.get('/mark-attendance', isAuthenticated, async (req, res) => {
-    const { code, sessionId } = req.query;
+    const { code, folderId, eventName, sessionType } = req.query;
     const officer = req.session.user;
 
     // Only officers and advisers can mark attendance
@@ -541,13 +628,7 @@ app.get('/mark-attendance', isAuthenticated, async (req, res) => {
     }
 
     try {
-        // 1. Find the session info to get event details
-        const session = await AttendanceSession.findById(sessionId);
-        if (!session) {
-            return res.send("<h1>❌ Invalid Session</h1><p>This attendance session does not exist.</p>");
-        }
-
-        // 2. The 'code' from the QR contains the student's MM-ID
+        // The 'code' from the QR contains the student's MM-ID
         // Find the student with this MM-ID
         const student = await User.findOne({ mmId: code });
 
@@ -555,30 +636,29 @@ app.get('/mark-attendance', isAuthenticated, async (req, res) => {
             return res.send("<h1>❌ Student Not Found</h1><p>No student with MM-ID: " + code + "</p>");
         }
 
-        // 3. Check if this student already scanned for THIS SPECIFIC session type + event
+        // Check if this student already scanned for THIS SPECIFIC event + session type
         const alreadyScanned = await Attendance.findOne({
             studentId: student.mmId,
-            eventName: session.eventName,
-            sessionType: session.type
+            eventName: eventName,
+            sessionType: sessionType
         });
 
         if (alreadyScanned) {
-            return res.send(`<h1>⚠️ Already Recorded</h1><p>${student.name} already checked in for ${session.type.replace('_', ' ')}</p>`);
+            return res.send(`<h1>⚠️ Already Recorded</h1><p>${student.name} already checked in for ${sessionType.replace('_', ' ')}</p>`);
         }
 
-        // 4. Create the attendance record with sessionType
+        // Create the attendance record
         const newRecord = new Attendance({
             studentId: student.mmId,
             studentName: student.name,
-            eventName: session.eventName,
-            sessionType: session.type,
-            sessionId: sessionId,
+            eventName: eventName,
+            sessionType: sessionType,
             timestamp: new Date()
         });
 
         await newRecord.save();
         
-        res.send(`<h1>✅ Success</h1><p>${student.name} (${student.mmId}) checked in: ${session.type.replace('_', ' ')}</p><p><a href="/attendance?sessionId=${sessionId}">Scan Next Student</a></p>`);
+        res.send(`<h1>✅ Success</h1><p>${student.name} (${student.mmId}) checked in: ${sessionType.replace('_', ' ')}</p><p><a href="/attendance?folderId=${folderId}&eventName=${eventName}&sessionType=${sessionType}">Scan Next Student</a></p>`);
     } catch (err) {
         console.error(err);
         res.status(500).send("Error saving attendance.");
@@ -646,6 +726,39 @@ app.get('/api/download-qr/:studentId', isAuthenticated, async (req, res) => {
     } catch (err) {
         console.error('Error downloading QR code:', err);
         res.status(500).json({ error: 'Error downloading QR code' });
+    }
+});
+
+// API Endpoint: Get QR code on demand for student list (lazy loading)
+app.get('/api/student-qr/:mmId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        const { mmId } = req.params;
+        
+        // Try to get QR from User collection first
+        let qrCode = null;
+        const user = await User.findOne({ mmId }).select('qrCode').lean();
+        
+        if (user && user.qrCode) {
+            qrCode = user.qrCode;
+        } else {
+            // Fallback to StudentIDPool if not in User
+            const poolEntry = await StudentIDPool.findOne({ mmId }).select('qrCode').lean();
+            if (poolEntry && poolEntry.qrCode) {
+                qrCode = poolEntry.qrCode;
+            } else {
+                // Generate QR code on the fly if not found
+                qrCode = await QRCode.toDataURL(mmId);
+            }
+        }
+
+        res.json({ mmId, qrCode });
+    } catch (err) {
+        console.error('Error fetching QR code:', err);
+        res.status(500).json({ error: 'Error fetching QR code' });
     }
 });
 
@@ -958,13 +1071,40 @@ app.post('/post-announcement', upload.single('image'), async (req, res) => {
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
     try {
-        await Announcement.create({
-            title,
-            message,
-            imageUrl,
-            author: req.session.user.name
-        });
-        res.redirect('/dashboard');
+                const created = await Announcement.create({
+                        title,
+                        message,
+                        imageUrl,
+                        author: req.session.user.name
+                });
+
+                // Send push notifications to all saved subscriptions
+                try {
+                    const subs = await PushSubscription.find().lean();
+                    const payload = JSON.stringify({
+                        title: title,
+                        body: message && message.length > 120 ? message.substring(0, 117) + '...' : (message || ''),
+                        icon: '/assets/img/logo.jpg',
+                        data: { url: '/dashboard' }
+                    });
+
+                    await Promise.all(subs.map(async s => {
+                        try {
+                            await webpush.sendNotification(s.subscription, payload);
+                        } catch (err) {
+                            // If subscription is no longer valid, remove it
+                            if (err.statusCode === 410 || err.statusCode === 404) {
+                                await PushSubscription.deleteOne({ _id: s._id });
+                            } else {
+                                console.error('Push send error:', err);
+                            }
+                        }
+                    }));
+                } catch (pushErr) {
+                    console.error('Error sending push notifications:', pushErr);
+                }
+
+                res.redirect('/dashboard');
     } catch (err) {
         console.error(err);
         res.send("Error posting announcement.");
@@ -1379,35 +1519,127 @@ app.get('/admin/students', isAuthenticated, async (req, res) => {
             return res.redirect('/dashboard');
         }
 
-        // Get all 300 student ID slots
-        const allStudents = [];
-        for (let i = 1; i <= 300; i++) {
-            const mmId = `MM-${String(i).padStart(3, '0')}`;
-            const user = await User.findOne({ mmId });
-            // If there's no user, pull the QR from the StudentIDPool so empty slots still show a QR image
-            let poolEntry = null;
-            if (!user) {
-                poolEntry = await StudentIDPool.findOne({ mmId });
-            }
-
-            allStudents.push({
-                mmId: mmId,
-                name: user ? user.name : '',
-                role: user ? user.role : '',
-                _id: user ? user._id : (poolEntry ? null : null),
-                qrCode: user ? user.qrCode : (poolEntry ? poolEntry.qrCode : null),
-                corPath: user ? user.corPath : null,
-                isAssigned: !!user
-            });
+        // Parse page number (default to 1)
+        const page = Math.max(1, parseInt(req.query.page || 1));
+        const pageSize = 50; // Show 50 students per page
+        const totalSlots = 300; // Total MM-IDs: MM-001 to MM-300
+        const totalPages = Math.ceil(totalSlots / pageSize); // Should be 6 pages
+        
+        // Validate page number
+        if (page > totalPages) {
+            return res.redirect(`/admin/students?page=${totalPages}`);
         }
 
+        const skip = (page - 1) * pageSize;
+        const startSlot = skip + 1;
+        const endSlot = Math.min(skip + pageSize, totalSlots);
+
+        // Get all students from database
+        const allUsersInDb = await User.find()
+            .select('name username mmId role corPath _id')
+            .lean();
+
+        // Create a map for quick lookup
+        const userMap = {};
+        allUsersInDb.forEach(user => {
+            if (user.mmId) {
+                userMap[user.mmId] = user;
+            }
+        });
+
+        // Build the complete list for this page (both assigned and empty slots)
+        const students = [];
+        for (let i = startSlot; i <= endSlot; i++) {
+            const mmId = `MM-${String(i).padStart(3, '0')}`;
+            if (userMap[mmId]) {
+                // Student is assigned
+                students.push({
+                    ...userMap[mmId],
+                    isAssigned: true
+                });
+            } else {
+                // Empty slot
+                students.push({
+                    _id: null,
+                    mmId: mmId,
+                    name: '',
+                    username: '',
+                    role: '',
+                    corPath: null,
+                    isAssigned: false
+                });
+            }
+        }
+
+        // Get total count of assigned students
+        const totalAssigned = allUsersInDb.length;
+
         res.render('master-student-list', { 
-            students: allStudents,
-            user: req.session.user 
+            students: students,
+            user: req.session.user,
+            page: page,
+            pageSize: pageSize,
+            totalPages: totalPages,
+            totalAssigned: totalAssigned
         });
     } catch (err) {
         console.error('Error loading master student list:', err);
         res.status(500).send('Error loading student list');
+    }
+});
+
+// API: Search across all 300 student slots
+app.get('/api/search-students', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        const searchQuery = (req.query.q || '').toLowerCase();
+        if (!searchQuery) {
+            return res.json({ results: [] });
+        }
+
+        // Get all users from database
+        const allUsers = await User.find()
+            .select('name username mmId role corPath _id')
+            .lean();
+
+        // Create a map for quick lookup
+        const userMap = {};
+        allUsers.forEach(user => {
+            if (user.mmId) {
+                userMap[user.mmId] = user;
+            }
+        });
+
+        // Search across all 300 slots
+        const results = [];
+        for (let i = 1; i <= 300; i++) {
+            const mmId = `MM-${String(i).padStart(3, '0')}`;
+            const name = userMap[mmId]?.name || '';
+            
+            // Check if search query matches mmId or name
+            if (mmId.toLowerCase().includes(searchQuery) || name.toLowerCase().includes(searchQuery)) {
+                const pageSize = 50;
+                const page = Math.ceil(i / pageSize);
+                
+                results.push({
+                    mmId: mmId,
+                    name: name,
+                    page: page,
+                    isAssigned: !!userMap[mmId],
+                    role: userMap[mmId]?.role || '',
+                    username: userMap[mmId]?.username || '',
+                    _id: userMap[mmId]?._id || null
+                });
+            }
+        }
+
+        res.json({ results });
+    } catch (err) {
+        console.error('Error searching students:', err);
+        res.status(500).json({ error: 'Search error' });
     }
 });
 
@@ -1418,26 +1650,31 @@ app.get('/api/master-students', isAuthenticated, async (req, res) => {
             return res.status(403).json({ error: 'Access denied' });
         }
 
-        const allStudents = [];
-        for (let i = 1; i <= 300; i++) {
-            const mmId = `MM-${String(i).padStart(3, '0')}`;
-            const user = await User.findOne({ mmId });
-            let poolEntry = null;
-            if (!user) {
-                poolEntry = await StudentIDPool.findOne({ mmId });
-            }
+        // Parse page number and page size from query
+        const page = Math.max(1, parseInt(req.query.page || 1));
+        const pageSize = 50; // 50 results per page
+        const skip = (page - 1) * pageSize;
 
-            allStudents.push({
-                mmId: mmId,
-                name: user ? user.name : '',
-                role: user ? user.role : '',
-                _id: user ? user._id : null,
-                qrCode: user ? user.qrCode : (poolEntry ? poolEntry.qrCode : null),
-                isAssigned: !!user
-            });
-        }
+        // Get total count
+        const totalAssigned = await User.countDocuments();
+        const totalPages = Math.ceil(totalAssigned / pageSize);
 
-        res.json({ students: allStudents });
+        // Get paginated students (no QR codes)
+        const assignedStudents = await User.find()
+            .select('name username mmId role corPath')
+            .sort({ mmId: 1 })
+            .skip(skip)
+            .limit(pageSize)
+            .lean();
+
+        // Build response with pagination info
+        res.json({ 
+            students: assignedStudents,
+            page: page,
+            pageSize: pageSize,
+            totalPages: totalPages,
+            totalAssigned: totalAssigned
+        });
     } catch (err) {
         console.error('Error fetching master student list:', err);
         res.status(500).json({ error: 'Error loading student list' });

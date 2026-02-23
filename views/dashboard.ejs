@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BSBA-MM Portal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         /* THEME: YELLOW & BLACK */
         * { box-sizing: border-box; }
@@ -31,7 +32,7 @@
 
         /* Sections (Hidden by Default) */
         .portal-section { display: none; background: white; padding: 20px; border-radius: 12px; border: 2px solid #000; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .back-btn { background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 12px 20px; cursor: pointer; margin-bottom: 15px; display: none; font-weight: bold; border-radius: 5px; font-size: 1em; transition: all 0.3s; }
+        .back-btn { background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 12px 20px; cursor: pointer; margin-bottom: 15px; display: inline-block; font-weight: bold; border-radius: 8px; font-size: 1em; transition: all 0.3s; max-width: 200px; }
         .back-btn:hover { background: #ffcc00; color: #000; }
         .back-btn:active { transform: scale(0.98); }
 
@@ -125,8 +126,11 @@
             }
 
             .back-btn {
-                width: 100%;
-                padding: 12px;
+                display: inline-block;
+                max-width: 200px;
+                padding: 10px 15px;
+                font-size: 0.95em;
+                width: auto;
             }
 
             input, textarea, select {
@@ -220,11 +224,10 @@
     <h1 style="margin: 0; font-size: 1.1rem;">Marketing Management Portal</h1>
 </header>
 
-        <button id="backBtn" class="back-btn" onclick="showMenu()">⬅️ Back to Menu</button>
+        <button id="backBtn" class="back-btn" onclick="showMenu()" style="display: none;">⬅️ Back to Menu</button>
 
         <div id="mainMenu" class="menu-grid">
             <div class="menu-card" onclick="openSection('announcements')">📢<br>Announcements</div>
-            <div class="menu-card" onclick="openSection('congrats')">🏆<br>Achievements</div>
             <div class="menu-card" onclick="openSection('attendance')">📸<br>Attendance</div>
             <% if (user.role === 'officer' || user.role === 'adviser') { %>
                 <a href="/admin/students" class="menu-card" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">👥<br>Master Student List</a>
@@ -274,7 +277,9 @@
     </div>
 
         
-    </div> <div id="attendance" class="portal-section" style="display: none;">
+    </div>
+
+<div id="attendance" class="portal-section" style="display: none;">
         <h2>📸 Attendance System</h2>
        <% if (user.role === 'officer' || user.role === 'adviser') { %>
     <form id="scanForm" style="background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #ffcc00; margin-bottom: 20px;">
@@ -346,7 +351,13 @@
                 <h3 style="color: #1a1a1a; margin-top: 0;">📋 How to Mark Attendance</h3>
                 <p style="font-size: 1.1em;">Simply show your <strong>MM-ID Card</strong> to the officer when they scan attendance.</p>
                 <p style="color: #666; font-size: 0.9em;">Your MM-ID is: <strong style="color: #ffcc00;"><%= user.mmId %></strong></p>
-                <p style="color: #666;">An officer will scan your QR code to record your attendance.</p>
+                <p
+            
+            <div style="text-align: center; padding: 20px; background: white; border-radius: 8px; border-left: 5px solid #ffcc00; margin-bottom: 30px;">
+                <h3 style="color: #1a1a1a; margin-top: 0;">📱 Your Attendance QR Code</h3>
+                <p style="color: #666; margin-bottom: 15px;">Show this QR code to the officer for scanning:</p>
+                <div id="qrCodeContainer" style="display: flex; justify-content: center; padding: 15px; background: #fff;"></div>
+            </div> style="color: #666;">An officer will scan your QR code to record your attendance.</p>
             </div>
 
    <div class="filing-container" style="background: #f4f4f4; padding: 20px; border-radius: 10px; border-left: 5px solid #ffcc00;">
@@ -363,39 +374,6 @@
         </div>
     <% } %>
 
-</div>
-
-    <div id="congrats" class="portal-section" style="display: none;">
-    <h2>🏆 Achievements</h2>
-    <% if (user.role === 'officer' || user.role === 'adviser') { %>
-        <div style="background: #222; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #ffcc00;">
-            <h4 style="color: #ffcc00; margin-top: 0;">Admin: Update Achievements</h4>
-            <form action="/update-achievements" method="POST" enctype="multipart/form-data">
-                <textarea name="message" style="width: 100%; padding: 10px;" placeholder="Enter achievement text..."></textarea>
-                <input type="file" name="achievementImage" accept="image/*" style="color: white; margin-top: 10px;">
-                <button type="submit" style="background: #ffcc00; border: none; padding: 5px 15px; cursor: pointer; margin-top: 10px;">Update Achievement</button>
-            </form>
-        </div>
-    <% } %>
-    
-    <div class="achievements-container">
-    <% achievements.forEach(item => { %>
-        <div style="position: relative; background: #111; padding: 20px; border: 1px solid #ffcc00; margin-bottom: 10px;">
-            
-            <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                <form action="/delete-achievement/<%= item._id %>" method="POST" style="position: absolute; top: 10px; right: 10px;">
-                    <button type="submit" style="background: none; border: none; color: #ff4444; cursor: pointer; font-size: 1.2em;">🗑️</button>
-                </form>
-            <% } %>
-
-            <% if (item.imageUrl) { %>
-                <img src="<%= item.imageUrl %>" style="max-width: 100%; border-radius: 8px; margin-bottom: 10px">
-            <% } %>
-            <p><%= item.content %></p>
-            <small>Posted by: <%= item.updatedBy %></small>
-        </div>
-    <% }) %>
-</div>
 </div>
 
 
@@ -521,6 +499,11 @@
             if (id === 'qr-codes') {
                 loadQRCodes();
             }
+            
+            // 6. Generate student QR code when attendance section is opened
+            if (id === 'attendance') {
+                generateStudentQRCode();
+            }
         } else {
             console.error("Section with ID " + id + " not found!");
         }
@@ -531,6 +514,34 @@
         document.getElementById('mainMenu').style.display = 'grid';
         document.querySelectorAll('.portal-section').forEach(s => s.style.display = 'none');
         document.getElementById('backBtn').style.display = 'none';
+    }
+
+    function generateStudentQRCode() {
+        const mmId = '<%= user.mmId %>';
+        const container = document.getElementById('qrCodeContainer');
+        
+        if (!mmId || !container) {
+            console.warn('QR code container or MM-ID not found');
+            return;
+        }
+        
+        // Clear previous QR code
+        container.innerHTML = '';
+        
+        // Generate new QR code
+        try {
+            new QRCode(container, {
+                text: mmId,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+            container.innerHTML = '<p style="color: #c00;">Error generating QR code</p>';
+        }
     }
 
     async function loadQRCodes() {
@@ -593,6 +604,7 @@
             document.getElementById('studentQRList').innerHTML = '<p style="color: #c00; padding: 20px; background: #ffe0e0; border-radius: 5px;">Error loading student data: ' + error.message + '</p>';
         }
     }
+
     </script>
 <script>
     function toggleSidebar() {
@@ -685,7 +697,78 @@
         const sessionType = this.querySelector('select[name="sessionType"]').value;
 
         // Redirect to scanner with data
-        window.location.href = `/generate-qr?folderId=${folderId}&eventName=${eventName}&sessionType=${sessionType}`;
+        window.location.href = `/attendance?folderId=${folderId}&eventName=${eventName}&sessionType=${sessionType}`;
     });
 </script>
 </body>
+<script>
+// Notification permission + Push subscription for service worker
+(function(){
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    const askedKey = 'notification-permission-requested';
+
+    async function registerAndSubscribe() {
+        try {
+            const reg = await navigator.serviceWorker.register('/sw.js');
+            // Get VAPID public key from server
+            const r = await fetch('/vapidPublicKey');
+            const { publicKey } = await r.json();
+
+            // Convert key
+            function urlBase64ToUint8Array(base64String) {
+                const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+                const rawData = window.atob(base64);
+                const outputArray = new Uint8Array(rawData.length);
+                for (let i = 0; i < rawData.length; ++i) {
+                    outputArray[i] = rawData.charCodeAt(i);
+                }
+                return outputArray;
+            }
+
+            const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicKey)
+            });
+
+            // Send subscription to server
+            await fetch('/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(sub)
+            });
+        } catch (err) {
+            console.error('Push registration error:', err);
+        }
+    }
+
+    // Ask permission only once per browser using localStorage
+    (async function maybeAsk() {
+        if (localStorage.getItem(askedKey)) return;
+        // Only prompt if user hasn't already granted or denied
+        if (Notification.permission === 'default') {
+            // Wait until DOM is stable (user just logged in)
+            try {
+                const permission = await Notification.requestPermission();
+                localStorage.setItem(askedKey, '1');
+                if (permission === 'granted') {
+                    await registerAndSubscribe();
+                }
+            } catch (e) {
+                console.error('Notification permission request failed', e);
+            }
+        } else if (Notification.permission === 'granted') {
+            // Already granted: ensure subscription exists
+            await registerAndSubscribe();
+            localStorage.setItem(askedKey, '1');
+        } else {
+            // denied
+            localStorage.setItem(askedKey, '1');
+        }
+    })();
+
+})();
+</script>
+</body>
+</html>

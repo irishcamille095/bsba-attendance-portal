@@ -79,6 +79,7 @@
         .btn-secondary {
             background: #6c757d;
             color: white;
+            max-width: 200px;
         }
 
         .btn-secondary:hover {
@@ -261,12 +262,19 @@
             .controls {
                 flex-direction: column;
                 gap: 8px;
+                align-items: center;
             }
 
             .btn {
                 width: 100%;
                 padding: 11px 12px;
                 font-size: 0.95em;
+            }
+
+            .btn-secondary {
+                width: auto;
+                max-width: 200px;
+                padding: 10px 15px;
             }
 
             .students-table {
