@@ -6,72 +6,203 @@
     <title>BSBA-MM Portal</title>
     <style>
         /* THEME: YELLOW & BLACK */
+        * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f4f4; display: flex; }
         
         /* Sidebar */
-        .sidebar { width: 250px; background: #000; color: #ffcc00; height: 100vh; position: fixed; padding: 20px; border-right: 4px solid #ffcc00; }
+        .sidebar { width: 250px; background: #000; color: #ffcc00; height: 100vh; position: fixed; padding: 20px; border-right: 4px solid #ffcc00; overflow-y: auto; }
         .sidebar h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; text-align: center; }
+        .sidebar a { color: white; padding: 12px; display: block; text-decoration: none; transition: all 0.2s; }
+        .sidebar a:hover { color: #ffcc00; background: rgba(255, 204, 0, 0.1); }
         
         /* Main Content */
-        .content { flex: 1; margin-left: 290px; padding: 40px; }
-        header { border-bottom: 3px solid #000; margin-bottom: 30px; }
+        .content { flex: 1; margin-left: 290px; padding: 20px; }
+        header { border-bottom: 3px solid #000; margin-bottom: 20px; padding: 10px 15px; }
 
         /* Button Grid (The Menu) */
-        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
         .menu-card { 
-            background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 40px 20px; 
-            border-radius: 15px; cursor: pointer; text-align: center; font-weight: bold; font-size: 1.1em;
-            transition: 0.3s;
+            background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 30px 15px; 
+            border-radius: 12px; cursor: pointer; text-align: center; font-weight: bold; font-size: 1em;
+            transition: all 0.3s ease; min-height: 120px; display: flex; align-items: center; justify-content: center; flex-direction: column;
         }
-        .menu-card:hover { background: #ffcc00; color: #000; transform: translateY(-5px); }
+        .menu-card:hover { background: #ffcc00; color: #000; transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
+        .menu-card:active { transform: translateY(-1px); }
 
         /* Sections (Hidden by Default) */
-        .portal-section { display: none; background: white; padding: 30px; border-radius: 15px; border: 2px solid #000; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .back-btn { background: #000; color: #ffcc00; border: 1px solid #ffcc00; padding: 10px 20px; cursor: pointer; margin-bottom: 20px; display: none; }
+        .portal-section { display: none; background: white; padding: 20px; border-radius: 12px; border: 2px solid #000; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .back-btn { background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 12px 20px; cursor: pointer; margin-bottom: 15px; display: none; font-weight: bold; border-radius: 5px; font-size: 1em; transition: all 0.3s; }
+        .back-btn:hover { background: #ffcc00; color: #000; }
+        .back-btn:active { transform: scale(0.98); }
 
-        /* Mobile Adjustments */
-@media (max-width: 768px) {
-    .mobile-toggle { 
-        display: block !important; /* Shows the hamburger button on phones */
-    }
+        /* Forms */
+        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; font-size: 1em; }
+        input:focus, textarea:focus, select:focus { outline: none; border: 2px solid #ffcc00; }
+        button { padding: 12px 20px; font-size: 1em; cursor: pointer; border-radius: 5px; transition: all 0.3s; }
+        
+        /* Images */
+        img { max-width: 100%; height: auto; display: block; }
+        
+        /* Card styling */
+        .card { margin: 10px 0; padding: 15px; background: #f9f9f9; border-radius: 8px; }
 
-    .sidebar {
-        left: -250px; /* Moves sidebar off-screen by default */
-        transition: 0.3s;
-        height: 100vh;
-        width: 250px;
-        position: fixed;
-        z-index: 999;
-        overflow-y: auto; /* Fixes the cut-off issue so you can scroll the menu */
-    }
+        /* Folder cards */
+        .folder-card { transition: all 0.3s; }
+        .folder-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 
-    /* This class will be added by JavaScript when you click the button */
-    .sidebar.active {
-        left: 0; 
-    }
+        /* Mobile-first responsive design */
+        @media (max-width: 768px) {
+            body { display: block; }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: fixed;
+                left: 0;
+                top: 50px;
+                max-height: calc(100vh - 50px);
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 2000;
+                padding: 15px;
+                border-right: none;
+                border-bottom: 2px solid #ffcc00;
+            }
 
-    .content {
-        margin-left: 0 !important; /* Content takes full width on phone */
-        width: 100%;
-        padding-top: 60px;
-    }
-}
+            .sidebar.active {
+                transform: translateX(0);
+                overflow-y: auto;
+            }
+
+            .content {
+                margin-left: 0;
+                padding: 10px;
+                margin-top: 50px;
+            }
+
+            header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                margin: 0;
+                z-index: 1000;
+                padding: 10px 12px;
+                background: #ffcc00;
+            }
+
+            header button {
+                display: block !important;
+                background: rgba(0,0,0,0.2);
+                border: 1px solid rgba(0,0,0,0.3);
+                color: #000;
+                padding: 8px 12px;
+                font-size: 1.3em;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-right: 10px;
+            }
+
+            header h1 {
+                font-size: 1em;
+                margin: 0;
+            }
+
+            .menu-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .menu-card {
+                padding: 20px 10px;
+                font-size: 0.9em;
+                min-height: 100px;
+            }
+
+            .portal-section {
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            .back-btn {
+                width: 100%;
+                padding: 12px;
+            }
+
+            input, textarea, select {
+                padding: 11px;
+                margin: 8px 0;
+                font-size: 16px; /* Prevents auto-zoom on iOS */
+            }
+
+            button {
+                padding: 12px 16px;
+                font-size: 1em;
+                width: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .menu-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .menu-card {
+                padding: 18px 10px;
+                font-size: 0.85em;
+                min-height: 90px;
+            }
+
+            .content {
+                padding: 8px;
+            }
+
+            .portal-section {
+                padding: 12px;
+            }
+
+            header h1 {
+                font-size: 0.9em;
+            }
+
+            input, textarea, select {
+                padding: 10px;
+            }
+
+            button {
+                padding: 11px 14px;
+                font-size: 0.95em;
+            }
+
+            .folder-card {
+                padding: 12px;
+            }
+        }
+
+        /* On Desktop: Show sidebar normally */
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                position: fixed !important;
+            }
+            header button {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <button class="mobile-toggle" onclick="toggleSidebar()">☰ Menu</button>
-    <div class="sidebar" style="position: fixed; left: 0; top: 0; width: 250px; height: 100vh; background: #000; padding: 20px; z-index: 1000;">
+    <div class="sidebar" id="sidebar">
     <h2 style="color: #ffcc00;">BSBA-MM</h2>
     <p style="color: #fff;">User: <strong><%= user.name %></strong></p>
     <p style="color: #fff;">Role: <strong><%= user.role %></strong></p>
-    <% if (user.role === 'officer' || user.role === 'adviser') { %>
-    <button onclick="toggleSection('attendance-records')">📊 View Master Attendance</button>
-<% } %>
-
-<% if (user.role === 'student') { %>
-    <button onclick="toggleSection('my-attendance')">📅 My Attendance History</button>
-<% } %>
+    <div style="padding: 10px 20px;">
+    <a href="/my-account" style="text-decoration: none; color: white; display: flex; align-items: center; gap: 10px;">
+        👤 <span style="font-weight: bold;">My Account</span>
+    </a>
+</div>
     <hr style="border: 1px solid #ffcc00;">
     
     <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
@@ -82,18 +213,22 @@
 </div>
 
     <div class="content">
-        <header>
-            <h1>Marketing Management Portal</h1>
-        </header>
+      <header style="background: #ffcc00; color: white; padding: 10px 15px; display: flex; align-items: center; position: sticky; top: 0; z-index: 1000;">
+    <button onclick="toggleSidebar()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-right: 15px; font-size: 1.2rem;">
+        ☰
+    </button>
+    <h1 style="margin: 0; font-size: 1.1rem;">Marketing Management Portal</h1>
+</header>
 
         <button id="backBtn" class="back-btn" onclick="showMenu()">⬅️ Back to Menu</button>
 
         <div id="mainMenu" class="menu-grid">
             <div class="menu-card" onclick="openSection('announcements')">📢<br>Announcements</div>
             <div class="menu-card" onclick="openSection('congrats')">🏆<br>Achievements</div>
-            <div class="menu-card" onclick="openSection('about-dept')">📖<br>About the Department</div>
-            <div class="menu-card" onclick="openSection('files')">📂<br>Downloads</div>
             <div class="menu-card" onclick="openSection('attendance')">📸<br>Attendance</div>
+            <% if (user.role === 'officer' || user.role === 'adviser') { %>
+                <a href="/admin/students" class="menu-card" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">👥<br>Master Student List</a>
+            <% } %>
         </div>
 
         <div id="announcements" class="portal-section">
@@ -142,22 +277,24 @@
     </div> <div id="attendance" class="portal-section" style="display: none;">
         <h2>📸 Attendance System</h2>
        <% if (user.role === 'officer' || user.role === 'adviser') { %>
-    <form action="/generate-qr" method="POST" style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px;">
-        <h3 style="color: #800000; margin-top: 0;">Generate Attendance QR</h3>
+    <form id="scanForm" style="background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #ffcc00; margin-bottom: 20px;">
+        <h3 style="color: #1a1a1a; margin-top: 0;">📱 Start Scanning Students</h3>
         
         <div style="display: flex; flex-direction: column; gap: 15px;">
             <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Event Name:</label>
-                <input type="text" name="eventName" placeholder="e.g. Monthly Meeting" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-            </div>
-
-            <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Assign to Semester Folder:</label>
-                <select name="folderId" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Semester/Folder:</label>
+                <select id="folderSelect" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
                     <option value="" disabled selected>-- Select a Folder --</option>
                     <% folders.forEach(folder => { %>
                         <option value="<%= folder._id %>"><%= folder.name %></option>
-                    <% }) %>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Event:</label>
+                <select id="eventSelect" name="eventName" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" disabled>
+                    <option value="" disabled selected>-- Select Folder First --</option>
                 </select>
             </div>
 
@@ -171,30 +308,32 @@
                 </select>
             </div>
 
-            <button type="submit" class="menu-card" style="background: #800000; color: white; padding: 15px; cursor: pointer; border: none; font-weight: bold; width: 100%;">
-                GENERATE QR CODE
+            <input type="hidden" id="folderIdInput" name="folderId">
+
+            <button type="submit" class="menu-card" style="background: #000; color: #ffcc00; padding: 15px; cursor: pointer; border: 2px solid #ffcc00; font-weight: bold; width: 100%; border-radius: 8px; transition: all 0.3s ease;">
+                🔍 OPEN SCANNER
             </button>
         </div>
     </form>
                 <hr style="border: 1px solid #ffcc00; margin: 20px 0;">
-                <a href="/view-active-qr" style="color: #ffcc00; text-decoration: none; font-weight: bold;">🔄 Re-open Active QR</a>
+                <a href="/view-active-qr" style="color: #ffcc00; text-decoration: none; font-weight: bold;">🔄 Re-open Active Scanner</a>
     
-    <div class="filing-container" style="background: #f4f4f4; padding: 20px; border-radius: 10px;">
-            <h3 style="color: #800000;">📂 Master Attendance Filing</h3>
+    <div class="filing-container" style="background: #f4f4f4; padding: 20px; border-radius: 10px; border-left: 5px solid #ffcc00;">
+            <h3 style="color: #1a1a1a;">📂 Master Attendance Filing</h3>
             
             <form action="/create-folder" method="POST" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <input type="text" name="folderName" placeholder="New Semester/Folder Name" required style="flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
-                <button type="submit" style="background: #800000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">+ Create</button>
+                <input type="text" name="folderName" placeholder="New Semester/Folder Name" required style="flex: 1; padding: 10px; border-radius: 5px; border: 2px solid #000;">
+                <button type="submit" style="background: #ffcc00; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">+ Create</button>
             </form>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
                 <% folders.forEach(folder => { %>
-                    <div class="folder-card" style="background: white; border: 1px solid #800000; padding: 15px; border-radius: 8px; text-align: center; position: relative;">
+                    <div class="folder-card" style="background: white; border-left: 5px solid #ffcc00; border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; position: relative;">
                         <span style="font-size: 2.5rem; display: block;">📁</span>
                         <strong style="font-size: 0.9rem;"><%= folder.name %></strong>
                         
                         <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 0.8rem;">
-                            <a href="/folder-details/<%= folder._id %>" style="color: blue; text-decoration: none;">Open</a>
+                            <a href="/folder-details/<%= folder._id %>" style="color: blue; text-decoration: none;">View</a>
                             <a href="/delete-folder/<%= folder._id %>" style="color: red; text-decoration: none;" onclick="return confirm('Delete this folder?')">Delete</a>
                         </div>
                     </div>
@@ -203,16 +342,18 @@
         </div>
 
         <% } else { %>
-            <div style="text-align: center; padding: 20px;">
-    <p>Scan the QR code provided by the officer to mark your attendance.</p>
-    <a href="/attendance" class="menu-card" style="display: inline-block; background: #800000; color: #ffcc00; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-        📸 Open Camera Scanner
-    </a>
-   <div class="filing-container" style="background: #f4f4f4; padding: 20px; border-radius: 10px;">
-            <h3 style="color: #800000;">📊 My Attendance Section</h3>
+            <div style="text-align: center; padding: 20px; background: #f0f0f0; border-radius: 8px; border-left: 5px solid #ffcc00; margin-bottom: 30px;">
+                <h3 style="color: #1a1a1a; margin-top: 0;">📋 How to Mark Attendance</h3>
+                <p style="font-size: 1.1em;">Simply show your <strong>MM-ID Card</strong> to the officer when they scan attendance.</p>
+                <p style="color: #666; font-size: 0.9em;">Your MM-ID is: <strong style="color: #ffcc00;"><%= user.mmId %></strong></p>
+                <p style="color: #666;">An officer will scan your QR code to record your attendance.</p>
+            </div>
+
+   <div class="filing-container" style="background: #f4f4f4; padding: 20px; border-radius: 10px; border-left: 5px solid #ffcc00;">
+            <h3 style="color: #1a1a1a;">📊 My Attendance Section</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
                 <% folders.forEach(folder => { %>
-                    <div class="folder-card" style="background: white; border: 1px solid #800000; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div class="folder-card" style="background: white; border-left: 5px solid #ffcc00; border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center;">
                         <span style="font-size: 2.5rem; display: block;">📁</span>
                         <strong style="font-size: 0.9rem;"><%= folder.name %></strong>
                         <a href="/my-attendance/<%= folder._id %>" style="display: block; margin-top: 10px; color: blue; text-decoration: none; font-size: 0.8rem;">View Records</a>
@@ -222,11 +363,10 @@
         </div>
     <% } %>
 
-</div> 
+</div>
 
     <div id="congrats" class="portal-section" style="display: none;">
     <h2>🏆 Achievements</h2>
-    
     <% if (user.role === 'officer' || user.role === 'adviser') { %>
         <div style="background: #222; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #ffcc00;">
             <h4 style="color: #ffcc00; margin-top: 0;">Admin: Update Achievements</h4>
@@ -237,7 +377,7 @@
             </form>
         </div>
     <% } %>
-
+    
     <div class="achievements-container">
     <% achievements.forEach(item => { %>
         <div style="position: relative; background: #111; padding: 20px; border: 1px solid #ffcc00; margin-bottom: 10px;">
@@ -258,95 +398,7 @@
 </div>
 </div>
 
-<div id="about-dept" class="portal-section" style="display: none;">
-    <h2 onclick="toggleSection('history-content')" style="cursor:pointer; color: #ffcc00;">📜 History (Click to View)</h2>
-    <div id="history-content" style="display: none; margin-bottom: 20px;">
-        <% if (user.role === 'officer' || user.role === 'adviser') { %>
-            <form action="/add-history" method="POST" enctype="multipart/form-data">
-                <textarea name="message" placeholder="Add history text..." required></textarea>
-                <input type="file" name="historyImage" accept="image/*">
-                <button type="submit">Add History Entry</button>
-            </form>
-        <% } %>
-        <% historyEntries.forEach(item => { %>
-            <div style="border: 1px solid #444; padding: 10px; position: relative;">
-                <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                    <form action="/delete-history/<%= item._id %>" method="POST" style="position: absolute; right: 5px; top: 5px;">
-                        <button type="submit" style="background:none; border:none; color:red; cursor:pointer;">🗑️</button>
-                    </form>
-                <% } %>
-                <% if (item.imageUrl) { %><img src="<%= item.imageUrl %>" style="width:100px;"><% } %>
-                <p><%= item.content %></p>
-            </div>
-        <% }) %>
-    </div>
 
-    <h2 onclick="toggleSection('officer-content')" style="cursor:pointer; color: #ffcc00;">👥 Current Officers (Click to View)</h2>
-    <div id="officer-content" style="display: none; padding: 20px; background: #111; border: 1px solid #444;">
-    
-    <% if (user.role === 'officer' || user.role === 'adviser') { %>
-        <form action="/add-officer" method="POST" enctype="multipart/form-data">
-    <input type="text" name="name" placeholder="Officer Name" required>
-    <input type="text" name="position" placeholder="Position" required>
-    <input type="file" name="officerImage" accept="image/*"> <button type="submit">Add Officer</button>
-</form>
-    <% } %>
-
-    <div class="officers-grid" style="display: flex; flex-wrap: wrap; gap: 20px;">
-        <% officers.forEach(officer => { %>
-    <div class="officer-card" style="border: 1px solid #ffcc00; padding: 15px; margin: 10px; background: #222; border-radius: 8px; text-align: center; color: white;">
-        
-        <% if (officer.imageUrl) { %>
-            <img src="<%= officer.imageUrl %>" alt="Officer" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid #ffcc00; margin-bottom: 10px;">
-        <% } else { %>
-            <div style="width: 100px; height: 100px; border-radius: 50%; background: #444; margin: 0 auto 10px auto; display: flex; align-items: center; justify-content: center;">👤</div>
-        <% } %>
-
-        <h3 style="color: #ffcc00; margin: 5px 0;"><%= officer.name %></h3>
-        <p style="color: #ffffff; font-weight: bold; margin: 0;"><%= officer.position %></p>
-
-        <% if (user.role === 'officer' || user.role === 'adviser') { %>
-            <form action="/delete-officer/<%= officer._id %>" method="POST" style="margin-top: 10px;">
-                <button type="submit" style="background: red; color: white; border: none; padding: 5px; cursor: pointer; border-radius: 4px;">Delete</button>
-            </form>
-        <% } %>
-    </div>
-<% }) %>
-    </div>
-</div>
-<script>
-function toggleSection(id) {
-    const x = document.getElementById(id);
-    x.style.display = (x.style.display === "none") ? "block" : "none";
-}
-</script>
-
-</div>
-<div id="files" class="portal-section" style="display: none;">
-    <h2 style="color: #ffcc00;">📁 Department Downloads</h2>
-
-    <% if (user.role === 'officer' || user.role === 'adviser') { %>
-        <div style="background: #222; padding: 15px; border: 1px solid #ffcc00; margin-bottom: 20px;">
-            <h4 style="color: #fff;">Upload New File</h4>
-            <form action="/upload-file" method="POST" enctype="multipart/form-data">
-                <input type="text" name="displayName" placeholder="File Name (e.g., Syllabus)" required>
-                <input type="file" name="file" required>
-                <button type="submit" style="background: #ffcc00; cursor: pointer;">📤 Upload File</button>
-            </form>
-        </div>
-    <% } %>
-
-    <div class="file-list">
-        <% files.forEach(file => { %>
-            <div style="background: #111; padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: white;">📄 <%= file.displayName %></span>
-                
-                <a href="/uploads/<%= file.filename %>" download="<%= file.displayName %>" style="background: #28a745; color: white; padding: 5px 10px; text-decoration: none; border-radius: 5px;">
-                    📥 Download
-                </a>
-            </div>
-        <% }) %>
-    </div>
 </div>
 
 <div id="attendance-records" class="portal-section" style="display: none;">
@@ -369,9 +421,35 @@ function toggleSection(id) {
                     <td style="font-size: 0.8em; color: #888;"><%= record.sessionId %></td>
                 </tr>
             <% }) %>
-        </tbody>
     </table>
 </div>
+
+<% if (user.role === 'officer' || user.role === 'adviser') { %>
+<div id="qr-codes" class="portal-section" style="display: none;">
+    <h2>🎫 Student IDs & QR Codes</h2>
+    <p style="color: #333; margin-bottom: 20px;">Manage, view, and print student QR codes with MM-IDs.</p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+        <a href="/student-ids" style="background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; text-align: center; transition: all 0.3s ease;">
+            <div style="font-size: 2em; margin-bottom: 10px;">📋</div>
+            View Student List
+        </a>
+        
+        <a href="/print-student-cards" style="background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; text-align: center; transition: all 0.3s ease;">
+            <div style="font-size: 2em; margin-bottom: 10px;">🖨️</div>
+            Print Mini ID Cards
+        </a>
+    </div>
+
+    <button onclick="loadQRCodes()" style="background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px;">
+        🔄 Refresh List
+    </button>
+
+    <div id="studentQRList" style="background: white; padding: 20px; border-radius: 8px;">
+        <p style="color: #666;">Loading student data...</p>
+    </div>
+</div>
+<% } %>
 
 <div id="my-attendance" class="portal-section" style="display: none;">
     <h2 style="color: #ffcc00;">📅 My Attendance History</h2>
@@ -438,6 +516,11 @@ function toggleSection(id) {
             targetSection.style.setProperty('display', 'block', 'important');
             // 4. Show the Back to Menu button
             document.getElementById('backBtn').style.display = 'block';
+            
+            // 5. Auto-load QR codes when qr-codes section is opened
+            if (id === 'qr-codes') {
+                loadQRCodes();
+            }
         } else {
             console.error("Section with ID " + id + " not found!");
         }
@@ -450,11 +533,159 @@ function toggleSection(id) {
         document.getElementById('backBtn').style.display = 'none';
     }
 
+    async function loadQRCodes() {
+        try {
+            console.log('Loading QR codes...');
+            const response = await fetch('/api/student-qr-codes');
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Data received:', data);
+            
+            const studentList = document.getElementById('studentQRList');
+            
+            if (!data.students || data.students.length === 0) {
+                studentList.innerHTML = '<p style="color: #333; padding: 20px;">No students registered yet.</p>';
+                console.log('No students found');
+                return;
+            }
+
+            console.log('Rendering ' + data.students.length + ' students');
+
+            let html = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; background: white;">
+                <thead>
+                    <tr style="background: #000; color: #ffcc00; padding: 10px; text-align: left;">
+                        <th style="padding: 12px; border: 1px solid #ddd;">Student ID</th>
+                        <th style="padding: 12px; border: 1px solid #ddd;">Student Name</th>
+                        <th style="padding: 12px; border: 1px solid #ddd;">Email</th>
+                        <th style="padding: 12px; border: 1px solid #ddd;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+            data.students.forEach(student => {
+                html += `
+                    <tr style="border-bottom: 1px solid #ddd; background: white;">
+                        <td style="padding: 12px; font-weight: bold; color: #800000;">${student.mmId || 'N/A'}</td>
+                        <td style="padding: 12px; color: #333;">${student.name || 'N/A'}</td>
+                        <td style="padding: 12px; color: #333;">${student.username || 'N/A'}</td>
+                        <td style="padding: 12px;">
+                            <a href="/api/download-qr/${student._id}" class="qr-download-btn" style="background: #ffcc00; color: #000; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
+                                📥 Download QR
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            studentList.innerHTML = html;
+            console.log('Table rendered successfully');
+
+        } catch (error) {
+            console.error('Error loading QR codes:', error);
+            document.getElementById('studentQRList').innerHTML = '<p style="color: #c00; padding: 20px; background: #ffe0e0; border-radius: 5px;">Error loading student data: ' + error.message + '</p>';
+        }
+    }
+    </script>
+<script>
     function toggleSidebar() {
-    // This looks for your sidebar and adds/removes the 'active' class
-    const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('active');
-}
+        // This looks for the div with class="sidebar" and toggles the "active" style
+        const sidebar = document.querySelector('.sidebar');
+        sidebar.classList.toggle('active');
+    }
+
+    // This closes the sidebar if you tap anywhere on the dashboard while it's open
+    document.addEventListener('click', function(event) {
+        const sidebar = document.querySelector('.sidebar');
+        const headerBtn = document.querySelector('header button');
+        
+        if (window.innerWidth <= 768 && 
+            sidebar.classList.contains('active') && 
+            !sidebar.contains(event.target) && 
+            !headerBtn.contains(event.target)) {
+            sidebar.classList.remove('active');
+        }
+    });
+
+    // Touch swipe detection to close sidebar
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.addEventListener('touchstart', function(event) {
+        touchStartX = event.changedTouches[0].screenX;
+    }, false);
+
+    document.addEventListener('touchend', function(event) {
+        touchEndX = event.changedTouches[0].screenX;
+        const sidebar = document.querySelector('.sidebar');
+        
+        if (window.innerWidth <= 768 && sidebar.classList.contains('active')) {
+            // Detect swipe from left to right (closing swipe)
+            if (touchEndX > touchStartX + 50) {
+                sidebar.classList.remove('active');
+            }
+        }
+    }, false);
+
+    // Handle folder selection and event loading
+    document.getElementById('folderSelect').addEventListener('change', async function() {
+        const folderId = this.value;
+        const eventSelect = document.getElementById('eventSelect');
+        const folderIdInput = document.getElementById('folderIdInput');
+
+        if (!folderId) {
+            eventSelect.disabled = true;
+            eventSelect.innerHTML = '<option value="" disabled selected>-- Select Folder First --</option>';
+            return;
+        }
+
+        // Store the folderId in hidden input
+        folderIdInput.value = folderId;
+
+        try {
+            // Fetch events for this folder
+            const response = await fetch(`/api/folder-events/${folderId}`);
+            const events = await response.json();
+
+            // Clear and populate event dropdown
+            eventSelect.innerHTML = '<option value="" disabled selected>-- Select an Event --</option>';
+            
+            if (events.length > 0) {
+                events.forEach(event => {
+                    const option = document.createElement('option');
+                    option.value = event.eventName;
+                    option.textContent = event.eventName;
+                    eventSelect.appendChild(option);
+                });
+                eventSelect.disabled = false;
+            } else {
+                eventSelect.innerHTML = '<option value="" disabled selected>No events in this folder yet</option>';
+                eventSelect.disabled = true;
+            }
+        } catch (error) {
+            console.error('Error loading events:', error);
+            eventSelect.innerHTML = '<option value="" disabled selected>Error loading events</option>';
+            eventSelect.disabled = true;
+        }
+    });
+
+    // Handle form submission
+    document.getElementById('scanForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const folderId = document.getElementById('folderIdInput').value;
+        const eventName = document.getElementById('eventSelect').value;
+        const sessionType = this.querySelector('select[name="sessionType"]').value;
+
+        // Redirect to scanner with data
+        window.location.href = `/generate-qr?folderId=${folderId}&eventName=${eventName}&sessionType=${sessionType}`;
+    });
 </script>
 </body>
-</html>

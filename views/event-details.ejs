@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= event.name %> - Attendance</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 10px; margin: 0; background: #f4f4f4; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 15px; border-radius: 8px; }
+        h1 { color: #800000; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #800000; color: white; }
+        a { display: inline-block; margin: 10px 0; padding: 10px 15px; background: #800000; color: white; text-decoration: none; border-radius: 5px; }
+        a:hover { background: #600000; }
+        @media (max-width: 768px) {
+            body { padding: 5px; }
+            .container { padding: 10px; }
+            table { 
+                font-size: 0.9em; 
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: nowrap;
+            }
+            thead { display: none; }
+            tbody { display: block; }
+            tr { 
+                display: block; 
+                margin-bottom: 12px; 
+                border: 1px solid #ddd;
+                background: white;
+                border-radius: 6px;
+                padding: 12px;
+            }
+            th, td { 
+                padding: 8px; 
+                display: block;
+                text-align: right;
+                border-bottom: 1px solid #f0f0f0;
+                position: relative;
+                padding-left: 50%;
+            }
+            td:before {
+                content: attr(data-label);
+                position: absolute;
+                left: 0;
+                font-weight: bold;
+                color: #800000;
+                width: 48%;
+                text-align: left;
+            }
+            td:last-child { border-bottom: none; }
+            tr:nth-child(even) { background: white; }
+            h1 { font-size: 1.3em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Attendance for: <%= event.name %></h1>
+        <a href="/dashboard">← Back to Dashboard</a>
+        <table>
+        <thead style="background: #800000; color: white;">
+            <tr>
+                <th>Student Name</th>
+                <th>AM IN</th>
+                <th>AM OUT</th>
+                <th>PM IN</th>
+                <th>PM OUT</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (event.attendance && event.attendance.length > 0) { %>
+                <% event.attendance.forEach(record => { %>
+                    <% if (user.role !== 'student' || record.studentId === user.username) { %>
+                        <tr>
+                            <td data-label="Student Name"><%= record.studentName %></td>
+                            <td data-label="AM IN"><%= record.amIn ? record.amIn.toLocaleTimeString() : '---' %></td>
+                            <td data-label="AM OUT"><%= record.amOut ? record.amOut.toLocaleTimeString() : '---' %></td>
+                            <td data-label="PM IN"><%= record.pmIn ? record.pmIn.toLocaleTimeString() : '---' %></td>
+                            <td data-label="PM OUT"><%= record.pmOut ? record.pmOut.toLocaleTimeString() : '---' %></td>
+                        </tr>
+                    <% } %>
+                <% }); %>
+            <% } else { %>
+                <tr>
+                    <td data-label="Message" colspan="5" style="text-align:center;">No attendance recorded yet.</td>
+                </tr>
+            <% } %>
+        </tbody>
+        </table>
+    </div>
+</body>
+</html>

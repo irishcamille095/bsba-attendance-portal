@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .card { 
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-top: 6px solid #1a1a1a;
+        }
+        
+        .info-group { 
+            margin-bottom: 20px;
+        }
+        
+        label { 
+            font-weight: 600;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        input[type="text"], 
+        input[type="password"],
+        input[type="file"] { 
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        input[type="file"]:focus {
+            outline: none;
+            border-color: #ffcc00;
+            box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1);
+        }
+        
+        input[type="text"]:disabled {
+            background: #f9f9f9;
+            cursor: not-allowed;
+        }
+        
+        .btn-update { 
+            background: #ffcc00;
+            color: #1a1a1a;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+        
+        .btn-update:hover {
+            background: #e6b800;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+        }
+        
+        .btn-back { 
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-back:hover {
+            color: #ffcc00;
+        }
+        
+        h2 {
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+        
+        h3 {
+            color: #1a1a1a;
+            font-size: 1.1em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ffcc00;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            background: #1a1a1a;
+            color: #ffcc00;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #c3e6cb;
+            text-align: center;
+            font-weight: 600;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .section-divider {
+            border: 0;
+            border-top: 2px solid #f0f0f0;
+            margin: 30px 0;
+        }
+        
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #ffcc00;
+            color: #1a1a1a;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+        
+        .file-input-label:hover {
+            background: #e6b800;
+            transform: translateY(-2px);
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-name {
+            display: block;
+            margin-top: 10px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .cor-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffcc00;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            color: #555;
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                padding: 20px;
+            }
+            
+            h2 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <a href="/dashboard" class="btn-back">← Back to Dashboard</a>
+        <h2>My Account Details</h2>
+        
+        <div class="role-badge">
+            <%= user.role %>
+        </div>
+
+        <div class="info-group">
+            <label>Account Name:</label>
+            <input type="text" value="<%= user.name %>" disabled>
+        </div>
+
+        <div class="info-group">
+            <label>Email Address:</label>
+            <input type="text" value="<%= user.username %>" disabled>
+        </div>
+
+        <div class="info-group">
+            <label>Student ID (MM-ID):</label>
+            <input type="text" value="<%= user.mmId || 'N/A' %>" disabled>
+        </div>
+
+        <% if (showSuccess) { %>
+            <div class="success-message">
+                ✅ Password updated successfully!
+            </div>
+        <% } %>
+
+        <% if (cor_success) { %>
+            <div class="success-message">
+                ✅ Certificate of Registration (COR) uploaded successfully!
+            </div>
+        <% } %>
+
+        <hr class="section-divider">
+
+        <!-- Password Update Section -->
+        <h3>🔐 Change Password</h3>
+        <form action="/update-password" method="POST" onsubmit="return validatePasswords()">
+            <div class="info-group">
+                <label>New Password:</label>
+                <input type="password" id="newPass" name="newPassword" placeholder="Enter new password" required>
+            </div>
+
+            <div class="info-group">
+                <label>Confirm New Password:</label>
+                <input type="password" id="confirmPass" placeholder="Re-type password" required>
+            </div>
+
+            <button type="submit" class="btn-update">Update Password</button>
+        </form>
+
+        <hr class="section-divider">
+
+        <!-- COR Upload Section -->
+        <h3>📄 Certificate of Registration (COR)</h3>
+        <div class="cor-info">
+            Please upload a PDF or image of your Certificate of Registration. This will be visible to Officers and Advisers for verification purposes.
+        </div>
+
+        <% if (user.corPath) { %>
+            <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ffcc00;">
+                ✓ COR already uploaded: <a href="<%= user.corPath %>" target="_blank" style="color: #1a1a1a; font-weight: 600;">View File</a>
+            </div>
+        <% } %>
+
+        <form action="/upload-cor" method="POST" enctype="multipart/form-data">
+            <div class="info-group">
+                <label for="cor-file">Upload COR (PDF or Image):</label>
+                <input type="file" id="cor-file" name="cor" accept=".pdf,.jpg,.jpeg,.png,.gif" required>
+                <label for="cor-file" class="file-input-label">Choose File</label>
+                <span class="file-name" id="file-name">No file selected</span>
+            </div>
+
+            <button type="submit" class="btn-update">Upload COR</button>
+        </form>
+    </div>
+
+<script>
+    // Show file name when selected
+    document.getElementById('cor-file').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || 'No file selected';
+        document.getElementById('file-name').textContent = fileName;
+    });
+
+    // 1. Get the current URL search parameters
+    const params = new URLSearchParams(window.location.search);
+    
+    // 2. Check if 'success' is equal to 'true'
+    if (params.has('success') && params.get('success') === 'true') {
+        // 4. Remove the '?success=true' from the URL without reloading the page
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+    }
+
+    function validatePasswords() {
+        const newPass = document.getElementById('newPass').value;
+        const confirmPass = document.getElementById('confirmPass').value;
+        
+        if (newPass !== confirmPass) {
+            alert('❌ Passwords do not match!');
+            return false;
+        }
+        
+        if (newPass.length < 6) {
+            alert('❌ Password must be at least 6 characters long!');
+            return false;
+        }
+        
+        return true;
+    }
+</script>
+
+</body>
+</html>

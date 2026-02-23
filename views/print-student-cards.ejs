@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Printable Student Mini ID Cards</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .print-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .print-header p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .print-instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            color: #0d47a1;
+        }
+
+        .no-print {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .btn-print {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-print:hover {
+            background: #45a049;
+        }
+
+        .btn-back {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: #0b7dda;
+        }
+
+        /* Card Grid Layout */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        /* Mini ID Card Style - 2"x3.5" at 300dpi (600x1050px) */
+        .id-card {
+            width: 200px;
+            height: 350px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            page-break-inside: avoid;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .id-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-header {
+            text-align: center;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .card-header h3 {
+            font-size: 12px;
+            margin: 0;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .student-name {
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            line-height: 1.2;
+            word-wrap: break-word;
+        }
+
+        .qr-code {
+            width: 90px;
+            height: 90px;
+            margin-bottom: 8px;
+            background: white;
+            padding: 3px;
+            border-radius: 5px;
+            flex-shrink: 0;
+        }
+
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .card-footer {
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .mm-id {
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+
+        .organization-name {
+            font-size: 9px;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .print-header,
+            .no-print,
+            .print-instructions {
+                display: none !important;
+            }
+
+            .cards-container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10mm;
+                padding: 10mm;
+                background: white;
+                page-break-after: always;
+            }
+
+            .id-card {
+                width: 50.8mm;
+                height: 88.9mm;
+                /* Exact business card size: 2"x3.5" = 50.8mm x 88.9mm */
+                margin: 0;
+                box-shadow: none;
+                break-inside: avoid;
+            }
+
+            @page {
+                margin: 10mm;
+                size: A4;
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .cards-container {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+                padding: 10px;
+            }
+
+            .id-card {
+                width: 150px;
+                height: 263px;
+                padding: 12px;
+            }
+
+            .student-name {
+                font-size: 11px;
+            }
+
+            .qr-code {
+                width: 70px;
+                height: 70px;
+            }
+
+            .mm-id {
+                font-size: 11px;
+            }
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-header">
+        <h1>🎓 Student Mini ID Cards</h1>
+        <p>Print-ready student identification cards with QR codes</p>
+        <div class="print-instructions">
+            📋 <strong>Printing Instructions:</strong> Use cardstock paper (preferably 200+ GSM). 
+            Set print margins to 0.25" or minimum. Each card is 2"×3.5" (standard business card size).
+            Cut along the dotted lines after printing.
+        </div>
+    </div>
+
+    <div class="no-print">
+        <button class="btn btn-print" onclick="window.print()">🖨️ Print Cards</button>
+        <a href="/student-ids" class="btn btn-back">👈 Back to List</a>
+    </div>
+
+    <div class="cards-container">
+        <% if (students && students.length > 0) { %>
+            <% students.forEach((student) => { %>
+                <div class="id-card">
+                    <div class="card-content">
+                        <div class="card-header">
+                            <h3>STUDENT ID</h3>
+                        </div>
+                        
+                        <div class="card-body">
+                            <div class="student-name"><%= student.name %></div>
+                            
+                            <div class="qr-code">
+                                <img 
+                                    src="<%= student.qrCode %>" 
+                                    alt="QR Code <%= student.mmId %>"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="mm-id"><%= student.mmId %></div>
+                            <div class="organization-name">BSBA Organization</div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="empty-state">
+                <h2>No students available</h2>
+                <p>There are currently no students to print.</p>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        // Auto-open print dialog on page load (optional)
+        window.addEventListener('load', function() {
+            // Uncomment the line below to auto-open print dialog
+            // window.print();
+        });
+    </script>
+</body>
+</html>

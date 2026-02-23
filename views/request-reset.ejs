@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgot Password - BSBA-MM Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .reset-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 450px;
+            border: 3px solid #000;
+            border-top: 6px solid #ffcc00;
+            overflow: hidden;
+        }
+
+        .reset-header {
+            background: #000;
+            color: #ffcc00;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .reset-header h1 {
+            font-size: 1.8em;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .reset-header p {
+            font-size: 0.95em;
+            color: #fff;
+            opacity: 0.9;
+        }
+
+        .reset-content {
+            padding: 40px 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 0.95em;
+        }
+
+        input[type="email"],
+        textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input[type="email"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #ffcc00;
+            box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.15);
+            background: #fffbf0;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .help-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 13px;
+            background: #000;
+            color: #ffcc00;
+            border: 2px solid #ffcc00;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background: #ffcc00;
+            color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 204, 0, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .back-link-container {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .back-link {
+            color: #000;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #ffcc00;
+        }
+
+        .info-box {
+            background: #fffbf0;
+            border: 2px solid #ffcc00;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 25px;
+            color: #1a1a1a;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="reset-container">
+        <div class="reset-header">
+            <h1>🔐 Forgot Password</h1>
+            <p>Reset your password securely</p>
+        </div>
+
+        <div class="reset-content">
+            <div class="info-box">
+                <strong>💡 How it works:</strong> Enter your email address. Our administrators will verify your identity and help reset your password.
+            </div>
+
+            <form action="/request-reset" method="POST">
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="Enter your registered email" 
+                        required
+                        autocomplete="email"
+                    >
+                    <p class="help-text">The email address you used when creating your account</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="reason">Reason for Reset</label>
+                    <textarea 
+                        id="reason" 
+                        name="reason" 
+                        placeholder="e.g., I forgot my password / My account was compromised"
+                    ></textarea>
+                    <p class="help-text">Optional: Help us understand why you need a password reset</p>
+                </div>
+
+                <button type="submit" class="submit-btn">Submit Reset Request</button>
+            </form>
+
+            <div class="back-link-container">
+                <a href="/login" class="back-link">← Back to Login</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
