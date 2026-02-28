@@ -315,10 +315,18 @@
         <p style="color: #e0e0e0;">User: <strong><%= user.name %></strong></p>
         <p style="color: #e0e0e0;">Role: <strong><%= user.role %></strong></p>
         
+        <% if (user.role === 'adviser' || user.role === 'officer') { %>
+        <div style="padding: 10px 0px; border-bottom: 1px solid #ffcc00; margin-bottom: 10px;">
+            <a href="/admin/reset-requests" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px;">
+                <i class="fas fa-key"></i> <span style="font-weight: bold;">Password Reset Requests</span>
+            </a>
+        </div>
+        <% } %>
+        
         <hr style="border: 1px solid #ffcc00;">
         
         <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
-            <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #000; color: #ffcc00; border: 2px solid #ffcc00; border-radius: 8px; font-weight: bold; cursor: pointer; display: block;">
+            <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #ffcc00; color: #121212; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: block;">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </button>
         </form>

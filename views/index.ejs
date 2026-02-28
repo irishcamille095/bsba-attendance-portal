@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BSBA Portal">
+    <meta name="theme-color" content="#FFD700">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/img/logo.png">
     <title>BSBA-MM Student Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/style.css">
@@ -47,6 +53,31 @@
             .main { padding: 10px 8px; }
             .header { padding: 10px; }
             .card { padding: 12px; }
+        }
+
+        /* PWA Install Button */
+        .install-btn {
+            background: linear-gradient(135deg, #FFD700, #FFC700);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        
+        .install-btn:hover {
+            background: linear-gradient(135deg, #FFC700, #FFB700);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .install-btn i {
+            margin-right: 8px;
         }
     </style>
 </head>
@@ -99,6 +130,7 @@
             sidebar.classList.toggle('active');
         }
     </script>
+    <script src="/pwa-install.js"></script>
 
 </body>
 </html>
