@@ -671,6 +671,8 @@
 </body>
 <script>
 // Notification permission + Push subscription for service worker
+// DISABLED - Service worker offline caching disabled to prevent cache-related issues
+/*
 (function(){
     if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
@@ -737,6 +739,7 @@
     })();
 
 })();
+*/
 
 // Delete folder confirmation
 function showDeleteFolderConfirmation(folderId, folderName) {

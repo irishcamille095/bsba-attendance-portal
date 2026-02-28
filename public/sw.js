@@ -42,44 +42,73 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-// Fetch Event - Serve from cache, fall back to network
+// Fetch Event - Network-first for HTML, cache-first for assets
 self.addEventListener('fetch', function(event) {
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then(function(response) {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-
-        return fetch(event.request).then(function(response) {
-          // Check if we received a valid response
+  const url = new URL(event.request.url);
+  
+  // Network-first strategy for HTML pages (EJS views)
+  if (event.request.destination === 'document' || url.pathname.endsWith('.ejs')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(function(response) {
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
-
-          // Clone the response
+          // Cache it for offline fallback, but network takes priority
           const responseToCache = response.clone();
-
-          // Cache the fetched response for future use
           caches.open(CACHE_NAME)
             .then(function(cache) {
               cache.put(event.request, responseToCache);
             });
-
           return response;
-        });
-      })
-      .catch(function() {
-        // Return a custom offline page or cached content
-        return caches.match('/') || new Response('Offline - Application cache unavailable');
-      })
-  );
+        })
+        .catch(function() {
+          // Fall back to cache if network fails
+          return caches.match(event.request)
+            .then(function(response) {
+              return response || new Response('Offline - Page not available');
+            });
+        })
+    );
+  } else {
+    // Cache-first strategy for assets (CSS, JS, images, fonts)
+    event.respondWith(
+      caches.match(event.request)
+        .then(function(response) {
+          // Cache hit - return response
+          if (response) {
+            return response;
+          }
+
+          return fetch(event.request).then(function(response) {
+            // Check if we received a valid response
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // Clone the response
+            const responseToCache = response.clone();
+
+            // Cache the fetched response for future use
+            caches.open(CACHE_NAME)
+              .then(function(cache) {
+                cache.put(event.request, responseToCache);
+              });
+
+            return response;
+          });
+        })
+        .catch(function() {
+          // Return a custom offline page or cached content
+          return caches.match('/') || new Response('Offline - Application cache unavailable');
+        })
+    );
+  }
 });
 
 // Push Notification Event

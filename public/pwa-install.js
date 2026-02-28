@@ -72,15 +72,15 @@ window.addEventListener('appinstalled', () => {
   }
 });
 
-// Register the service worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('Service Worker registered successfully:', registration);
-      })
-      .catch((error) => {
-        console.log('Service Worker registration failed:', error);
-      });
-  });
-}
+// Service Worker disabled - offline functionality disabled to prevent caching issues
+// if ('serviceWorker' in navigator) {
+//   window.addEventListener('load', () => {
+//     navigator.serviceWorker.register('/sw.js')
+//       .then((registration) => {
+//         console.log('Service Worker registered successfully:', registration);
+//       })
+//       .catch((error) => {
+//         console.log('Service Worker registration failed:', error);
+//       });
+//   });
+// }

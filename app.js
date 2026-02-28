@@ -186,6 +186,14 @@ app.use(session({
     saveUninitialized: true
 }));
 
+// Prevent browser caching of dynamic pages
+app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+});
+
 // Ensure upload directories exist
 const uploadDirs = ['public/uploads', 'public/uploads/cor'];
 uploadDirs.forEach(dir => {
@@ -1673,10 +1681,19 @@ app.post('/admin/remove-student', isAuthenticated, async (req, res) => {
             }
         }
 
-        // Delete the user to wipe their profile
+        // 1. Delete the user to wipe their profile
         await User.findByIdAndDelete(user._id);
 
-        res.json({ success: true, message: 'Student removed. ID slot is now available.' });
+        // 2. Clear all attendance records for this student
+        await Attendance.deleteMany({ studentId: mmId });
+
+        // 3. Mark the MM-ID as unassigned in the student pool
+        await StudentIDPool.updateOne(
+            { mmId },
+            { isAssigned: false, assignedToUsername: null }
+        );
+
+        res.json({ success: true, message: 'Student removed. Attendance records cleared. ID slot is now available.' });
     } catch (err) {
         console.error('Error removing student:', err);
         res.status(500).json({ error: 'Error removing student' });
