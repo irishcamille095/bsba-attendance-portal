@@ -21,45 +21,11 @@
         }
 
         /* Sidebar */
-        .sidebar { 
-            width: 250px;
-            background: #000;
-            color: #FFD700;
-            height: 100vh;
-            position: fixed;
-            padding: 20px;
-            border-right: 4px solid #FFD700;
-            overflow-y: auto;
-        }
-
-        .sidebar h2 {
-            border-bottom: 2px solid #FFD700;
-            padding-bottom: 10px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .sidebar p {
-            color: #fff;
-            margin-bottom: 8px;
-        }
-
-        .logout-btn {
-            background: #FFD700;
-            color: #000;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            margin-top: 30px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .logout-btn:hover {
-            background: #ffd700;
-        }
+        .sidebar { width: 250px; background: #000; color: #ffcc00; height: 100vh; position: fixed; padding: 20px; border-right: 4px solid #ffcc00; overflow-y: auto; }
+        .sidebar h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; text-align: center; }
+        .sidebar a { color: white; padding: 12px; display: block; text-decoration: none; transition: all 0.2s; }
+        .sidebar a:hover { color: #ffcc00; background: rgba(255, 204, 0, 0.1); }
+        .sidebar p { color: #e0e0e0; margin-bottom: 8px; }
 
         /* Main Content */
         .content {
@@ -75,7 +41,7 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            border: 1px solid #FFD700;
+            border: 1px solid #ffcc00;
         }
         
         .info-group { 
@@ -84,7 +50,7 @@
         
         label { 
             font-weight: 700;
-            color: #FFD700;
+            color: #ffcc00;
             display: block;
             margin-bottom: 8px;
             font-size: 0.95em;
@@ -109,8 +75,8 @@
         input[type="password"]:focus,
         input[type="file"]:focus {
             outline: none;
-            border-color: #FFD700;
-            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+            border-color: #ffcc00;
+            box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.2);
             background-color: #2a2a2a;
         }
         
@@ -121,7 +87,7 @@
         }
         
         .btn-update { 
-            background: #FFD700;
+            background: #ffcc00;
             color: #000;
             border: none;
             padding: 14px;
@@ -135,27 +101,27 @@
         }
         
         .btn-update:hover {
-            background: #ffd700;
+            background: #ffcc00;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
         }
         
         .btn-back { 
             display: inline-block;
             margin-bottom: 20px;
-            color: #FFD700;
+            color: #ffcc00;
             text-decoration: none;
             font-weight: 700;
             font-size: 1em;
             transition: all 0.3s ease;
             background: #000;
-            border: 2px solid #FFD700;
+            border: 2px solid #ffcc00;
             padding: 12px 20px;
             border-radius: 8px;
         }
         
         .btn-back:hover {
-            background: #FFD700;
+            background: #ffcc00;
             color: #000;
         }
         
@@ -172,12 +138,12 @@
             margin-top: 25px;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #FFD700;
+            border-bottom: 2px solid #ffcc00;
         }
         
         .role-badge {
             display: inline-block;
-            background: #FFD700;
+            background: #ffcc00;
             color: #000;
             padding: 8px 16px;
             border-radius: 25px;
@@ -208,7 +174,7 @@
         .file-input-label {
             display: inline-block;
             padding: 12px 20px;
-            background: #FFD700;
+            background: #ffcc00;
             color: #000;
             border-radius: 8px;
             cursor: pointer;
@@ -218,7 +184,7 @@
         }
         
         .file-input-label:hover {
-            background: #ffd700;
+            background: #ffcc00;
             transform: translateY(-2px);
         }
         
@@ -234,10 +200,10 @@
         }
         
         .cor-info {
-            background: rgba(255, 215, 0, 0.1);
+            background: rgba(255, 204, 0, 0.1);
             padding: 15px;
             border-radius: 8px;
-            border-left: 4px solid #FFD700;
+            border-left: 4px solid #ffcc00;
             margin-bottom: 15px;
             font-size: 0.95em;
             color: #E0E0E0;
@@ -253,7 +219,7 @@
         }
 
         .cor-uploaded a {
-            color: #FFD700;
+            color: #ffcc00;
             font-weight: 600;
         }
 
@@ -278,7 +244,7 @@
                 z-index: 2000;
                 padding: 15px;
                 border-right: none;
-                border-bottom: 2px solid #FFD700;
+                border-bottom: 2px solid #ffcc00;
                 overflow-y: auto;
             }
 
@@ -315,25 +281,51 @@
                 display: none !important;
             }
         }
+
+        .password-section-hidden {
+            display: none;
+        }
+
+        .password-toggle-btn {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .password-toggle-btn:hover {
+            background: #ffdd33;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+        }
     </style>
 </head>
 <body>
     <div class="sidebar" id="sidebar">
-        <h2 style="color: #FFD700;">BSBA-MM</h2>
-        <p style="color: #fff;">User: <strong><%= user.name %></strong></p>
-        <p style="color: #fff;">Role: <strong><%= user.role %></strong></p>
+        <h2 style="color: #ffcc00;">BSBA-MM</h2>
+        <p style="color: #e0e0e0;">User: <strong><%= user.name %></strong></p>
+        <p style="color: #e0e0e0;">Role: <strong><%= user.role %></strong></p>
         
-        <hr style="border: 1px solid #FFD700;">
+        <hr style="border: 1px solid #ffcc00;">
         
         <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
-            <button type="submit" class="logout-btn" style="width: 100%; padding: 12px; background: #FFD700; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; display: block;">
-                Logout
+            <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #000; color: #ffcc00; border: 2px solid #ffcc00; border-radius: 8px; font-weight: bold; cursor: pointer; display: block;">
+                <i class="fas fa-sign-out-alt"></i> Logout
             </button>
         </form>
     </div>
 
     <div class="content">
-        <header style="background: #FFD700; color: #121212; padding: 12px 15px; display: flex; align-items: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; margin: -30px -30px 0 -30px; padding: 12px 45px;">
+        <header style="background: #ffcc00; color: #121212; padding: 12px 15px; display: flex; align-items: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; margin: -30px -30px 0 -30px; padding: 12px 45px;">
             <button onclick="toggleSidebar()" style="background: rgba(18,18,18,0.15); border: 1px solid rgba(18,18,18,0.3); color: #121212; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-right: 15px; font-size: 1.2rem;">
                 <i class="fas fa-bars"></i>
             </button>
@@ -377,20 +369,26 @@
         <hr class="section-divider">
 
         <!-- Password Update Section -->
-        <h3>Change Password</h3>
-        <form action="/update-password" method="POST" onsubmit="return validatePasswords()">
-            <div class="info-group">
-                <label>New Password:</label>
-                <input type="password" id="newPass" name="newPassword" placeholder="Enter new password" required>
-            </div>
+        <button type="button" class="password-toggle-btn" onclick="togglePasswordSection()">
+            <i class="fas fa-chevron-right" id="toggle-icon"></i>
+            <span>Change Password</span>
+        </button>
+        
+        <div id="passwordSection" class="password-section-hidden">
+            <form action="/update-password" method="POST" onsubmit="return validatePasswords()">
+                <div class="info-group">
+                    <label>New Password:</label>
+                    <input type="password" id="newPass" name="newPassword" placeholder="Enter new password" required>
+                </div>
 
-            <div class="info-group">
-                <label>Confirm New Password:</label>
-                <input type="password" id="confirmPass" placeholder="Re-type password" required>
-            </div>
+                <div class="info-group">
+                    <label>Confirm New Password:</label>
+                    <input type="password" id="confirmPass" placeholder="Re-type password" required>
+                </div>
 
-            <button type="submit" class="btn-update">Update Password</button>
-        </form>
+                <button type="submit" class="btn-update">Update Password</button>
+            </form>
+        </div>
 
         <hr class="section-divider">
 
@@ -453,6 +451,15 @@
         // 4. Remove the '?success=true' from the URL without reloading the page
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
+    }
+
+    function togglePasswordSection() {
+        const section = document.getElementById('passwordSection');
+        const icon = document.getElementById('toggle-icon');
+        
+        section.classList.toggle('password-section-hidden');
+        icon.classList.toggle('fa-chevron-right');
+        icon.classList.toggle('fa-chevron-down');
     }
 
     function validatePasswords() {
