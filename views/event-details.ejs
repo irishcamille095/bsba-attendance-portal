@@ -76,7 +76,7 @@
         <tbody>
             <% if (event.attendance && event.attendance.length > 0) { %>
                 <% event.attendance.forEach(record => { %>
-                    <% if (user.role !== 'student' || record.studentId === user.username) { %>
+                    <% if (user.role !== 'student' || record.studentId === user.mmId) { %>
                         <tr>
                             <td data-label="Student Name"><%= record.studentName %></td>
                             <td data-label="AM IN"><%= record.amIn ? record.amIn.toLocaleTimeString() : '---' %></td>

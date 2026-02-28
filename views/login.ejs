@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-title" content="BSBA Portal">
     <meta name="theme-color" content="#FFD700">
     <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/assets/img/logo.png">
+    <link rel="apple-touch-icon" href="/assets/img/logo.jpg">
     <title>BSBA-MM Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/style.css">
@@ -28,6 +28,11 @@
 
     <div class="login-box">
     <h2>BSBA-MM Portal</h2>
+    <% if (error) { %>
+        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 0.95em;">
+            <%= error %>
+        </div>
+    <% } %>
     <form action="/login" method="POST">
         <input type="email" name="username" placeholder="Email Address" required>
         <input type="password" name="password" placeholder="Password" required>

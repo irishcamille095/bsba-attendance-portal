@@ -538,80 +538,97 @@
                 white-space: nowrap;
             }
 
+            .table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-bottom: 15px;
+                width: 100%;
+            }
+
             /* Responsive Table */
             table {
                 font-size: 0.85em;
-                display: block;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                white-space: nowrap;
+                border-collapse: collapse;
+                background: #1e1e1e;
+                display: table;
+                width: 100%;
+                min-width: 950px;
             }
 
             thead {
-                display: none;
+                display: table-header-group;
             }
 
             tbody {
-                display: block;
+                display: table-row-group;
             }
 
             tr {
-                display: block;
-                margin-bottom: 12px;
-                border: 1px solid #e0e0e0;
-                background: white;
-                border-radius: 6px;
-                padding: 12px;
-                page-break-inside: avoid;
-                break-inside: avoid;
+                display: table-row;
+                border: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            th {
+                display: table-cell;
+                background-color: #000 !important;
+                color: #ffcc00 !important;
+                font-weight: 700 !important;
+                border-bottom: 2px solid #ffcc00 !important;
+                padding: 12px !important;
+                text-align: left !important;
+                border: none !important;
+                margin: 0 !important;
             }
 
             td {
-                display: block;
-                text-align: right;
-                padding: 8px 0;
-                border-bottom: 1px solid #f0f0f0;
-                position: relative;
-                padding-left: 50%;
-                min-width: 60px;
-            }
-
-            td:last-child {
-                min-width: 100px;
-            }
-
-            td:before {
-                content: attr(data-label);
-                position: absolute;
-                left: 0;
-                font-weight: bold;
-                color: #ffcc00;
-                width: 48%;
+                display: table-cell;
+                padding: 12px;
+                border-bottom: 1px solid #2d2d2d;
                 text-align: left;
-            }
-
-            td:last-child {
-                border-bottom: none;
+                color: #e0e0e0;
+                background: inherit;
+                margin: 0;
             }
 
             tr:nth-child(even) {
-                background-color: white;
+                background-color: #252525 !important;
+            }
+
+            tr:nth-child(odd) {
+                background-color: #1e1e1e !important;
             }
 
             tr:hover {
-                background-color: white;
+                background-color: #2a2a2a !important;
             }
 
             .action-cell {
-                display: flex;
-                gap: 6px;
-                flex-wrap: wrap;
-                justify-content: flex-end;
+                display: table-cell;
+                padding: 12px;
+                border-bottom: 1px solid #2d2d2d;
+                text-align: left;
+                color: #e0e0e0;
+                align-items: center;
             }
 
             .btn-delete {
-                padding: 8px 10px;
-                font-size: 0.85em;
+                background: #dc3545;
+                color: white;
+                padding: 8px 12px;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.8em;
+                font-weight: 700;
+                white-space: nowrap;
+                transition: all 0.3s ease;
+            }
+
+            .btn-delete:hover {
+                background: #c82333;
+                transform: translateY(-2px);
             }
 
             .search-box {
@@ -689,24 +706,67 @@
             }
 
             table {
-                font-size: 0.8em;
-                display: block;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
+                font-size: 0.75em;
+                display: table;
+                border-collapse: collapse;
+                background: #1e1e1e;
+                min-width: 850px;
+                width: 100%;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tbody {
+                display: table-row-group;
+            }
+
+            tr {
+                display: table-row;
+            }
+
+            th {
+                display: table-cell;
+                background-color: #000 !important;
+                color: #ffcc00 !important;
+                font-weight: 700 !important;
+                border-bottom: 2px solid #ffcc00 !important;
+                padding: 10px !important;
+                text-align: left !important;
+                border: none !important;
             }
 
             td {
-                padding: 6px 0;
-                padding-left: 40%;
-                min-width: 50px;
+                display: table-cell !important;
+                padding: 8px !important;
+                border-bottom: 1px solid #2d2d2d !important;
+                text-align: left !important;
+                color: #e0e0e0 !important;
+                background: inherit !important;
+                padding-left: 8px !important;
+                min-width: auto !important;
             }
 
             td:last-child {
-                min-width: 90px;
+                min-width: auto !important;
             }
 
             td:before {
-                width: 38%;
+                display: none !important;
+                width: auto !important;
+            }
+
+            tr:nth-child(even) {
+                background-color: #252525 !important;
+            }
+
+            tr:nth-child(odd) {
+                background-color: #1e1e1e !important;
+            }
+
+            tr:hover {
+                background-color: #2a2a2a !important;
             }
 
             .event-card {
@@ -720,8 +780,22 @@
             }
 
             .btn-delete {
+                background: #dc3545;
+                color: white;
                 padding: 6px 8px;
-                font-size: 0.8em;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.75em;
+                font-weight: 700;
+                white-space: nowrap;
+                transition: all 0.3s ease;
+                display: table-cell;
+            }
+
+            .btn-delete:hover {
+                background: #c82333;
+                transform: translateY(-2px);
             }
 
             .btn-download {
@@ -738,6 +812,10 @@
             }
 
             .action-cell {
+                display: table-cell !important;
+                padding: 8px !important;
+                border-bottom: 1px solid #2d2d2d !important;
+                text-align: left !important;
                 gap: 4px;
             }
         }
@@ -864,7 +942,7 @@
             <div id="message"></div>
             
             <% if (user.role === 'student') { %>
-                <% const myRecord = (attendanceData || []).find(r => r.studentId === user.studentId); %>
+                <% const myRecord = (attendanceData || []).find(r => r.studentId === user.mmId); %>
                 <% if (myRecord) { %>
                     <div class="table-wrapper">
                     <table>
@@ -882,10 +960,10 @@
                             <tr class="attendance-row" data-student-id="<%= myRecord.studentId %>" data-student-name="<%= myRecord.studentName %>">
                                 <td data-label="Student ID"><strong><%= myRecord.studentId %></strong></td>
                                 <td data-label="Student Name"><%= myRecord.studentName %></td>
-                                <td data-label="AM IN"><%= myRecord.amIn ? new Date(myRecord.amIn).toLocaleTimeString() : '---' %></td>
-                                <td data-label="AM OUT"><%= myRecord.amOut ? new Date(myRecord.amOut).toLocaleTimeString() : '---' %></td>
-                                <td data-label="PM IN"><%= myRecord.pmIn ? new Date(myRecord.pmIn).toLocaleTimeString() : '---' %></td>
-                                <td data-label="PM OUT"><%= myRecord.pmOut ? new Date(myRecord.pmOut).toLocaleTimeString() : '---' %></td>
+                                <td data-label="AM IN"><%= formatPhilippinesTime(myRecord.amIn) %></td>
+                                <td data-label="AM OUT"><%= formatPhilippinesTime(myRecord.amOut) %></td>
+                                <td data-label="PM IN"><%= formatPhilippinesTime(myRecord.pmIn) %></td>
+                                <td data-label="PM OUT"><%= formatPhilippinesTime(myRecord.pmOut) %></td>
                             </tr>
                         </tbody>
                     </table>
@@ -915,10 +993,10 @@
                                 <tr class="attendance-row" data-student-id="<%= record.studentId %>" data-student-name="<%= record.studentName %>">
                                     <td data-label="Student ID"><strong><%= record.studentId %></strong></td>
                                     <td data-label="Student Name"><%= record.studentName %></td>
-                                    <td data-label="AM IN"><%= record.amIn ? new Date(record.amIn).toLocaleTimeString() : '---' %></td>
-                                    <td data-label="AM OUT"><%= record.amOut ? new Date(record.amOut).toLocaleTimeString() : '---' %></td>
-                                    <td data-label="PM IN"><%= record.pmIn ? new Date(record.pmIn).toLocaleTimeString() : '---' %></td>
-                                    <td data-label="PM OUT"><%= record.pmOut ? new Date(record.pmOut).toLocaleTimeString() : '---' %></td>
+                                    <td data-label="AM IN"><%= formatPhilippinesTime(record.amIn) %></td>
+                                    <td data-label="AM OUT"><%= formatPhilippinesTime(record.amOut) %></td>
+                                    <td data-label="PM IN"><%= formatPhilippinesTime(record.pmIn) %></td>
+                                    <td data-label="PM OUT"><%= formatPhilippinesTime(record.pmOut) %></td>
                                     <% if (user.role === 'officer' || user.role === 'adviser') { %>
                                         <td class="action-cell" data-label="Actions">
                                             <button type="button" class="btn-delete" onclick="openDeleteModal('<%= record.studentId %>', '<%= record.studentName %>')">

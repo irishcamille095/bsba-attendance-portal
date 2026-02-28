@@ -204,11 +204,13 @@
         </div>
     </div>
 
+    <script src="/attendance-confirmation.js"></script>
     <script>
         const folderId = new URLSearchParams(window.location.search).get('folderId');
         const eventName = new URLSearchParams(window.location.search).get('eventName') || 'Event Scanner';
         const sessionType = new URLSearchParams(window.location.search).get('sessionType') || '';
         let scanInProgress = false;
+        let html5QrcodeScanner = null;
         
         // Set current date
         const today = new Date();
@@ -260,10 +262,53 @@
             playBeep(200, 800);
             triggerVibration();
             
-            // Hide overlay after 2 seconds
+            // Hide overlay after 1.5 seconds
             setTimeout(() => {
                 overlay.classList.remove('show');
-            }, 2000);
+            }, 1500);
+        }
+
+        async function markAttendance(code) {
+            try {
+                const response = await fetch(`/mark-attendance?code=${code}&folderId=${folderId}&eventName=${eventName}&sessionType=${sessionType}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show success confirmation modal
+                    window.attendanceConfirmation.show({
+                        title: '✅ Attendance Marked',
+                        description: 'Student attendance has been recorded successfully.',
+                        studentInfo: {
+                            name: data.student.name,
+                            mmId: data.student.mmId,
+                            session: data.student.session
+                        },
+                        onConfirm: () => {
+                            // Redirect to attendance page when done
+                            window.location.href = `/attendance?folderId=${folderId}&eventName=${eventName}&sessionType=${sessionType}`;
+                        }
+                    });
+                } else {
+                    // Show error or warning modal
+                    let title = '⚠️ ' + data.message;
+                    let warning = data.detail || '';
+                    
+                    window.attendanceConfirmation.show({
+                        title: title,
+                        description: warning,
+                        onConfirm: () => {
+                            scanInProgress = false;
+                        }
+                    });
+                    
+                    setTimeout(() => {
+                        scanInProgress = false;
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error marking attendance:', error);
+                scanInProgress = false;
+            }
         }
 
         function onScanSuccess(decodedText) {
@@ -274,23 +319,32 @@
             // Show success feedback
             showSuccessOverlay();
             
-            // Redirect after 2 seconds
+            // Mark attendance after showing overlay
             setTimeout(() => {
-                window.location.href = "/mark-attendance?code=" + decodedText + "&folderId=" + folderId + "&eventName=" + eventName + "&sessionType=" + sessionType;
-            }, 2000);
+                markAttendance(decodedText);
+            }, 1500);
         }
 
         function onScanError(error) {
             console.log("Scan error: " + error);
         }
 
-        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-            fps: 10, 
-            qrbox: 250,
-            formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
-        });
+        // Initialize scanner once DOM is ready
+        function initializeScanner() {
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+                fps: 10, 
+                qrbox: 250,
+                formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
+            });
 
-        html5QrcodeScanner.render(onScanSuccess, onScanError);
+            html5QrcodeScanner.render(onScanSuccess, onScanError);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeScanner);
+        } else {
+            initializeScanner();
+        }
     </script>
 </body>
 </html>

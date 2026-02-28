@@ -18,6 +18,18 @@ const Event = require('./models/Event');
 const User = require('./models/User');
 const ResetRequest = require('./models/ResetRequest');
 
+// Utility function to format UTC date to Philippines time string
+function formatToPhilippinesTime(utcDate) {
+    if (!utcDate) return '---';
+    return new Date(utcDate).toLocaleString('en-US', { 
+        timeZone: 'Asia/Manila',
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true 
+    });
+}
+
 const app = express();
 
 // Paste your link here. 
@@ -322,7 +334,10 @@ const FileSchema = new mongoose.Schema({
 });
 const File = mongoose.model('File', FileSchema);
 
-app.get('/login', (req, res) => res.render('login'));
+app.get('/login', (req, res) => {
+    const error = req.query.error || null;
+    res.render('login', { error });
+});
 
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
@@ -336,12 +351,16 @@ app.post('/login', async (req, res) => {
             // Save the user data (including their role!) into the session
             req.session.user = user;
             return res.redirect('/dashboard');
+        } else if (!user) {
+            // No account with this email
+            return res.render('login', { error: 'No account found with this email address.' });
         } else {
-            return res.send("❌ Invalid Student ID or Password.");
+            // Password is incorrect
+            return res.render('login', { error: 'The password is incorrect.' });
         }
     } catch (err) {
         console.error(err);
-        res.status(500).send("Server Error");
+        res.render('login', { error: 'An error occurred. Please try again.' });
     }
 });
 
@@ -364,7 +383,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
         
         // 2. Fetch the Attendance data you just added
         const allAttendance = await Attendance.find().sort({ timestamp: -1 });
-        const myAttendance = await Attendance.find({ studentId: user.studentId }).sort({ timestamp: -1 });
+        const myAttendance = await Attendance.find({ studentId: user.mmId }).sort({ timestamp: -1 });
 
         // 3. Render the page once with ALL variables
         res.render('dashboard', { 
@@ -632,7 +651,7 @@ app.get('/mark-attendance', isAuthenticated, async (req, res) => {
 
     // Only officers and advisers can mark attendance
     if (officer.role !== 'officer' && officer.role !== 'adviser') {
-        return res.status(403).send("❌ Unauthorized");
+        return res.status(403).json({ success: false, message: "❌ Unauthorized" });
     }
 
     try {
@@ -641,7 +660,11 @@ app.get('/mark-attendance', isAuthenticated, async (req, res) => {
         const student = await User.findOne({ mmId: code });
 
         if (!student) {
-            return res.send("<h1>❌ Student Not Found</h1><p>No student with MM-ID: " + code + "</p>");
+            return res.status(404).json({ 
+                success: false, 
+                message: "Student Not Found",
+                detail: `No student with MM-ID: ${code}`
+            });
         }
 
         // Check if this student already scanned for THIS SPECIFIC event + session type
@@ -652,10 +675,14 @@ app.get('/mark-attendance', isAuthenticated, async (req, res) => {
         });
 
         if (alreadyScanned) {
-            return res.send(`<h1>⚠️ Already Recorded</h1><p>${student.name} already checked in for ${sessionType.replace('_', ' ')}</p>`);
+            return res.status(400).json({
+                success: false,
+                message: "Already Recorded",
+                detail: `${student.name} already checked in for ${sessionType.replace('_', ' ')}`
+            });
         }
 
-        // Create the attendance record
+        // Create the attendance record with UTC timestamp
         const newRecord = new Attendance({
             studentId: student.mmId,
             studentName: student.name,
@@ -666,10 +693,18 @@ app.get('/mark-attendance', isAuthenticated, async (req, res) => {
 
         await newRecord.save();
         
-        res.send(`<h1>✅ Success</h1><p>${student.name} (${student.mmId}) checked in: ${sessionType.replace('_', ' ')}</p><p><a href="/attendance?folderId=${folderId}&eventName=${eventName}&sessionType=${sessionType}">Scan Next Student</a></p>`);
+        res.json({
+            success: true,
+            message: "Attendance Marked",
+            student: {
+                name: student.name,
+                mmId: student.mmId,
+                session: sessionType.replace('_', ' ')
+            }
+        });
     } catch (err) {
         console.error(err);
-        res.status(500).send("Error saving attendance.");
+        res.status(500).json({ success: false, message: "Error saving attendance." });
     }
 });
 
@@ -737,40 +772,28 @@ app.get('/api/download-qr/:studentId', isAuthenticated, async (req, res) => {
     }
 });
 
-// API Endpoint: Get QR code on demand for student list (lazy loading)
+// API Endpoint: Get QR code on demand for student list (lazy loading) - QR code tied to MM ID (source of truth from StudentIDPool)
 app.get('/api/student-qr/:mmId', isAuthenticated, async (req, res) => {
     try {
-        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
-            return res.status(403).json({ error: 'Access denied' });
-        }
-
         const { mmId } = req.params;
         
-        // Try to get QR from User collection first
-        let qrCode = null;
-        const user = await User.findOne({ mmId }).select('qrCode').lean();
+        // Fetch QR from StudentIDPool (source of truth for QR codes tied to MM IDs)
+        const poolEntry = await StudentIDPool.findOne({ mmId }).select('qrCode').lean();
         
-        if (user && user.qrCode) {
-            qrCode = user.qrCode;
+        if (poolEntry && poolEntry.qrCode) {
+            res.json({ mmId, qrCode: poolEntry.qrCode });
         } else {
-            // Fallback to StudentIDPool if not in User
-            const poolEntry = await StudentIDPool.findOne({ mmId }).select('qrCode').lean();
-            if (poolEntry && poolEntry.qrCode) {
-                qrCode = poolEntry.qrCode;
-            } else {
-                // Generate QR code on the fly if not found
-                qrCode = await QRCode.toDataURL(mmId);
-            }
+            // Fallback: Generate QR code on the fly if not found (should rarely happen with proper initialization)
+            const qrCode = await QRCode.toDataURL(mmId);
+            res.json({ mmId, qrCode });
         }
-
-        res.json({ mmId, qrCode });
     } catch (err) {
         console.error('Error fetching QR code:', err);
         res.status(500).json({ error: 'Error fetching QR code' });
     }
 });
 
-// Route: Download a PDF containing all assigned student QR cards
+// Route: Download a PDF containing all 300 student QR cards (MM-001 to MM-300)
 app.get('/download-all-qrs', isAuthenticated, async (req, res) => {
     // Only Officers and Advisers can download the master PDF
     if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
@@ -778,11 +801,11 @@ app.get('/download-all-qrs', isAuthenticated, async (req, res) => {
     }
 
     try {
-        // Fetch all currently assigned IDs from the pool
-        const assignedIDs = await StudentIDPool.find({ isAssigned: true }).sort({ mmId: 1 });
+        // Fetch ALL 300 MM IDs from the pool (regardless of assignment status)
+        const allIDs = await StudentIDPool.find().sort({ mmId: 1 });
 
-        if (!assignedIDs || assignedIDs.length === 0) {
-            return res.send('No assigned student IDs found to generate QR cards.');
+        if (!allIDs || allIDs.length === 0) {
+            return res.send('No student ID pool found. Please contact an administrator.');
         }
 
         // Prepare PDF response
@@ -801,8 +824,8 @@ app.get('/download-all-qrs', isAuthenticated, async (req, res) => {
         let y = doc.options.margin;
         let col = 0;
 
-        for (let i = 0; i < assignedIDs.length; i++) {
-            const entry = assignedIDs[i];
+        for (let i = 0; i < allIDs.length; i++) {
+            const entry = allIDs[i];
             const mmId = entry.mmId;
 
             // Prepare image buffer for the QR (either existing base64 or generate)
@@ -905,7 +928,7 @@ app.get('/folder-details/:folderId', isAuthenticated, async (req, res) => {
             // 3. Get all attendance records for this event
             records = await Attendance.find({ 
                 eventName: selectedEvent 
-            }).sort({ studentName: 1 });
+            }).sort({ studentId: 1 });
 
             // 4. Group records by student and organize by session type
             const studentMap = {};
@@ -927,17 +950,26 @@ app.get('/folder-details/:folderId', isAuthenticated, async (req, res) => {
                 if (record.sessionType === 'PM_OUT') studentMap[record.studentId].pmOut = record.timestamp;
             });
 
-            attendanceData = Object.values(studentMap);
+            // Sort by studentId to maintain registration order
+            attendanceData = Object.values(studentMap).sort((a, b) => {
+                const aNum = parseInt(a.studentId.split('-')[1]) || 0;
+                const bNum = parseInt(b.studentId.split('-')[1]) || 0;
+                return aNum - bNum;
+            });
         }
 
-        // 5. Send everything to folder-details.ejs
-        res.render('folder-details', { 
+        // 5. Create helper function for template to format times in Philippines timezone
+        const formatPhilippinesTime = formatToPhilippinesTime;
+
+        // Send everything to folder-details.ejs
+        res.render('folder-details', {
             folder, 
             sessions, 
             records, 
             attendanceData,
             selectedEvent, 
-            user: req.session.user 
+            user: req.session.user,
+            formatPhilippinesTime
         });
     } catch (err) {
         console.error("Error loading folder details:", err);
@@ -950,11 +982,18 @@ app.get('/my-folder-attendance/:folderId', isAuthenticated, async (req, res) => 
     const user = req.session.user;
     const sessions = await AttendanceSession.find({ folderId: req.params.folderId });
     const myRecords = await Attendance.find({ 
-        studentId: user.studentId,
+        studentId: user.mmId,
         eventName: { $in: sessions.map(s => s.eventName) }
     }).sort({ timestamp: -1 });
 
-    res.render('folder-details', { folder: { name: "My Records" }, records: myRecords, user });
+    const formatPhilippinesTime = formatToPhilippinesTime;
+
+    res.render('folder-details', { 
+        folder: { name: "My Records" }, 
+        records: myRecords, 
+        user,
+        formatPhilippinesTime
+    });
 });
 
 // Route to create a new Semester folder
@@ -1314,14 +1353,18 @@ app.get('/my-attendance/:folderId', isAuthenticated, async (req, res) => {
             attendanceData = Object.values(studentMap);
         }
 
-        // 5. Render folder-details (same template for both students and officers)
+        // 5. Create helper function for template to format times in Philippines timezone
+        const formatPhilippinesTime = formatToPhilippinesTime;
+
+        // Render folder-details (same template for both students and officers)
         res.render('folder-details', { 
             folder, 
             sessions, 
             records, 
             attendanceData,
             selectedEvent, 
-            user: req.session.user 
+            user: req.session.user,
+            formatPhilippinesTime
         });
     } catch (err) {
         console.error("Student attendance error:", err);

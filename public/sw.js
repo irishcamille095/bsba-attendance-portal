@@ -7,7 +7,7 @@ const urlsToCache = [
   '/delete-confirmation.js',
   '/reset-confirmation.js',
   '/pwa-install.js',
-  '/assets/img/logo.png',
+  '/assets/img/logo.jpg',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
 ];
@@ -123,8 +123,8 @@ self.addEventListener('push', function(event) {
   const title = payload.title || 'New announcement';
   const options = {
     body: payload.body || '',
-    icon: payload.icon || '/assets/img/logo.png',
-    badge: payload.icon || '/assets/img/logo.png',
+    icon: payload.icon || '/assets/img/logo.jpg',
+    badge: payload.icon || '/assets/img/logo.jpg',
     data: payload.data || { url: '/' }
   };
 
