@@ -4,72 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BSBA-MM Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            background-color: #f4f4f4;
-            padding: 15px;
+        /* Login-specific overrides */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
-        .login-box { 
-            background: white; 
-            padding: 30px 25px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-            width: 100%;
-            max-width: 350px; 
-            text-align: center; 
-        }
-        h2 { color: #ffcc00; margin-bottom: 25px; font-size: 1.5em; }
-        input { 
-            width: 100%; 
-            padding: 14px; 
-            margin: 10px 0; 
-            border: 2px solid #ccc; 
-            border-radius: 6px; 
-            font-family: inherit;
-            font-size: 1em;
-            transition: all 0.3s ease;
-        }
-        input:focus {
-            outline: none;
-            border-color: #ffcc00;
-            box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1);
-        }
-        button { 
-            width: 100%; 
-            padding: 14px; 
-            background: #ffcc00; 
-            color: #000; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: bold;
-            font-size: 1.05em;
-            transition: all 0.3s ease;
-            margin-top: 5px;
-        }
-        button:hover { background: #f3db00; transform: translateY(-2px); }
-        button:active { transform: translateY(0); }
         .signup-link { margin-top: 20px; font-size: 0.95em; }
-        .signup-link a { color: #ffcc00; text-decoration: none; font-weight: bold; }
-        .signup-link a:hover { text-decoration: underline; }
-        p { margin-top: 15px; color: #666; font-size: 0.9em; }
-        p a { color: #007bff; text-decoration: none; font-weight: 600; }
-        p a:hover { text-decoration: underline; }
-        @media (max-width: 480px) {
-            .login-box { 
-                padding: 25px 20px;
-            }
-            h2 { font-size: 1.3em; margin-bottom: 20px; }
-            input { padding: 13px; font-size: 16px; }
-            button { padding: 13px; font-size: 1em; }
-        }
+        .signup-link a { color: #ffcc00; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -91,3 +37,7 @@
 
 
 </div>
+
+</body>
+
+</html>

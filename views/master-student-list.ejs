@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master Student List - BSBA Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <script src="/delete-confirmation.js"></script>
     <style>
+        /* Master-student-list-specific overrides */
         * {
             margin: 0;
             padding: 0;
@@ -12,113 +16,23 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f4f4f4;
+            font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #121212;
             display: flex;
-        }
-
-        /* Mobile Header */
-        .mobile-header {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: #ffcc00;
-            color: #000;
-            padding: 12px 15px;
-            z-index: 1001;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .mobile-header.active {
-            display: flex;
-        }
-
-        .hamburger-btn {
-            background: none;
-            border: none;
-            font-size: 1.5em;
-            cursor: pointer;
-            color: #000;
-            padding: 5px;
-        }
-
-        .mobile-header h1 {
-            font-size: 1.1em;
-            margin: 0;
-            flex: 1;
-            text-align: center;
         }
 
         /* Sidebar */
-        .sidebar {
-            width: 250px;
-            background: #000;
-            color: #ffcc00;
-            height: 100vh;
-            position: fixed;
-            padding: 20px;
-            border-right: 4px solid #ffcc00;
-            overflow-y: auto;
-        }
-
-        .sidebar h2 {
-            border-bottom: 2px solid #ffcc00;
-            padding-bottom: 10px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .sidebar p {
-            color: #fff;
-            margin-bottom: 8px;
-        }
-
-        .logout-btn {
-            background: #ffcc00;
-            color: #000;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            margin-top: 30px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .logout-btn:hover {
-            background: #e6b800;
-        }
+        .sidebar { width: 250px; background: #000; color: #ffcc00; height: 100vh; position: fixed; padding: 20px; border-right: 4px solid #ffcc00; overflow-y: auto; }
+        .sidebar h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; text-align: center; }
+        .sidebar a { color: white; padding: 12px; display: block; text-decoration: none; transition: all 0.2s; }
+        .sidebar a:hover { color: #ffcc00; background: rgba(255, 204, 0, 0.1); }
 
         /* Main Content */
-        .content {
-            flex: 1;
-            margin-left: 290px;
-            padding: 30px;
-        }
-
-        header {
-            background: #ffcc00;
-            color: #000;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
+        .content { flex: 1; margin-left: 290px; padding: 20px; }
+        header { border-bottom: 3px solid #000; margin-bottom: 20px; padding: 10px 15px; }
+        .back-btn { background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 12px 20px; cursor: pointer; margin-bottom: 15px; display: inline-block; font-weight: bold; border-radius: 8px; font-size: 1em; transition: all 0.3s; max-width: 200px; }
+        .back-btn:hover { background: #ffcc00; color: #000; }
+        .back-btn:active { transform: scale(0.98); }
 
         /* Controls */
         .controls {
@@ -139,24 +53,27 @@
         }
 
         .btn-primary {
-            background: #000;
-            color: #ffcc00;
-            border: 2px solid #ffcc00;
+            background: #FFD700;
+            color: #121212;
+            border: 2px solid #FFD700;
         }
 
         .btn-primary:hover {
-            background: #ffcc00;
-            color: #000;
+            background: #FFD700;
+            color: #121212;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
         }
 
         .btn-secondary {
-            background: #6c757d;
-            color: white;
+            background: #2d2d2d;
+            color: #e0e0e0;
+            border: 1px solid #FFD700;
         }
 
         .btn-secondary:hover {
-            background: #5a6268;
+            background: #3d3d3d;
+            color: #FFD700;
             transform: translateY(-2px);
         }
 
@@ -168,30 +85,30 @@
         .search-box input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #000;
+            border: 1px solid #2d2d2d;
             border-radius: 8px;
             font-size: 1em;
-            background: white;
-            color: #1a1a1a;
+            background: #1e1e1e;
+            color: #e0e0e0;
             transition: all 0.3s ease;
         }
 
         .search-box input::placeholder {
-            color: #999;
+            color: #707070;
         }
 
         .search-box input:focus {
             outline: none;
-            border-color: #ffcc00;
-            box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1);
-            background: #fffcf0;
+            border-color: #FFD700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+            background: #252525;
         }
 
         /* Table Styles */
         .table-container {
-            background: white;
+            background: #1e1e1e;
             border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             overflow: hidden;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -204,8 +121,8 @@
         }
 
         thead {
-            background: #000;
-            color: #ffcc00;
+            background: #252525;
+            color: #FFD700;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -215,41 +132,42 @@
             padding: 15px;
             text-align: left;
             font-weight: 600;
-            border-bottom: 2px solid #ffcc00;
+            border-bottom: 2px solid #FFD700;
             white-space: nowrap;
         }
 
         td {
             padding: 12px 15px;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #2d2d2d;
+            color: #e0e0e0;
         }
 
         tbody tr:hover {
-            background: #f8f9fa;
+            background: #2d2d2d;
         }
 
         tbody tr.assigned {
-            background: #fffbf0;
+            background: #2a2a1e;
         }
 
         tbody tr.assigned:hover {
-            background: #fff5e6;
+            background: #353527;
         }
 
         .student-id {
             font-family: 'Courier New', monospace;
             font-weight: 700;
-            color: #800000;
+            color: #FFD700;
             font-size: 1.1em;
         }
 
         .student-name {
             font-weight: 500;
-            color: #333;
+            color: #e0e0e0;
         }
 
         .empty-slot {
-            color: #999;
+            color: #707070;
             font-style: italic;
         }
 
@@ -262,77 +180,82 @@
         }
 
         .role-student {
-            background: #d1ecf1;
-            color: #0c5460;
+            background: rgba(100, 180, 200, 0.2);
+            color: #64b4c8;
+            border: 1px solid #64b4c8;
         }
 
         .role-officer {
-            background: #cce5ff;
-            color: #004085;
+            background: rgba(100, 150, 255, 0.2);
+            color: #6496ff;
+            border: 1px solid #6496ff;
         }
 
         .role-adviser {
-            background: #f8d7da;
-            color: #721c24;
+            background: rgba(255, 100, 100, 0.2);
+            color: #ff6464;
+            border: 1px solid #ff6464;
         }
 
         .qr-code {
             width: 40px;
             height: 40px;
-            border: 1px solid #ddd;
+            border: 1px solid #2d2d2d;
             border-radius: 5px;
             cursor: pointer;
             transition: transform 0.3s ease;
+            background: #252525;
         }
 
         .qr-code:hover {
             transform: scale(1.2);
+            border-color: #FFD700;
         }
 
         .qr-placeholder {
             width: 40px;
             height: 40px;
-            background: #f0f0f0;
-            border: 1px dashed #ddd;
+            background: #252525;
+            border: 1px dashed #2d2d2d;
             border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #999;
+            color: #707070;
             font-size: 0.8em;
         }
 
         select, .btn-sm {
             padding: 6px 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #2d2d2d;
             border-radius: 5px;
             font-size: 0.9em;
             cursor: pointer;
         }
 
         select {
-            background: white;
-            color: #333;
+            background: #252525;
+            color: #e0e0e0;
         }
 
         .btn-sm {
             background: none;
             border: none;
-            color: #dc3545;
+            color: #ff6464;
             font-weight: 600;
             padding: 5px 10px;
             transition: all 0.3s ease;
         }
 
         .btn-sm:hover {
-            background: #f8d7da;
-            border-color: #dc3545;
+            background: rgba(255, 100, 100, 0.1);
+            border-color: #ff6464;
         }
 
         .back-btn {
-            background: #000;
-            color: #ffcc00;
-            border: 2px solid #ffcc00;
+            background: transparent;
+            color: #FFD700;
+            border: 2px solid #FFD700;
             padding: 12px 20px;
             cursor: pointer;
             margin-bottom: 15px;
@@ -345,12 +268,12 @@
         }
 
         .back-btn:hover {
-            background: #ffcc00;
-            color: #000;
+            background: #FFD700;
+            color: #121212;
         }
 
         .stats {
-            background: white;
+            background: #1e1e1e;
             padding: 15px;
             border-radius: 8px;
             margin-top: 20px;
@@ -361,13 +284,13 @@
 
         .stat-card {
             padding: 15px;
-            background: #f8f9fa;
-            border-left: 4px solid #ffcc00;
+            background: #252525;
+            border-left: 4px solid #FFD700;
             border-radius: 5px;
         }
 
         .stat-label {
-            color: #666;
+            color: #909090;
             font-size: 0.8em;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -376,7 +299,7 @@
         .stat-value {
             font-size: 1.8em;
             font-weight: 700;
-            color: #000;
+            color: #FFD700;
             margin-top: 5px;
         }
 
@@ -394,7 +317,8 @@
         }
 
         .modal-content {
-            background-color: white;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
             position: absolute;
             top: 50%;
             left: 50%;
@@ -404,7 +328,100 @@
             width: 80%;
             max-width: 500px;
             text-align: center;
-            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #2d2d2d;
+        }
+
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .confirmation-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirmation-content {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            padding: 40px 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            border: 2px solid #2d2d2d;
+        }
+
+        .confirmation-content h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.3em;
+            color: #FFD700;
+        }
+
+        .confirmation-content p {
+            margin: 0 0 20px 0;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .confirmation-content .warning {
+            background: rgba(255, 100, 100, 0.1);
+            border-left: 4px solid #ff6464;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            text-align: left;
+            color: #ff9999;
+            font-weight: 500;
+        }
+
+        .confirmation-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        .confirmation-buttons button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 110px;
+        }
+
+        .confirmation-buttons .btn-confirm {
+            background: #ff6464;
+            color: white;
+        }
+
+        .confirmation-buttons .btn-confirm:hover {
+            background: #ff4444;
+            transform: translateY(-2px);
+        }
+
+        .confirmation-buttons .btn-cancel {
+            background: #2d2d2d;
+            color: #e0e0e0;
+            border: 1px solid #FFD700;
+        }
+
+        .confirmation-buttons .btn-cancel:hover {
+            background: #3d3d3d;
+            color: #FFD700;
         }
 
         .modal-content img {
@@ -415,7 +432,7 @@
         }
 
         .close {
-            color: #aaa;
+            color: #909090;
             float: right;
             font-size: 28px;
             font-weight: bold;
@@ -424,7 +441,7 @@
         }
 
         .close:hover {
-            color: #000;
+            color: #FFD700;
         }
 
         @keyframes fadeIn {
@@ -438,66 +455,116 @@
         }
 
         #searchResults th {
-            background: #000;
-            color: #ffcc00;
+            background: #252525;
+            color: #FFD700;
             padding: 12px;
             text-align: left;
-            border-bottom: 2px solid #ffcc00;
+            border-bottom: 2px solid #FFD700;
         }
 
         #searchResults td {
             padding: 12px;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #2d2d2d;
+            color: #e0e0e0;
         }
 
         #searchResults tr:hover {
-            background: #f8f9fa;
+            background: #2d2d2d;
         }
 
+        /* Mobile-first responsive design */
         @media (max-width: 768px) {
-            .mobile-header.active {
-                display: flex;
-            }
-
+            body { display: block; }
+            
             .sidebar {
+                width: 100%;
+                height: auto;
                 position: fixed;
                 left: 0;
                 top: 50px;
-                width: 100%;
-                height: auto;
                 max-height: calc(100vh - 50px);
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
                 z-index: 2000;
                 padding: 15px;
                 border-right: none;
-                border-bottom: 2px solid #ffcc00;
-                overflow-y: auto;
+                border-bottom: 2px solid #FFD700;
             }
 
             .sidebar.active {
                 transform: translateX(0);
+                overflow-y: auto;
             }
 
             .content {
-                margin-left: 0 !important;
-                width: 100%;
-                padding: 15px;
-                margin-top: 50px;
+                margin-left: 0;
+                padding: 10px;
+                padding-top: 20px;
+                margin-top: 0;
             }
 
             header {
-                padding: 15px;
-                margin-bottom: 15px;
+                position: sticky;
+                top: 0;
+                left: 0;
+                right: 0;
+                margin: 0;
+                z-index: 1000;
+                padding: 10px 12px;
+                background: #FFD700;
+            }
+
+            header button {
+                display: block !important;
+                background: rgba(0,0,0,0.2);
+                border: 1px solid rgba(0,0,0,0.3);
+                color: #000;
+                padding: 8px 12px;
+                font-size: 1.3em;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-right: 10px;
             }
 
             header h1 {
-                font-size: 1.5em;
-                margin-bottom: 5px;
+                font-size: 1em;
+                margin: 0;
             }
 
-            header p {
+            .menu-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .menu-card {
+                padding: 20px 10px;
+                font-size: 0.9em;
+                min-height: 100px;
+            }
+
+            .portal-section {
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            .back-btn {
+                display: inline-block;
+                max-width: 200px;
+                padding: 10px 15px;
                 font-size: 0.95em;
+                width: auto;
+            }
+
+            input, textarea, select {
+                padding: 11px;
+                margin: 8px 0;
+                font-size: 16px; /* Prevents auto-zoom on iOS */
+            }
+
+            button {
+                padding: 12px 16px;
+                font-size: 1em;
+                width: auto;
             }
 
             .controls {
@@ -529,18 +596,34 @@
 
             th, td {
                 padding: 8px 10px;
-                white-space: nowrap;
+                white-space: normal;
             }
 
             .qr-code {
                 width: 30px;
                 height: 30px;
             }
+
+            td select {
+                display: block;
+                width: 100%;
+                margin-bottom: 5px;
+                padding: 6px 10px;
+            }
+
+            td .btn-sm {
+                display: block;
+                width: 100%;
+                text-align: center;
+                padding: 6px 10px;
+                margin: 0;
+            }
         }
 
         @media (max-width: 480px) {
             .content {
-                padding: 10px;
+                padding: 8px;
+                margin-top: 0;
             }
 
             header {
@@ -548,11 +631,16 @@
             }
 
             header h1 {
-                font-size: 1.2em;
+                font-size: 0.9em;
             }
 
-            header p {
-                font-size: 0.9em;
+            input, textarea, select {
+                padding: 10px;
+            }
+
+            button {
+                padding: 11px 14px;
+                font-size: 0.95em;
             }
 
             .controls {
@@ -571,44 +659,73 @@
 
             th, td {
                 padding: 6px 8px;
+                white-space: normal;
             }
 
             .qr-code {
                 width: 25px;
                 height: 25px;
             }
+
+            td select {
+                display: block;
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            td .btn-sm {
+                display: block;
+                width: 100%;
+                text-align: center;
+                margin-bottom: 0;
+            }
+        }
+
+        /* On Desktop: Show sidebar normally */
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                position: fixed !important;
+            }
+            header button {
+                display: none !important;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Mobile Header -->
-    <div class="mobile-header" id="mobileHeader">
-        <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
-        <h1>BSBA-MM</h1>
-    </div>
 
-    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
-        <h2 style="color: #ffcc00;">BSBA-MM</h2>
-        <p>Admin Panel</p>
-        <p style="color: #fff;">User: <strong><%= user.name %></strong></p>
-        <p style="color: #fff;">Role: <strong><%= user.role %></strong></p>
-        
-        <hr style="border: 1px solid #ffcc00; margin: 15px 0;">
-        
-        <form action="/logout" method="POST" style="margin-top: 20px;">
-            <button type="submit" class="logout-btn">🚪 Logout</button>
-        </form>
+    <h2 style="color: #FFD700;">BSBA-MM</h2>
+    <p style="color: #e0e0e0;">User: <strong><%= user.name %></strong></p>
+    <p style="color: #e0e0e0;">Role: <strong><%= user.role %></strong></p>
+    
+    <% if (user.role === 'adviser' || user.role === 'officer') { %>
+    <div style="padding: 10px 0px; border-bottom: 1px solid #ffcc00; margin-bottom: 10px;">
+        <a href="/admin/reset-requests" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px;">
+            <i class="fas fa-key"></i> <span style="font-weight: bold;">Password Reset Requests</span>
+        </a>
     </div>
+    <% } %>
+    
+    <hr style="border: 1px solid #FFD700;">
+    
+    <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
+        <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #FFD700; color: #121212; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: block;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </form>
+</div>
 
-    <!-- Main Content -->
-    <div class="content">
-        <header>
-            <h1>👥 Master Student List</h1>
-            <p>Manage all 300 student ID slots (MM-001 to MM-300)</p>
-        </header>
+                <div class="content">
+            <header style="background: #FFD700; color: #121212; padding: 12px 15px; display: flex; align-items: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+    <button onclick="toggleSidebar()" style="background: rgba(18,18,18,0.15); border: 1px solid rgba(18,18,18,0.3); color: #121212; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-right: 15px; font-size: 1.2rem;">
+        <i class="fas fa-bars"></i>
+    </button>
+    <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #121212;">Marketing Management Portal</h1>
+</header>
 
-        <a href="/dashboard" class="back-btn" style="text-decoration: none; display: inline-block;">⬅️ Back to Menu</a>
+        <button id="backBtn" class="back-btn" onclick="goBack()" style="margin-bottom: 15px; background: transparent; color: #FFD700; border: 2px solid #FFD700;"><i class="fas fa-arrow-left"></i> Back to Menu</button>
 
         <!-- Controls -->
         <div class="controls">
@@ -620,11 +737,11 @@
                     onkeyup="filterTable()"
                 >
             </div>
-            <a href="/download-all-qrs" class="btn btn-primary" style="display:inline-block; text-decoration:none; text-align:center;">📄 Download All Student QR Cards</a>
+            <a href="/download-all-qrs" class="btn btn-primary" style="display:inline-block; text-decoration:none; text-align:center;"><i class="fas fa-file"></i> Download All Student QR Cards</a>
         </div>
 
         <!-- Search Results Container -->
-        <div id="searchResults" style="display: none; background: white; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); margin-bottom: 20px; overflow: hidden;"></div>
+        <div id="searchResults" style="display: none; background: #1e1e1e; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); margin-bottom: 20px; overflow: hidden;"></div>
 
         <!-- Table -->
         <div class="table-container">
@@ -659,13 +776,13 @@
                             </td>
                             <td>
                                 <div class="qr-placeholder" data-mmid="<%= student.mmId %>" onclick="loadAndShowQR('<%= student.mmId %>')">
-                                    <span style="cursor: pointer; color: #ffcc00;">Click to load</span>
+                                    <span style="cursor: pointer; color: #FFD700;">Click to load</span>
                                 </div>
                             </td>
                             <td>
                                 <% if (student.isAssigned && student.corPath) { %>
                                     <a href="/download-cor/<%= student._id %>" class="btn-sm" style="color: #28a745; text-decoration: none; font-weight: 600;" title="Download COR">
-                                        📄 Download
+                                        <i class="fas fa-file"></i> Download
                                     </a>
                                 <% } else { %>
                                     <span class="empty-slot">—</span>
@@ -679,7 +796,7 @@
                                         <option value="officer" <%= student.role === 'officer' ? 'selected' : '' %>>Officer</option>
                                         <option value="adviser" <%= student.role === 'adviser' ? 'selected' : '' %>>Adviser</option>
                                     </select>
-                                    <button class="btn-sm" onclick="removeStudent('<%= student.mmId %>', '<%= student.name %>')">🗑️ Remove</button>
+                                    <button class="btn-sm" onclick="removeStudent('<%= student.mmId %>', '<%= student.name %>')" ><i class="fas fa-trash"></i> Remove</button>
                                 <% } else { %>
                                     <span class="empty-slot">No actions</span>
                                 <% } %>
@@ -717,7 +834,7 @@
                 <a href="/admin/students?page=<%= page - 1 %>" class="btn btn-secondary">◀ Previous</a>
             <% } %>
             
-            <span style="padding: 12px 24px; background: #f0f0f0; border-radius: 8px; align-self: center;">
+            <span style="padding: 12px 24px; background: #252525; border-radius: 8px; align-self: center; color: #e0e0e0; border: 1px solid #2d2d2d;">
                 Page <%= page %> of <%= totalPages %> (50 students per page)
             </span>
             
@@ -737,6 +854,9 @@
             <p style="color: #666; margin-top: 15px;">Right-click to save image</p>
         </div>
     </div>
+
+    <!-- Confirmation Modal -->
+    <!-- Now using universal delete-confirmation modal from delete-confirmation.js -->
 
     <script>
         // QR Code cache to avoid fetching the same code twice
@@ -826,12 +946,21 @@
             }
         }
 
-        // Remove student
+        // Remove student - Show confirmation modal
         function removeStudent(mmId, studentName) {
-            if (!confirm(`Are you sure you want to remove ${studentName || 'this student'}? Their profile will be wiped clean but the ID will be available for a new student.`)) {
-                return;
-            }
+            showDeleteConfirmation({
+                title: '⚠️ Remove Student',
+                description: `Are you sure you want to remove <strong>${studentName || 'this student'}</strong>? Their profile will be wiped clean but the MM-ID will be available for a new student.`,
+                warning: '⚠️ This will permanently delete ALL attendance records for this student. This action cannot be undone.',
+                buttonText: 'Yes, Remove Student',
+                onConfirm: function() {
+                    performRemoveStudent(mmId);
+                }
+            });
+        }
 
+        // Actually perform the removal
+        function performRemoveStudent(mmId) {
             fetch('/admin/remove-student', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -899,7 +1028,7 @@
                                '<tbody>';
                     
                     data.results.forEach((result, index) => {
-                        const bgColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                        const bgColor = index % 2 === 0 ? '#1e1e1e' : '#252525';
                         html += '<tr style="background: ' + bgColor + '; border-bottom: 1px solid #ddd;">' +
                                 '<td style="padding: 12px; font-weight: bold; color: #800000;">' + result.mmId + '</td>' +
                                 '<td style="padding: 12px; color: #333;">' + (result.name || '(Empty Slot)') + '</td>' +
@@ -928,34 +1057,23 @@
             sidebar.classList.toggle('active');
         }
 
+        // Go back function
+        function goBack() {
+            window.history.back();
+        }
+
         // Close sidebar when clicking outside
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');
-            const hamburger = document.querySelector('.hamburger-btn');
+            const header = document.querySelector('header');
             
             if (window.innerWidth <= 768 && 
                 sidebar.classList.contains('active') && 
                 !sidebar.contains(event.target) && 
-                !hamburger.contains(event.target)) {
+                !header.contains(event.target)) {
                 sidebar.classList.remove('active');
             }
         });
-
-        // Show mobile header on mobile screens
-        function updateMobileHeader() {
-            const mobileHeader = document.getElementById('mobileHeader');
-            if (window.innerWidth <= 768) {
-                mobileHeader.classList.add('active');
-            } else {
-                mobileHeader.classList.remove('active');
-                const sidebar = document.getElementById('sidebar');
-                sidebar.classList.remove('active');
-            }
-        }
-
-        // Initialize on load and on resize
-        window.addEventListener('load', updateMobileHeader);
-        window.addEventListener('resize', updateMobileHeader);
     </script>
 </body>
 </html>

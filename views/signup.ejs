@@ -4,31 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BSBA-MM Sign Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f2f5; padding: 10px; }
-        .login-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; border-top: 6px solid #800000; }
-        h2 { color: #800000; margin-bottom: 20px; text-align: center; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-weight: 600; margin-bottom: 5px; color: #666; font-size: 0.95em; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 1em; }
-        input:focus, select:focus { outline: none; border: 2px solid #800000; }
-        button { width: 100%; padding: 14px; background: #800000; color: gold; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; transition: background 0.3s ease; margin-top: 10px; }
-        button:hover { background: #600000; }
-        button:active { transform: scale(0.98); }
-        .info-box { background: #e3f2fd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2196F3; text-align: center; }
-        .info-box label { margin: 5px 0; color: #1976d2; }
-        .info-box div { font-size: 1.3em; font-weight: 700; color: #000; font-family: 'Courier New', monospace; margin: 5px 0; }
-        .info-box small { color: #666; display: block; margin-top: 5px; }
-        .signup-link { text-align: center; margin-top: 15px; }
-        .signup-link a { color: #800000; text-decoration: none; font-weight: bold; }
-        .signup-link a:hover { text-decoration: underline; }
-        @media (max-width: 480px) {
-            .login-box { padding: 20px; }
-            h2 { font-size: 1.3em; }
-            input, select { padding: 11px; }
-            button { padding: 12px; }
+        /* Signup-specific overrides */
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 10px; 
         }
+        .login-box { border-top: 6px solid #800000; }
+        h2 { color: #800000; }
+        input:focus, select:focus { border-color: #800000; }
+        button { background: #800000; color: gold; }
+        button:hover { background: #600000; }
+        .info-box { background: #e3f2fd; border-left: 4px solid #2196F3; color: #1976d2; }
+        .info-box div { font-family: 'Courier New', monospace; font-size: 1.3em; font-weight: 700; color: #000; }
+        .input-group { margin-bottom: 15px; }
+        .signup-link a { color: #800000; }
     </style>
 </head>
 <body>
@@ -76,3 +71,6 @@
             <p>Already have an account? <a href="/login">Back to Login</a></p>
         </div>
     </div>
+</body>
+
+</html>

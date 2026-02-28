@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset Requests - BSBA-MM Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* Page-specific styles */
+        .reset-requests-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-top: 100px;
+        }
+        
+        .reset-header {
+            background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+            color: #FFD700;
+            padding: 25px 30px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .reset-header h1 {
+            margin: 0;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #FFD700;
+        }
+        
+        .back-to-dashboard {
+            display: inline-block;
+            color: black;
+            background: #FFD700;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        
+        .back-to-dashboard:hover {
+            background: #f0c700;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: #1a1a1a;
+        }
+        
+        .info-box strong {
+            color: #0d47a1;
+        }
+        
+        .no-requests {
+            background: white;
+            padding: 50px 40px;
+            border-radius: 8px;
+            text-align: center;
+            color: #666;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .no-requests i {
+            font-size: 3em;
+            color: #FFD700;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .no-requests h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 500px;
+        }
+        
+        thead {
+            background: #000;
+        }
+        
+        th {
+            color: #FFD700;
+            padding: 16px 18px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #FFD700;
+        }
+        
+        td {
+            padding: 14px 18px;
+            border-bottom: 1px solid #e0e0e0;
+            color: #333;
+        }
+        
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+        
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .reset-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+        }
+        
+        .reset-btn:hover {
+            background: #45a049;
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .reset-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .student-id-badge {
+            background: #f5f5f5;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.95em;
+            color: #333;
+        }
+        
+        .alert {
+            padding: 16px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+            display: block;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .reset-requests-container {
+                padding: 15px;
+                padding-top: 100px;
+            }
+            
+            .reset-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+                padding: 20px;
+            }
+            
+            .reset-header h1 {
+                font-size: 1.4em;
+            }
+            
+            .back-to-dashboard {
+                width: 100%;
+                text-align: center;
+            }
+            
+            th, td {
+                padding: 12px 10px;
+                font-size: 0.9em;
+            }
+            
+            .reset-btn {
+                padding: 8px 12px;
+                font-size: 0.85em;
+            }
+            
+            .info-box {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="reset-requests-container">
+        <!-- Header -->
+        <div class="reset-header">
+            <h1><i class="fas fa-lock"></i> Password Reset Requests</h1>
+            <a href="/dashboard" class="back-to-dashboard">← Back to Dashboard</a>
+        </div>
+        
+        <!-- Alert Messages -->
+        <div id="alertBox" class="alert"></div>
+        
+        <!-- Info Box -->
+        <div class="info-box">
+            <strong><i class="fas fa-info-circle"></i> Instructions:</strong><br>
+            Below is a list of all students requesting password resets. Click the <strong>"Reset Password"</strong> button to reset their password to 123456. They will then be able to log in and change their password.
+        </div>
+        
+        <!-- No Requests State -->
+        <% if (resetRequests.length === 0) { %>
+            <div class="no-requests">
+                <i class="fas fa-check-circle"></i>
+                <h2>No Pending Requests</h2>
+                <p>All students' password reset requests have been processed.</p>
+            </div>
+        <% } else { %>
+            <!-- Reset Requests Table -->
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">Student Name</th>
+                            <th style="width: 35%;">Student ID</th>
+                            <th style="width: 25%;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% resetRequests.forEach(student => { %>
+                            <tr data-user-id="<%= student._id %>">
+                                <td><strong><%= student.name || student.username || 'Unknown' %></strong></td>
+                                <td><span class="student-id-badge"><%= student.mmId || student.studentId || 'N/A' %></span></td>
+                                <td>
+                                    <button class="reset-btn" data-user-id="<%= student._id %>" data-student-name="<%= student.name || student.username || 'Student' %>">
+                                        Reset Password
+                                    </button>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </div>
+    
+    <script src="/reset-confirmation.js"></script>
+    <script>
+        // Handle back to dashboard navigation
+        const backBtn = document.querySelector('.back-to-dashboard');
+        if (backBtn) {
+            backBtn.addEventListener('click', function(e) {
+                window.location.href = '/dashboard';
+            });
+        }
+        
+        // Event delegation for reset buttons
+        document.addEventListener('click', async function(e) {
+            if (e.target.classList.contains('reset-btn')) {
+                const btn = e.target;
+                const userId = btn.dataset.userId;
+                const studentName = btn.dataset.studentName;
+                
+                // Show confirmation modal
+                showResetConfirmation({
+                    title: '🔐 Confirm Password Reset',
+                    description: `Reset password for <strong>${studentName}</strong> to <strong>123456</strong>?`,
+                    warning: 'The student will receive the temporary password and must change it on first login.',
+                    buttonText: 'Reset Password',
+                    onConfirm: async function() {
+                        const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+                        const originalHTML = btn.innerHTML;
+                        
+                        try {
+                            // Disable button and show loading state
+                            btn.disabled = true;
+                            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+                            
+                            const response = await fetch(`/admin/reset-password/${userId}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            
+                            const data = await response.json();
+                            
+                            if (response.ok) {
+                                // Show success message
+                                showAlert(`✓ Password reset successfully for ${studentName}. New password: 123456`, 'success');
+                                
+                                // Remove the row from the table
+                                row.style.opacity = '0.5';
+                                row.style.textDecoration = 'line-through';
+                                setTimeout(() => {
+                                    row.remove();
+                                    
+                                    // If table is empty, reload the page to show "No Pending Requests"
+                                    const tableRows = document.querySelectorAll('tbody tr');
+                                    if (tableRows.length === 0) {
+                                        setTimeout(() => location.reload(), 1500);
+                                    }
+                                }, 1000);
+                            } else {
+                                throw new Error(data.error || 'Failed to reset password');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            showAlert('❌ Error resetting password: ' + error.message, 'error');
+                            btn.disabled = false;
+                            btn.innerHTML = originalHTML;
+                        }
+                    },
+                    data: { userId, studentName }
+                });
+            }
+        });
+        
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = `alert alert-${type}`;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertBox.style.display = 'none';
+                }, 4000);
+            }
+        }
+    </script>
+</body>
+</html>

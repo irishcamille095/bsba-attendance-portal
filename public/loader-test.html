@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Loader Test</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/loader.js"></script>
+    <style>
+        body {
+            background: #121212;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #e0e0e0;
+        }
+        
+        .test-container {
+            text-align: center;
+            background: #1e1e1e;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+        
+        p {
+            margin: 15px 0;
+            font-size: 1.1rem;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            background: #FFD700;
+            color: #121212;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #ffd700;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,215,0,0.3);
+        }
+        
+        .debug-log {
+            background: #252525;
+            border: 1px solid #FFD700;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #FFD700;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🚀 Smart Loader Test Page</h1>
+        <p>Click the buttons below to test the loader spinner.</p>
+        
+        <div class="button-group">
+            <button onclick="testShowLoader()">
+                Test Show Loader (1 sec)
+            </button>
+            <button onclick="testHideLoader()">
+                Hide Loader Now
+            </button>
+            <button onclick="simulateSlowNavigation()">
+                Simulate Slow Navigation
+            </button>
+            <button class="needs-loader" id="realNav">
+                Real Navigation Test
+            </button>
+        </div>
+        
+        <div class="debug-log">
+            <div class="log-entry" style="color: #FFD700; font-weight: bold;">Debug Console:</div>
+            <div id="debugOutput"></div>
+        </div>
+    </div>
+
+    <script>
+        // Intercept console.log to show in page
+        const debugOutput = document.getElementById('debugOutput');
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.join(' ');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = message;
+            debugOutput.appendChild(entry);
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+        };
+
+        function testShowLoader() {
+            console.log('Manual test: Calling triggerSmartLoader()');
+            window.triggerSmartLoader();
+        }
+
+        function testHideLoader() {
+            console.log('Manual test: Calling hideSmartLoader()');
+            window.hideSmartLoader();
+        }
+
+        function simulateSlowNavigation() {
+            console.log('Simulating slow navigation...');
+            window.triggerSmartLoader();
+            // Don't actually navigate, just show loader
+        }
+
+        // Set up real navigation button
+        document.getElementById('realNav').addEventListener('click', function(e) {
+            console.log('Real navigation triggered - will navigate after 2 seconds');
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

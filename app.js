@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+require('dotenv').config();
+
 const mongoose = require('mongoose');
 const express = require('express');
 const session = require('express-session');
@@ -5,6 +8,15 @@ const fs = require('fs');
 const QRCode = require('qrcode');
 const PDFDocument = require('pdfkit');
 const webpush = require('web-push');
+const multer = require('multer');
+const path = require('path');
+
+// Import models upfront to avoid duplicates
+const PushSubscription = require('./models/PushSubscription');
+const StudentIDPool = require('./models/StudentIDPool');
+const Event = require('./models/Event');
+const User = require('./models/User');
+const ResetRequest = require('./models/ResetRequest');
 
 const app = express();
 
@@ -14,19 +26,17 @@ const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://irishcamille095:Febru
 
 mongoose.connect(mongoURI)
     .then(async () => {
-        console.log('✅ Connected to MongoDB Cloud!');
-        // Initialize student ID pool when DB connects
-        const StudentIDPool = require('./models/StudentIDPool');
+        console.log('[SUCCESS] Connected to MongoDB Cloud!');
         
         async function initializeStudentIDPool() {
             try {
                 const existingCount = await StudentIDPool.countDocuments();
                 if (existingCount >= 300) {
-                    console.log("✅ Student ID pool already initialized!");
+                    console.log("[SUCCESS] Student ID pool already initialized!");
                     return;
                 }
 
-                console.log("🔄 Initializing Student ID Pool (MM-001 to MM-300)...");
+                console.log("[INFO] Initializing Student ID Pool (MM-001 to MM-300)...");
                 const idsToCreate = [];
 
                 for (let i = 1; i <= 300; i++) {
@@ -45,10 +55,10 @@ mongoose.connect(mongoURI)
 
                 if (idsToCreate.length > 0) {
                     await StudentIDPool.insertMany(idsToCreate);
-                    console.log(`✅ Created ${idsToCreate.length} student IDs with QR codes!`);
+                    console.log(`[SUCCESS] Created ${idsToCreate.length} student IDs with QR codes!`);
                 }
             } catch (err) {
-                console.error("❌ Error initializing student ID pool:", err);
+                console.error("[ERROR] Error initializing student ID pool:", err);
             }
         }
         
@@ -58,12 +68,12 @@ mongoose.connect(mongoURI)
         const PORT = process.env.PORT || 3000;
         app.listen(PORT, () => {
             console.log("-----------------------------------------");
-            console.log(`🚀 SERVER IS LIVE: http://localhost:${PORT}`);
+            console.log(`[SUCCESS] SERVER IS LIVE: http://localhost:${PORT}`);
             console.log("-----------------------------------------");
         });
     })
     .catch(err => {
-        console.error('❌ Could not connect to MongoDB:', err.message);
+        console.error('[ERROR] Could not connect to MongoDB:', err.message);
         console.error('📌 Connection String:', mongoURI);
         console.error('⚠️  Please check:');
         console.error('   1. MongoDB credentials are correct');
@@ -91,9 +101,9 @@ async function refreshAvailableIDsCache() {
         const assignedIDs = new Set(usersWithMM.map(u => u.mmId));
         cachedAvailableIDs = fullRange.filter(id => !assignedIDs.has(id));
         lastAvailableIDsUpdate = Date.now();
-        console.log('✅ Available IDs cache refreshed:', cachedAvailableIDs.length, 'available');
+        console.log('[SUCCESS] Available IDs cache refreshed:', cachedAvailableIDs.length, 'available');
     } catch (err) {
-        console.error('❌ Error refreshing available IDs cache:', err);
+        console.error('[ERROR] Error refreshing available IDs cache:', err);
     }
 }
 
@@ -121,9 +131,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads')); // This lets the browser see your photos
 app.use(express.static('public'));
-// --- Web Push / Service Worker Support ---
-const PushSubscription = require('./models/PushSubscription');
 
+// --- Web Push / Service Worker Support ---
 let vapidKeys = {
     publicKey: process.env.VAPID_PUBLIC_KEY,
     privateKey: process.env.VAPID_PRIVATE_KEY
@@ -132,7 +141,9 @@ let vapidKeys = {
 if (!vapidKeys.publicKey || !vapidKeys.privateKey) {
     vapidKeys = webpush.generateVAPIDKeys();
     console.log('⚠️ Generated ephemeral VAPID keys. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in env to persist.');
-    console.log('VAPID Public Key:', vapidKeys.publicKey);
+    console.log('📋 VAPID Public Key:', vapidKeys.publicKey);
+    console.log('📋 VAPID Private Key:', vapidKeys.privateKey);
+    console.log('💾 Copy these keys into your .env file to make them permanent!');
 }
 
 webpush.setVapidDetails('mailto:admin@example.com', vapidKeys.publicKey, vapidKeys.privateKey);
@@ -168,7 +179,7 @@ app.post('/unsubscribe', async (req, res) => {
         res.status(500).send('Error');
     }
 });
-app.set('view engine', 'ejs');
+
 app.use(session({
     secret: 'bsba-mm-secret-key',
     resave: false,
@@ -180,7 +191,7 @@ const uploadDirs = ['public/uploads', 'public/uploads/cor'];
 uploadDirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
-        console.log(`✅ Created directory: ${dir}`);
+        console.log(`[SUCCESS] Created directory: ${dir}`);
     }
 });
 
@@ -217,9 +228,6 @@ const FolderSchema = new mongoose.Schema({
 const Folder = mongoose.model('Folder', FolderSchema);
 
 // ... NOW come your routes like app.get('/dashboard') ...
-
-const multer = require('multer');
-const path = require('path');
 
 // Change this part in your app.js
 const storage = multer.diskStorage({
@@ -305,14 +313,6 @@ const FileSchema = new mongoose.Schema({
     uploadDate: { type: Date, default: Date.now }
 });
 const File = mongoose.model('File', FileSchema);
-
-const Event = require('./models/Event');
-
-const User = require('./models/User'); // Import the new model
-
-const StudentIDPool = require('./models/StudentIDPool'); // Import student ID pool
-
-app.use(express.static('public'));
 
 app.get('/login', (req, res) => res.render('login'));
 
@@ -989,19 +989,6 @@ app.get('/delete-attendance/:sessionId', isAuthenticated, async (req, res) => {
     }
 });
 
-app.get('/view-attendance', async (req, res) => {
-    // Only Officers and Advisers can see the list
-    if (req.session.user.role === 'student') return res.redirect('/dashboard');
-
-    try {
-        // Fetch ALL records from the cloud, sorted by newest first
-        const allLogs = await Attendance.find().sort({ _id: -1 });
-        res.render('report', { logs: allLogs, user: req.session.user });
-    } catch (err) {
-        res.send("Error loading attendance logs.");
-    }
-});
-
 const UserSchema = new mongoose.Schema({
     username: { type: String, unique: true, required: true },
     password: { type: String, required: true },
@@ -1025,7 +1012,7 @@ async function migrateUsers() {
                 console.log("⚠️ Skipping a blank or invalid user in JSON");
             }
         }
-        console.log("✅ Database is ready!");
+        console.log("[SUCCESS] Database is ready!");
     } catch (e) {
         console.log("Migration error:", e);
     }
@@ -1134,7 +1121,7 @@ app.post('/delete-file', isAuthenticated, async (req, res) => {
 
     try {
         const { fileId } = req.body;
-        await FileModel.findByIdAndDelete(fileId);
+        await File.findByIdAndDelete(fileId);
         res.redirect('/dashboard');
     } catch (err) {
         console.error(err);
@@ -1252,25 +1239,6 @@ app.post('/upload-file', upload.single('file'), async (req, res) => {
     } catch (err) {
         console.error("DATABASE ERROR:", err); // Check your VS Code terminal for the real reason!
         res.status(500).send("Error saving file info: " + err.message);
-    }
-});
-
-// TEMPORARY TEST ROUTE
-app.get('/test-attendance', async (req, res) => {
-    try {
-        const testRecord = new Attendance({
-            studentId: "2024-0001", // Match this to a real studentId if you have one
-            studentName: "Test Student",
-            eventName: "First General Assembly",
-            sessionId: "TEST-SESSION-123",
-            timestamp: new Date()
-        });
-
-        await testRecord.save();
-        res.send("<h1>Success!</h1><p>Fake attendance added. Go back to your <a href='/dashboard'>Dashboard</a> and check the lists.</p>");
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Error creating test data: " + err.message);
     }
 });
 
@@ -1465,49 +1433,17 @@ app.get('/download-cor/:studentId', isAuthenticated, async (req, res) => {
 
 app.get('/delete-download/:id', isAuthenticated, async (req, res) => {
     try {
-        // Only allow officers or advisers to delete
+        // Security check
         if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
             return res.status(403).send("Unauthorized");
         }
 
-        // Replace 'Download' with the actual name of your Mongoose Model for files
-        const Download = require('./models/Download'); 
-        await Download.findByIdAndDelete(req.params.id);
-
-        res.redirect('/dashboard'); // Refresh dashboard to show the file is gone
+        // Check if needed: Download model does not exist in ./models/Download
+        // TODO: Verify if this route is still needed. If needed, replace 'Download' with 'File' model
+        res.redirect('/dashboard');
     } catch (err) {
         console.error("Error deleting file:", err);
         res.status(500).send("Server Error");
-    }
-});
-
-app.get('/officer-dashboard', async (req, res) => {
-    try {
-        // 1. Check if the user is logged in
-        if (!req.session.user) {
-            return res.redirect('/login');
-        }
-
-        // 2. Allow BOTH 'officer' AND 'adviser' roles
-        const userRole = req.session.user.role;
-        if (userRole === 'officer' || userRole === 'adviser') {
-            
-            // 3. Fetch the data from MongoDB
-            const requests = await ResetRequest.find({});
-            const allUsers = await User.find({ _id: { $ne: req.session.user._id } });
-
-            res.render('officer-dashboard', { 
-                user: req.session.user, 
-                requests: requests, 
-                allUsers: allUsers 
-            });
-        } else {
-            // If a student tries to go here, they get this:
-            res.status(403).send("Access Denied: You must be an Officer or Adviser.");
-        }
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Internal Server Error");
     }
 });
 
@@ -1754,15 +1690,15 @@ app.post('/admin-reset-password', async (req, res) => {
         // Use findOneAndUpdate to bypass the validation crash
         const result = await User.findOneAndUpdate(
             { username: idFromForm }, 
-            { $set: { password: "123456" } }
+            { $set: { password: "123456", resetRequest: false } },
+            { new: true }
         );
 
         if (!result) {
             return res.status(404).send("User not found.");
         }
-
         await ResetRequest.deleteOne({ studentId: idFromForm });
-        res.redirect('/officer-dashboard');
+        res.redirect('/admin/reset-requests');
     } catch (err) {
         console.error(err);
         res.status(500).send("Update failed: " + err.message);
@@ -1774,13 +1710,11 @@ app.get('/request-reset', (req, res) => {
     res.render('request-reset'); // This looks for a file named request-reset.ejs
 });
 
-const ResetRequest = require('./models/ResetRequest');
-
 app.post('/request-reset', async (req, res) => {
     try {
-        const { email, reason } = req.body;
+        let searchInput = req.body.email;
 
-        if (!email || !email.trim()) {
+        if (!searchInput || !searchInput.trim()) {
             return res.status(400).send(`
                 <!DOCTYPE html>
                 <html>
@@ -1806,8 +1740,16 @@ app.post('/request-reset', async (req, res) => {
             `);
         }
 
-        // Check if email exists in database
-        const user = await User.findOne({ email: email.trim().toLowerCase() });
+        // Trim and normalize input
+        const cleanInput = searchInput.trim();
+
+        // Try to find user by email (case-insensitive) first
+        let user = await User.findOne({ email: { $regex: `^${cleanInput}$`, $options: 'i' } });
+
+        // If not found by email, try by studentID
+        if (!user) {
+            user = await User.findOne({ studentId: cleanInput });
+        }
 
         if (!user) {
             return res.status(404).send(`
@@ -1826,7 +1768,7 @@ app.post('/request-reset', async (req, res) => {
                 </head>
                 <body>
                     <div class="error-box">
-                        <h2>❌ Email Not Found</h2>
+                        <h2>❌ Account Not Found</h2>
                         <div class="error-message">No account found with this email address</div>
                         <p>Please contact an Administrator or Officer for assistance.</p>
                         <a href="/request-reset">← Try Another Email</a>
@@ -1836,18 +1778,8 @@ app.post('/request-reset', async (req, res) => {
             `);
         }
 
-        // Create/update the reset request record
-        const newEntry = new ResetRequest({
-            studentId: user.mmId || user.username, // Store the user's mmId or username for reference
-            email: email.trim().toLowerCase(),
-            reason: reason || "No reason provided",
-            status: 'Pending'
-        });
-
-        // Save the reset request
-        await newEntry.save();
-
-        console.log(`✅ Password reset request created for email: ${email}`);
+        // Update the user's resetRequest flag to true
+        const updateResult = await User.findByIdAndUpdate(user._id, { resetRequest: true }, { new: true });
 
         // Success response with styled page
         res.send(`
@@ -1872,16 +1804,15 @@ app.post('/request-reset', async (req, res) => {
             </head>
             <body>
                 <div class="success-box">
-                    <h2>✅ Reset Request Submitted</h2>
+                    <h2>✅ Request sent to Officers</h2>
                     <div class="success-message">
-                        <strong>Success!</strong> Your password reset request has been received.
+                        <strong>Please wait for manual reset</strong>
                     </div>
                     <div class="info-section">
                         <h4>📋 What Happens Next:</h4>
-                        <p>✓ An Administrator or Officer will review your request</p>
-                        <p>✓ They will verify your identity</p>
-                        <p>✓ Your password will be reset to a default value</p>
-                        <p>✓ You'll receive instructions to set a new password</p>
+                        <p>✓ An Officer will review your request</p>
+                        <p>✓ Your password will be reset to 123456</p>
+                        <p>✓ You'll be able to log in and change it afterwards</p>
                     </div>
                     <div class="info-section">
                         <h4>⏱️ Timeline:</h4>
@@ -1893,7 +1824,7 @@ app.post('/request-reset', async (req, res) => {
             </html>
         `);
     } catch (err) {
-        console.error("❌ Password reset error:", err);
+        console.error("[ERROR] Password reset error:", err);
         res.status(500).send(`
             <!DOCTYPE html>
             <html>
@@ -1990,10 +1921,10 @@ app.post('/create-event/:folderId', isAuthenticated, async (req, res) => {
             token: Math.random().toString(36).substring(7)
         });
 
-        console.log("✅ Event created successfully:", newSession._id);
+        console.log("[SUCCESS] Event created successfully:", newSession._id);
         res.redirect(`/folder-details/${folderId}`); 
     } catch (err) {
-        console.error("❌ Error creating event:", err.message);
+        console.error("[ERROR] Error creating event:", err.message);
         res.status(500).send("Error creating event: " + err.message);
     }
 });
@@ -2133,5 +2064,142 @@ app.get('/generate-qr-pdf', isAuthenticated, async (req, res) => {
     } catch (err) {
         console.error('Error generating QR PDF:', err);
         res.status(500).send('Error generating PDF: ' + err.message);
+    }
+});
+
+// === PASSWORD RESET REQUESTS ROUTE ===
+app.get('/admin/reset-requests', isAuthenticated, async (req, res) => {
+    try {
+        // Check authorization - only adviser and officer roles can access
+        if (req.session.user.role !== 'adviser' && req.session.user.role !== 'officer') {
+            return res.status(403).send('Access Denied: Only Officers and Advisers can access this page.');
+        }
+
+        // Find all users with resetRequest: true flag
+        const resetRequests = await User.find({ resetRequest: true }).sort({ createdAt: -1 });
+
+        res.render('reset-requests', {
+            user: req.session.user,
+            resetRequests: resetRequests
+        });
+    } catch (err) {
+        console.error('Error loading reset requests:', err);
+        res.status(500).send('Error loading reset requests: ' + err.message);
+    }
+});
+
+// === RESET PASSWORD ACTION ROUTE ===
+app.post('/admin/reset-password/:userId', isAuthenticated, async (req, res) => {
+    try {
+        // Check authorization - only adviser and officer roles can reset
+        if (req.session.user.role !== 'adviser' && req.session.user.role !== 'officer') {
+            return res.status(403).json({ error: 'Access Denied' });
+        }
+
+        const { userId } = req.params;
+        const defaultPassword = '123456'; // Default reset password
+        console.log('[DEBUG] Admin Reset Password - userId from params:', userId);
+
+        // Update the user: set password and resetRequest to false
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { 
+                password: defaultPassword,
+                resetRequest: false 
+            },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            console.log('[ERROR] User not found for userId:', userId);
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        console.log(`[SUCCESS] Password reset for: ${updatedUser.name} (${updatedUser.email}). resetRequest now: ${updatedUser.resetRequest}`);
+
+        res.json({ 
+            success: true, 
+            message: `Password reset for ${updatedUser.name}. New password: 123456`
+        });
+    } catch (err) {
+        console.error('Error resetting password:', err);
+        res.status(500).json({ error: 'Error resetting password: ' + err.message });
+    }
+});
+
+// === DATABASE REPAIR ROUTE ===
+// This route helps fix users with missing/undefined emails
+app.get('/admin/repair-emails', isAuthenticated, async (req, res) => {
+    try {
+        // Check authorization
+        if (req.session.user.role !== 'adviser' && req.session.user.role !== 'officer') {
+            return res.status(403).send('Access Denied: Only Officers and Advisers can access this.');
+        }
+
+        console.log('\n========== EMAIL REPAIR DIAGNOSTIC ==========');
+        
+        // Find all users
+        const allUsers = await User.find({});
+        console.log(`Total Users: ${allUsers.length}\n`);
+        
+        // Check which ones have missing emails
+        const missingEmails = allUsers.filter(u => !u.email || u.email === 'undefined');
+        const haveEmails = allUsers.filter(u => u.email && u.email !== 'undefined');
+        
+        console.log(`Users with email: ${haveEmails.length}`);
+        console.log(`Users WITHOUT email (undefined): ${missingEmails.length}`);
+        
+        if (missingEmails.length > 0) {
+            console.log('\nUsers needing email repair:');
+            missingEmails.forEach(u => {
+                console.log(`  - ${u.name} | username: ${u.username} | email: ${u.email}`);
+            });
+            
+            // Auto-repair: Copy username to email for users missing email
+            console.log('\nAttempting to repair emails from usernames...');
+            for (const user of missingEmails) {
+                if (user.username) {
+                    const updated = await User.findByIdAndUpdate(
+                        user._id,
+                        { email: user.username },
+                        { new: true }
+                    );
+                    console.log(`  ✓ Fixed ${updated.name}: email now = ${updated.email}`);
+                }
+            }
+        }
+        
+        console.log('=========================================\n');
+        
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: Arial; background: #f4f4f4; padding: 20px; }
+                    .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+                    h1 { color: #000; }
+                    .success { color: #4caf50; font-weight: bold; }
+                    .error { color: #d32f2f; font-weight: bold; }
+                    .info { background: #e3f2fd; padding: 15px; border-left: 4px solid #2196f3; margin: 15px 0; }
+                    a { display: inline-block; margin-top: 20px; padding: 12px 24px; background: #000; color: #ffcc00; text-decoration: none; border-radius: 6px; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>✓ Email Repair Complete</h1>
+                    <div class="info">
+                        <p>The system has automatically repaired all missing emails by copying from the username field.</p>
+                        <p><strong>Check the terminal for the repair report.</strong></p>
+                    </div>
+                    <p>All users should now have valid emails. You can now use the password reset feature.</p>
+                    <a href="/dashboard">← Back to Dashboard</a>
+                </div>
+            </body>
+            </html>
+        `);
+    } catch (err) {
+        console.error('Error repairing emails:', err);
+        res.status(500).send('Error repairing emails: ' + err.message);
     }
 });

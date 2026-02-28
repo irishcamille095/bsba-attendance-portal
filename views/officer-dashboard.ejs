@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Officer Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/style.css">
     <style>
+        /* Officer-dashboard-specific overrides */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; padding: 15px; }
         .container { max-width: 1000px; margin: 0 auto; }
@@ -77,7 +79,7 @@
         <h1>Officer Management Portal</h1>
         
         <div class="info-box">
-            <a href="/admin/students">👥 View Master Student List (MM-001 to MM-300)</a>
+            <a href="/admin/students" class=""><i class="fas fa-users"></i> View Master Student List (MM-001 to MM-300)</a>
         </div>
 
         <h2>Pending Password Resets</h2>
@@ -119,4 +121,5 @@
         <a href="/dashboard" class="back-link">← Back to Main Dashboard</a>
     </div>
 </body>
+
 </html>

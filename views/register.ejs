@@ -4,29 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - BSBA Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f4f4f4; padding: 15px; }
-        .box { background: white; padding: 30px 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        h2 { color: #000; margin-bottom: 20px; font-size: 1.4em; }
-        input, select { width: 100%; padding: 13px; margin: 10px 0; border: 2px solid #ccc; border-radius: 6px; font-family: inherit; font-size: 1em; transition: all 0.3s ease; }
-        input:focus, select:focus { outline: none; border-color: #ffcc00; box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1); }
-        label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: 600; color: #333; text-align: left; }
-        button { width: 100%; padding: 14px; background: #ffcc00; color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1.05em; transition: all 0.3s ease; margin-top: 5px; }
-        button:hover { background: #f3db00; transform: translateY(-2px); }
-        button:active { transform: translateY(0); }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
-        .alert { padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.95em; }
-        .alert-info { background: #eef7ff; border-left: 4px solid #2196F3; color: #1565c0; }
-        .alert-warning { background: #fff3cd; border-left: 4px solid #ffc107; color: #856404; }
-        p { margin-top: 15px; font-size: 0.95em; }
-        p a { color: #ffcc00; text-decoration: none; font-weight: bold; }
-        p a:hover { text-decoration: underline; }
-        @media (max-width: 480px) {
-            .box { padding: 25px 20px; }
-            h2 { font-size: 1.2em; }
-            input, select { padding: 12px; font-size: 16px; }
-            button { padding: 12px; }
+        /* Register-specific overrides */
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
         }
     </style>
 </head>
@@ -68,4 +54,5 @@
         <p><a href="/login">← Back to Login</a></p>
     </div>
 </body>
+
 </html>

@@ -4,15 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgot Password - BSBA-MM Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* Request-reset-specific overrides */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             display: flex;
             justify-content: center;
@@ -162,13 +158,13 @@
 <body>
     <div class="reset-container">
         <div class="reset-header">
-            <h1>🔐 Forgot Password</h1>
+            <h1><i class="fas fa-lock"></i> Forgot Password</h1>
             <p>Reset your password securely</p>
         </div>
 
         <div class="reset-content">
             <div class="info-box">
-                <strong>💡 How it works:</strong> Enter your email address. Our administrators will verify your identity and help reset your password.
+                <strong><i class="fas fa-lightbulb"></i> How it works:</strong> Enter your email address. Our administrators will verify your identity and help reset your password.
             </div>
 
             <form action="/request-reset" method="POST">
@@ -204,4 +200,5 @@
         </div>
     </div>
 </body>
+
 </html>

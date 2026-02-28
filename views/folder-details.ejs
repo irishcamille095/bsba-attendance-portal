@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= folder.name %> - Attendance Records</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <script src="/delete-confirmation.js"></script>
     <style>
+        /* Folder-details-specific overrides */
         * {
             margin: 0;
             padding: 0;
@@ -13,7 +17,7 @@
 
         body { 
             font-family: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background-color: #f5f5f5;
+            background-color: #121212;
             display: flex;
         }
 
@@ -68,18 +72,19 @@
         .container { 
             max-width: 1200px;
             margin: auto;
-            background: white;
+            background: #1e1e1e;
             padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-            border-top: 6px solid #ffcc00;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            border-left: 5px solid #ffcc00;
+            border: 1px solid #2d2d2d;
         }
 
         .nav-links { 
             margin-bottom: 25px;
             display: flex;
             gap: 20px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid #2d2d2d;
             padding-bottom: 15px;
         }
 
@@ -88,32 +93,38 @@
             font-weight: 700;
             font-size: 1em;
             transition: all 0.3s ease;
-            color: #1a1a1a;
-        }
-
-        .nav-links a:hover {
             color: #ffcc00;
         }
 
-        .btn-back { color: #1a1a1a; }
-        .btn-dash { color: #666; }
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .btn-back { color: #ffcc00; }
+        .btn-dash { color: #ffcc00; }
 
         h1 {
-            color: #1a1a1a;
+            color: #ffcc00;
             font-size: 2em;
             margin: 20px 0;
         }
 
         h2 {
-            color: #1a1a1a;
+            color: #ffcc00;
             font-size: 1.5em;
             margin: 20px 0 15px 0;
+            border-bottom: 2px solid #2d2d2d;
+            padding-bottom: 10px;
         }
 
         h3 {
-            color: #1a1a1a;
+            color: #ffcc00;
             font-size: 1.2em;
             margin: 15px 0;
+        }
+        
+        p {
+            color: #e0e0e0;
         }
 
         .event-row { 
@@ -127,11 +138,11 @@
             flex: 1;
             display: block;
             padding: 16px;
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-left: 6px solid #ffcc00;
+            background: #252525;
+            border: 1px solid #2d2d2d;
+            border-left: 5px solid #ffcc00;
             text-decoration: none;
-            color: #1a1a1a;
+            color: #e0e0e0;
             border-radius: 8px;
             font-weight: 600;
             transition: all 0.3s ease;
@@ -139,7 +150,7 @@
 
         .event-card:hover { 
             transform: translateX(5px);
-            background: #f9f9f9;
+            background: #2a2a2a;
             border-color: #ffcc00;
             box-shadow: 0 4px 12px rgba(255, 204, 0, 0.2);
         }
@@ -164,7 +175,7 @@
 
         .btn-download { 
             background: #ffcc00;
-            color: #1a1a1a;
+            color: #000;
             padding: 12px 20px;
             text-decoration: none;
             border-radius: 8px;
@@ -184,7 +195,9 @@
             width: 100%;
             padding: 14px;
             margin: 20px 0;
-            border: 2px solid #000;
+            border: 1px solid #2d2d2d;
+            background: #252525;
+            color: #e0e0e0;
             border-radius: 8px;
             font-size: 1rem;
             font-family: inherit;
@@ -214,7 +227,7 @@
         }
 
         th { 
-            background-color: #1a1a1a;
+            background-color: #000;
             color: #ffcc00;
             padding: 16px;
             text-align: left;
@@ -225,15 +238,16 @@
 
         td { 
             padding: 14px 16px;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid #2d2d2d;
+            color: #e0e0e0;
         }
 
         tr:nth-child(even) { 
-            background-color: #f9f9f9;
+            background-color: #252525;
         }
 
         tr:hover {
-            background-color: #f5f5f5;
+            background-color: #2a2a2a;
         }
 
         .action-cell { 
@@ -262,7 +276,9 @@
 
         .role-select { 
             padding: 8px 12px;
-            border: 2px solid #ffcc00;
+            border: 1px solid #2d2d2d;
+            background: #252525;
+            color: #ffcc00;
             border-radius: 6px;
             font-size: 0.9rem;
             cursor: pointer;
@@ -274,6 +290,11 @@
             outline: none;
             border-color: #ffcc00;
             box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1);
+        }
+        
+        .role-select option {
+            background: #1e1e1e;
+            color: #e0e0e0;
         }
 
         .modal { 
@@ -294,25 +315,26 @@
         }
 
         .modal-content { 
-            background-color: white;
+            background-color: #1e1e1e;
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.3);
             max-width: 450px;
             width: 90%;
-            border-top: 6px solid #ffcc00;
+            border: 1px solid #2d2d2d;
+            border-left: 5px solid #ffcc00;
         }
 
         .modal-header { 
             font-size: 1.3rem;
             font-weight: 700;
-            color: #1a1a1a;
+            color: #ffcc00;
             margin-bottom: 15px;
         }
 
         .modal-body { 
             margin: 15px 0;
-            color: #666;
+            color: #e0e0e0;
         }
 
         .modal-buttons { 
@@ -324,7 +346,7 @@
 
         .btn-confirm { 
             background: #ffcc00;
-            color: #1a1a1a;
+            color: #000;
             padding: 12px 20px;
             border: none;
             border-radius: 8px;
@@ -339,8 +361,8 @@
         }
 
         .btn-cancel { 
-            background: #e0e0e0;
-            color: #1a1a1a;
+            background: #555;
+            color: #e0e0e0;
             padding: 12px 20px;
             border: none;
             border-radius: 8px;
@@ -350,7 +372,7 @@
         }
 
         .btn-cancel:hover { 
-            background: #d0d0d0;
+            background: #666;
             transform: translateY(-2px);
         }
 
@@ -359,42 +381,45 @@
         }
 
         .success-msg { 
-            color: #155724;
+            color: #4ade80;
             font-weight: 700;
             padding: 15px;
-            background: #d4edda;
+            background: #0f3f1f;
             border-radius: 8px;
             margin: 15px 0;
-            border: 2px solid #c3e6cb;
+            border: 2px solid #22c55e;
         }
 
         .error-msg { 
-            color: #721c24;
+            color: #ff6b6b;
             font-weight: 700;
             padding: 15px;
-            background: #f8d7da;
+            background: #3f0f0f;
             border-radius: 8px;
             margin: 15px 0;
-            border: 2px solid #f5c6cb;
+            border: 2px solid #dc3545;
         }
 
         .create-event-section {
-            background: #f9f9f9;
+            background: #252525;
             padding: 20px;
             margin-bottom: 20px;
             border-radius: 8px;
-            border-left: 6px solid #ffcc00;
+            border-left: 5px solid #ffcc00;
+            border: 1px solid #2d2d2d;
         }
 
         .create-event-section h3 {
-            color: #1a1a1a;
+            color: #ffcc00;
             margin-top: 0;
         }
 
         .create-event-section input {
             padding: 12px;
             border-radius: 6px;
-            border: 2px solid #000;
+            border: 1px solid #2d2d2d;
+            background: #1e1e1e;
+            color: #e0e0e0;
             font-family: inherit;
             transition: all 0.3s ease;
         }
@@ -407,18 +432,30 @@
 
         .create-event-section button {
             background: #ffcc00;
-            color: #1a1a1a;
+            color: #000;
             padding: 12px 20px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 700;
-            border: 2px solid #ffcc00;
+            border: none;
             transition: all 0.3s ease;
         }
 
         .create-event-section button:hover {
             background: #e6b800;
-            color: #1a1a1a;
+            color: #000;
+        }
+        
+        .create-event-section p {
+            color: #999;
+        }
+        
+        .create-event-section code {
+            background: #1e1e1e;
+            color: #ffcc00;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #2d2d2d;
         }
 
         @media (max-width: 768px) {
@@ -450,12 +487,12 @@
                 margin-left: 0 !important;
                 width: 100%;
                 padding: 15px;
-                margin-top: 50px;
+                margin-top: 0;
             }
 
             .container {
                 padding: 15px;
-                margin-top: 50px;
+                margin-top: 0;
             }
 
             .nav-links {
@@ -484,18 +521,21 @@
             }
 
             .event-row {
-                flex-direction: column;
+                flex-direction: row;
                 gap: 10px;
                 margin-bottom: 10px;
+                flex-wrap: nowrap;
             }
 
             .event-card {
                 padding: 12px;
                 font-size: 0.95em;
+                flex: 3;
             }
 
             .btn-delete-event {
-                width: 100%;
+                flex: 1;
+                white-space: nowrap;
             }
 
             /* Responsive Table */
@@ -533,6 +573,11 @@
                 border-bottom: 1px solid #f0f0f0;
                 position: relative;
                 padding-left: 50%;
+                min-width: 60px;
+            }
+
+            td:last-child {
+                min-width: 100px;
             }
 
             td:before {
@@ -615,11 +660,12 @@
         @media (max-width: 480px) {
             .content {
                 padding: 8px;
+                margin-top: 0;
             }
 
             .container {
                 padding: 12px;
-                margin-top: 50px;
+                margin-top: 0;
             }
 
             h1 {
@@ -644,11 +690,19 @@
 
             table {
                 font-size: 0.8em;
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             td {
                 padding: 6px 0;
                 padding-left: 40%;
+                min-width: 50px;
+            }
+
+            td:last-child {
+                min-width: 90px;
             }
 
             td:before {
@@ -658,6 +712,11 @@
             .event-card {
                 padding: 10px;
                 font-size: 0.9em;
+            }
+
+            .btn-delete-event {
+                padding: 8px 6px;
+                font-size: 0.8em;
             }
 
             .btn-delete {
@@ -689,7 +748,7 @@
 
         header.mobile-header {
             display: flex !important;
-            position: fixed;
+            position: sticky;
             top: 0;
             left: 0;
             right: 0;
@@ -704,6 +763,15 @@
             header.mobile-header {
                 display: flex !important;
             }
+            
+            /* Ensure table Actions column doesn't disappear */
+            th, td {
+                min-width: 60px;
+            }
+            
+            th:last-child, td:last-child {
+                min-width: 100px;
+            }
         }
     </style>
     </style>
@@ -714,11 +782,15 @@
         <h2 style="color: #ffcc00;">BSBA-MM</h2>
         <p style="color: #fff;">User: <strong><%= user.name %></strong></p>
         <p style="color: #fff;">Role: <strong><%= user.role %></strong></p>
+        
+        <% if (user.role === 'adviser' || user.role === 'officer') { %>
         <div style="padding: 10px 20px;">
-            <a href="/my-account" style="text-decoration: none; color: white; display: flex; align-items: center; gap: 10px;">
-                👤 <span style="font-weight: bold;">My Account</span>
+            <a href="/request-reset" style="text-decoration: none; color: white; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-lock"></i> <span style="font-weight: bold;">Reset Officer Password</span>
             </a>
         </div>
+        <% } %>
+        
         <hr style="border: 1px solid #ffcc00;">
         
         <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
@@ -740,7 +812,7 @@
             <% if (user.role === 'officer' || user.role === 'adviser') { %>
                 <div class="create-event-section">
                     <h3 style="margin-top: 0;">➕ Create New Event</h3>
-                    <p style="color: #666; font-size: 0.9em;">📁 Folder ID: <code><%= folder._id %></code></p>
+                    <p style="color: #999; font-size: 0.9em;">📁 Folder ID: <code><%= folder._id %></code></p>
                     <form action="/create-event/<%= folder._id %>" method="POST" style="display: flex; gap: 10px;">
                         <input type="text" name="eventName" placeholder="Event Name (e.g., Christmas Party, Monthly Meeting)" required style="flex: 1; padding: 10px; border-radius: 5px;">
                         <button type="submit" style="padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">✓ Create</button>
@@ -750,7 +822,7 @@
 
         <% if (!selectedEvent) { %>
             <h3>📅 Events in this Folder:</h3>
-            <p style="color: #666; font-size: 0.9em;">Click an event to view attendance records.</p>
+            <p style="color: #999; font-size: 0.9em;">Click an event to view attendance records.</p>
             <div style="margin-top: 20px;">
                 <% if (sessions && sessions.length > 0) { %>
                     <% sessions.forEach(session => { %>
@@ -760,20 +832,20 @@
                             </a>
 
                             <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                                <button type="button" class="btn-delete-event" onclick="deleteEvent('<%= session._id %>', '<%= folder._id %>')">
+                                <button type="button" class="btn-delete-event" onclick="deleteEvent('<%= session._id %>', '<%= folder._id %>', '<%= session.eventName %>')">
                                    🗑️ Delete
                                 </button>
                             <% } %>
                         </div>
                     <% }) %>
                 <% } else { %>
-                    <p style="color: #777; font-style: italic;">No events found in this folder yet.</p>
+                    <p style="color: #999; font-style: italic;">No events found in this folder yet.</p>
                 <% } %>
             </div>
 
         <% } else { %>
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #800000; margin-bottom: 15px; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
-                <h2 style="margin: 0; flex: 1;">Event: <%= selectedEvent %></h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ffcc00; margin-bottom: 15px; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="margin: 0; flex: 1; border: none; padding: 0;">Event: <%= selectedEvent %></h2>
 
                 <% if (user.role === 'officer' || user.role === 'adviser') { %>
                     <a href="/download-attendance/<%= folder._id %>?event=<%= encodeURIComponent(selectedEvent) %>" class="btn-download">
@@ -819,7 +891,7 @@
                     </table>
                     </div>
                 <% } else { %>
-                    <p style="color: #777; font-style: italic; padding: 20px; text-align: center;">You have not recorded your attendance for this event yet.</p>
+                    <p style="color: #999; font-style: italic; padding: 20px; text-align: center;">You have not recorded your attendance for this event yet.</p>
                 <% } %>
             <% } else { %>
                 <% if (attendanceData && attendanceData.length > 0) { %>
@@ -860,7 +932,7 @@
                     </table>
                     </div>
                 <% } else { %>
-                    <p style="color: #777; font-style: italic; padding: 20px; text-align: center;">No attendance records found for this event yet.</p>
+                    <p style="color: #999; font-style: italic; padding: 20px; text-align: center;">No attendance records found for this event yet.</p>
                 <% } %>
             <% } %>
         <% } %>
@@ -868,31 +940,60 @@
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">⚠️ Confirm Deletion</div>
-            <div class="modal-body">
-                <p>Are you sure you want to remove <strong id="modalStudentName"></strong> (<span id="modalStudentId"></span>)?</p>
-                <p style="font-size: 0.9rem; color: #666;">This will delete the student from the database and clear all their attendance records.</p>
-            </div>
-            <div class="modal-buttons">
-                <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-                <button type="button" class="btn-confirm" onclick="confirmDelete()">Delete Student</button>
-            </div>
-        </div>
-    </div>
+    <!-- Delete Confirmation Modal for Students -->
+    <!-- Now using universal delete-confirmation modal -->
+
+    <!-- Delete Confirmation Modal for Events -->
+    <!-- Now using universal delete-confirmation modal -->
 
 <script>
-    let deleteTargetId = null;
+    function deleteEvent(sessionId, folderId, eventName) {
+        showDeleteConfirmation({
+            title: '⚠️ Delete Event',
+            description: `Are you sure you want to delete the event <strong>"${eventName}"</strong>?`,
+            warning: 'This will delete the entire event and ALL student attendance records associated with it. This action cannot be undone.',
+            buttonText: 'Yes, Delete Event',
+            onConfirm: function() {
+                window.location.href = `/delete-event/${sessionId}/${folderId}`;
+            }
+        });
+    }
 
-    function deleteEvent(sessionId, folderId) {
-        console.log('deleteEvent called with:', { sessionId, folderId });
-        if (confirm('⚠️ WARNING: This will delete the entire event and ALL student records inside it.\n\nAre you sure?')) {
-            const url = `/delete-event/${sessionId}/${folderId}`;
-            console.log('Navigating to:', url);
-            window.location.href = url;
-        }
+    function openDeleteModal(studentId, studentName) {
+        showDeleteConfirmation({
+            title: '⚠️ Delete Student',
+            description: `Are you sure you want to remove <strong>${studentName}</strong> (${studentId})?`,
+            warning: 'This will delete the student from the database and clear all their attendance records. This action cannot be undone.',
+            buttonText: 'Yes, Delete Student',
+            onConfirm: function() {
+                confirmDelete(studentId);
+            }
+        });
+    }
+
+    function confirmDelete(studentId) {
+        fetch(`/delete-student/${studentId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            const msgDiv = document.getElementById('message');
+            if (result.success) {
+                msgDiv.innerHTML = `<div class="success-msg">✅ ${result.message}</div>`;
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                msgDiv.innerHTML = `<div class="error-msg">❌ ${result.error}</div>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('message').innerHTML = `<div class="error-msg">❌ An error occurred. Please try again.</div>`;
+        });
     }
 
     function filterTable() {
@@ -911,55 +1012,7 @@
             }
         }
     }
-
-    function openDeleteModal(studentId, studentName) {
-        deleteTargetId = studentId;
-        document.getElementById('modalStudentId').textContent = studentId;
-        document.getElementById('modalStudentName').textContent = studentName;
-        document.getElementById('deleteModal').classList.add('show');
-    }
-
-    function closeDeleteModal() {
-        document.getElementById('deleteModal').classList.remove('show');
-        deleteTargetId = null;
-    }
-
-    function confirmDelete() {
-        if (!deleteTargetId) return;
-
-        fetch(`/delete-student/${deleteTargetId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(result => {
-            closeDeleteModal();
-            const msgDiv = document.getElementById('message');
-            if (result.success) {
-                msgDiv.innerHTML = `<div class="success-msg">✅ ${result.message}</div>`;
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            } else {
-                msgDiv.innerHTML = `<div class="error-msg">❌ ${result.error}</div>`;
-            }
-        })
-        .catch(error => {
-            closeDeleteModal();
-            console.error('Error:', error);
-            document.getElementById('message').innerHTML = `<div class="error-msg">❌ An error occurred. Please try again.</div>`;
-        });
-    }
-
-    // Close modal when clicking outside of it
-    window.onclick = function(event) {
-        const modal = document.getElementById('deleteModal');
-        if (event.target === modal) {
-            closeDeleteModal();
-        }
-    }
 </script>
+
 </body>
 </html>

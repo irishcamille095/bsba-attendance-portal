@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BSBA-MM Student Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
+        /* Index-specific overrides */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; }
         
@@ -26,7 +29,6 @@
         .header h1 { color: #800000; margin-bottom: 10px; }
         .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .card h3 { color: #800000; margin-bottom: 15px; }
-        .announcement-item { border-left: 5px solid #800000; padding: 15px; margin: 10px 0; background: #fff9f9; }
         .btn-logout { background: #800000; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none; border: none; cursor: pointer; font-weight: bold; }
         .btn-logout:hover { background: #600000; }
         
@@ -39,7 +41,6 @@
             .header { padding: 15px; }
             .header h1 { font-size: 1.3em; }
             .card { padding: 15px; }
-            .announcement-item { padding: 12px; }
         }
         @media (max-width: 480px) {
             .sidebar a { padding: 12px; font-size: 0.95em; }
@@ -98,6 +99,7 @@
             sidebar.classList.toggle('active');
         }
     </script>
+
 </body>
 </html>
 

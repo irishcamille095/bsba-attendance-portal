@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BSBA-MM Portal</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <script src="/delete-confirmation.js"></script>
     <style>
-        /* THEME: YELLOW & BLACK */
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f4f4; display: flex; }
+        /* Dashboard-specific styles (sidebar, content layout, menu cards) */
         
         /* Sidebar */
         .sidebar { width: 250px; background: #000; color: #ffcc00; height: 100vh; position: fixed; padding: 20px; border-right: 4px solid #ffcc00; overflow-y: auto; }
@@ -67,7 +68,7 @@
                 z-index: 2000;
                 padding: 15px;
                 border-right: none;
-                border-bottom: 2px solid #ffcc00;
+                border-bottom: 2px solid #FFD700;
             }
 
             .sidebar.active {
@@ -78,18 +79,19 @@
             .content {
                 margin-left: 0;
                 padding: 10px;
-                margin-top: 50px;
+                padding-top: 20px;
+                margin-top: 0;
             }
 
             header {
-                position: fixed;
+                position: sticky;
                 top: 0;
                 left: 0;
                 right: 0;
                 margin: 0;
                 z-index: 1000;
                 padding: 10px 12px;
-                background: #ffcc00;
+                background: #FFD700;
             }
 
             header button {
@@ -160,6 +162,7 @@
 
             .content {
                 padding: 8px;
+                margin-top: 0;
             }
 
             .portal-section {
@@ -199,67 +202,73 @@
 <body>
 
     <div class="sidebar" id="sidebar">
-    <h2 style="color: #ffcc00;">BSBA-MM</h2>
-    <p style="color: #fff;">User: <strong><%= user.name %></strong></p>
-    <p style="color: #fff;">Role: <strong><%= user.role %></strong></p>
-    <div style="padding: 10px 20px;">
-    <a href="/my-account" style="text-decoration: none; color: white; display: flex; align-items: center; gap: 10px;">
-        👤 <span style="font-weight: bold;">My Account</span>
-    </a>
-</div>
-    <hr style="border: 1px solid #ffcc00;">
+    <h2 style="color: #FFD700;">BSBA-MM</h2>
+    <p style="color: #e0e0e0;">User: <strong><%= user.name %></strong></p>
+    <p style="color: #e0e0e0;">Role: <strong><%= user.role %></strong></p>
+    
+    <% if (user.role === 'adviser' || user.role === 'officer') { %>
+    <div style="padding: 10px 0px; border-bottom: 1px solid #ffcc00; margin-bottom: 10px;">
+        <a href="/admin/reset-requests" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px;">
+            <i class="fas fa-key"></i> <span style="font-weight: bold;">Password Reset Requests</span>
+        </a>
+    </div>
+    <% } %>
+    
+    <hr style="border: 1px solid #FFD700;">
     
     <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
-        <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #ffcc00; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; display: block;">
-            🚪 Logout
+        <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #FFD700; color: #121212; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: block;">
+            <i class="fas fa-sign-out-alt"></i> Logout
         </button>
     </form>
 </div>
 
-    <div class="content">
-      <header style="background: #ffcc00; color: white; padding: 10px 15px; display: flex; align-items: center; position: sticky; top: 0; z-index: 1000;">
-    <button onclick="toggleSidebar()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-right: 15px; font-size: 1.2rem;">
-        ☰
+                <div class="content">
+            <header style="background: #FFD700; color: #121212; padding: 12px 15px; display: flex; align-items: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+    <button onclick="toggleSidebar()" style="background: rgba(18,18,18,0.15); border: 1px solid rgba(18,18,18,0.3); color: #121212; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-right: 15px; font-size: 1.2rem;">
+        <i class="fas fa-bars"></i>
     </button>
-    <h1 style="margin: 0; font-size: 1.1rem;">Marketing Management Portal</h1>
+    <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #121212;">Marketing Management Portal</h1>
 </header>
 
-        <button id="backBtn" class="back-btn" onclick="showMenu()" style="display: none;">⬅️ Back to Menu</button>
+        <button id="backBtn" class="back-btn" onclick="showMenu()" style="display: none; margin-bottom: 15px; background: transparent; color: #FFD700; border: 2px solid #FFD700;"><i class="fas fa-arrow-left"></i> Back to Menu</button>
 
         <div id="mainMenu" class="menu-grid">
-            <div class="menu-card" onclick="openSection('announcements')">📢<br>Announcements</div>
-            <div class="menu-card" onclick="openSection('attendance')">📸<br>Attendance</div>
+            <div class="menu-card" onclick="openSection('announcements')"><i class="fas fa-bullhorn"></i><br>Announcements</div>
+            <div class="menu-card" onclick="openSection('attendance')"><i class="fas fa-camera"></i><br>Attendance</div>
+            <a href="/my-account" class="menu-card" style="text-decoration: none; display: flex; align-items: center; justify-content: center;"><i class="fas fa-user"></i><br>Profile</a>
             <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                <a href="/admin/students" class="menu-card" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">👥<br>Master Student List</a>
+                <a href="/admin/students" class="menu-card" style="text-decoration: none; display: flex; align-items: center; justify-content: center;"><i class="fas fa-users"></i><br>Master Student List</a>
             <% } %>
         </div>
 
         <div id="announcements" class="portal-section">
-    <h2>📢 Announcements</h2>
+    <h2><i class="fas fa-bullhorn"></i> Announcements</h2>
 
     <% if (user.role === 'officer' || user.role === 'adviser') { %>
-        <div style="background: #eee; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-            <h3>Post New Update</h3>
-            <form action="/post-announcement" method="POST" enctype="multipart/form-data">
-                <input type="text" name="title" placeholder="Announcement Title" required>
-                <textarea name="message" placeholder="Write your message here..." required></textarea>
-                <input type="file" name="image" accept="image/*">
-                <button type="submit" class="post-btn">Post to Portal</button>
+        <div style="background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #2d2d2d;">
+            <h3 style="color: #FFD700; margin-top: 0;">Post New Update</h3>
+            <form action="/post-announcement" method="POST" enctype="multipart/form-data" onsubmit="return validateAnnouncementForm(event)">
+                <input type="text" name="title" placeholder="Announcement Title" required style="margin: 8px 0;">
+                <textarea name="message" placeholder="Write your message here..." required style="margin: 8px 0;"></textarea>
+                <input type="file" name="image" accept="image/*" style="margin: 8px 0;">
+                <button type="submit" class="post-btn" id="announceBtn" style="background: #FFD700; color: #121212; margin-top: 10px;">Post to Portal</button>
             </form>
         </div>
     <% } %>
 
     <div id="announcementList">
     <% announcements.forEach(post => { %>
-        <div class="card" style="border-left: 8px solid #ffcc00; margin-bottom: 15px; position: relative;">
+        <div class="announcement-item" style="position: relative;">
             
             <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                <form action="/delete-announcement" method="POST" 
-                      onsubmit="return confirm('Delete this announcement?');" 
-                      style="position: absolute; top: 10px; right: 10px;">
-                    <input type="hidden" name="announcementId" value="<%= post._id %>">
-                    <button type="submit" style="background:none; border:none; cursor:pointer; font-size: 1.2em;">🗑️</button>
-                </form>
+                <button type="button" 
+                        onclick="showDeleteAnnouncementConfirmation('<%= post._id %>')"
+                        style="position: absolute; top: 10px; right: 10px; background:none; border:none; cursor:pointer; font-size: 1.2em; color: #e0e0e0; transition: all 0.3s ease;"
+                        onmouseover="this.style.color='#ff6b6b'"
+                        onmouseout="this.style.color='#e0e0e0'">
+                    <i class="fas fa-trash"></i>
+                </button>
             <% } %>
 
             <h3><%= post.title %></h3>
@@ -269,8 +278,8 @@
                 <img src="<%= post.imageUrl %>" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">
             <% } %>
 
-            <p style="font-size: 0.8em; color: #666; margin-top: 10px;">
-                Posted by: <strong><%= post.author %></strong> on <%= post.date.toDateString() %>
+            <p style="font-size: 0.85em; margin-top: 10px;">
+                <strong>Posted by:</strong> <%= post.author %> | <strong>Date:</strong> <%= post.date.toDateString() %>
             </p>
         </div>
     <% }) %> 
@@ -282,13 +291,13 @@
 <div id="attendance" class="portal-section" style="display: none;">
         <h2>📸 Attendance System</h2>
        <% if (user.role === 'officer' || user.role === 'adviser') { %>
-    <form id="scanForm" style="background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #ffcc00; margin-bottom: 20px;">
-        <h3 style="color: #1a1a1a; margin-top: 0;">📱 Start Scanning Students</h3>
+    <form id="scanForm" style="background: #1e1e1e; padding: 20px; border-radius: 12px; border-left: 5px solid #FFD700; margin-bottom: 20px; border: 1px solid #2d2d2d;">
+        <h3 style="color: #FFD700; margin-top: 0;"><i class="fas fa-mobile-alt"></i> Start Scanning Students</h3>
         
         <div style="display: flex; flex-direction: column; gap: 15px;">
             <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Semester/Folder:</label>
-                <select id="folderSelect" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px; color: #e0e0e0;">Semester/Folder:</label>
+                <select id="folderSelect" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #2d2d2d; background: #252525; color: #e0e0e0;">
                     <option value="" disabled selected>-- Select a Folder --</option>
                     <% folders.forEach(folder => { %>
                         <option value="<%= folder._id %>"><%= folder.name %></option>
@@ -297,15 +306,15 @@
             </div>
 
             <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Event:</label>
-                <select id="eventSelect" name="eventName" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" disabled>
+                <label style="display: block; font-weight: bold; margin-bottom: 5px; color: #e0e0e0;">Event:</label>
+                <select id="eventSelect" name="eventName" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #2d2d2d; background: #252525; color: #e0e0e0;" disabled>
                     <option value="" disabled selected>-- Select Folder First --</option>
                 </select>
             </div>
 
             <div>
-                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Session Type:</label>
-                <select name="sessionType" required style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px; color: #e0e0e0;">Session Type:</label>
+                <select name="sessionType" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #2d2d2d; background: #252525; color: #e0e0e0;">
                     <option value="AM_IN">Morning Check-In (AM IN)</option>
                     <option value="AM_OUT">Morning Check-Out (AM OUT)</option>
                     <option value="PM_IN">Afternoon Check-In (PM IN)</option>
@@ -315,31 +324,29 @@
 
             <input type="hidden" id="folderIdInput" name="folderId">
 
-            <button type="submit" class="menu-card" style="background: #000; color: #ffcc00; padding: 15px; cursor: pointer; border: 2px solid #ffcc00; font-weight: bold; width: 100%; border-radius: 8px; transition: all 0.3s ease;">
-                🔍 OPEN SCANNER
+            <button type="submit" class="menu-card" style="background: #1e1e1e; color: #FFD700; padding: 15px; cursor: pointer; border: 2px solid #FFD700; font-weight: bold; width: 100%; border-radius: 12px; transition: all 0.3s ease;">
+                <i class="fas fa-search"></i> OPEN SCANNER
             </button>
         </div>
     </form>
-                <hr style="border: 1px solid #ffcc00; margin: 20px 0;">
-                <a href="/view-active-qr" style="color: #ffcc00; text-decoration: none; font-weight: bold;">🔄 Re-open Active Scanner</a>
     
-    <div class="filing-container" style="background: #f4f4f4; padding: 20px; border-radius: 10px; border-left: 5px solid #ffcc00;">
-            <h3 style="color: #1a1a1a;">📂 Master Attendance Filing</h3>
+    <div class="filing-container" style="background: #1e1e1e; padding: 20px; border-radius: 12px; border-left: 5px solid #FFD700; border: 1px solid #2d2d2d;">
+            <h3 style="color: #FFD700;"><i class="fas fa-folder"></i> Master Attendance Filing</h3>
             
             <form action="/create-folder" method="POST" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <input type="text" name="folderName" placeholder="New Semester/Folder Name" required style="flex: 1; padding: 10px; border-radius: 5px; border: 2px solid #000;">
-                <button type="submit" style="background: #ffcc00; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">+ Create</button>
+                <input type="text" name="folderName" placeholder="New Semester/Folder Name" required style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #2d2d2d; background: #252525; color: #e0e0e0;">
+                <button type="submit" style="background: #FFD700; color: #121212; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">+ Create</button>
             </form>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
                 <% folders.forEach(folder => { %>
-                    <div class="folder-card" style="background: white; border-left: 5px solid #ffcc00; border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; position: relative;">
-                        <span style="font-size: 2.5rem; display: block;">📁</span>
-                        <strong style="font-size: 0.9rem;"><%= folder.name %></strong>
+                    <div class="folder-card" style="background: #252525; border-left: 5px solid #FFD700; border: 1px solid #2d2d2d; padding: 15px; border-radius: 12px; text-align: center; position: relative;">
+                        <span style="font-size: 2.5rem; display: block; color: #FFD700;"><i class="fas fa-folder"></i></span>
+                        <strong style="font-size: 0.9rem; color: #e0e0e0;"><%= folder.name %></strong>
                         
                         <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 0.8rem;">
-                            <a href="/folder-details/<%= folder._id %>" style="color: blue; text-decoration: none;">View</a>
-                            <a href="/delete-folder/<%= folder._id %>" style="color: red; text-decoration: none;" onclick="return confirm('Delete this folder?')">Delete</a>
+                            <a href="/folder-details/<%= folder._id %>" style="color: #FFD700; text-decoration: none;">View</a>
+                            <a href="#" style="color: #ff6b6b; text-decoration: none;" onclick="showDeleteFolderConfirmation('<%= folder._id %>', '<%= folder.name %>'); return false;">Delete</a>
                         </div>
                     </div>
                 <% }) %>
@@ -347,27 +354,27 @@
         </div>
 
         <% } else { %>
-            <div style="text-align: center; padding: 20px; background: #f0f0f0; border-radius: 8px; border-left: 5px solid #ffcc00; margin-bottom: 30px;">
-                <h3 style="color: #1a1a1a; margin-top: 0;">📋 How to Mark Attendance</h3>
-                <p style="font-size: 1.1em;">Simply show your <strong>MM-ID Card</strong> to the officer when they scan attendance.</p>
-                <p style="color: #666; font-size: 0.9em;">Your MM-ID is: <strong style="color: #ffcc00;"><%= user.mmId %></strong></p>
-                <p
+            <div style="text-align: center; padding: 20px; background: #1e1e1e; border-radius: 12px; border-left: 5px solid #FFD700; margin-bottom: 30px; border: 1px solid #2d2d2d;">
+                <h3 style="color: #FFD700; margin-top: 0;"><i class="fas fa-list"></i> How to Mark Attendance</h3>
+                <p style="font-size: 1.1em; color: #e0e0e0;">Simply show your <strong>MM-ID Card</strong> to the officer when they scan attendance.</p>
+                <p style="color: #808080; font-size: 0.9em;">Your MM-ID is: <strong style="color: #FFD700;"><%= user.mmId %></strong></p>
+            </div>
             
-            <div style="text-align: center; padding: 20px; background: white; border-radius: 8px; border-left: 5px solid #ffcc00; margin-bottom: 30px;">
-                <h3 style="color: #1a1a1a; margin-top: 0;">📱 Your Attendance QR Code</h3>
-                <p style="color: #666; margin-bottom: 15px;">Show this QR code to the officer for scanning:</p>
-                <div id="qrCodeContainer" style="display: flex; justify-content: center; padding: 15px; background: #fff;"></div>
-            </div> style="color: #666;">An officer will scan your QR code to record your attendance.</p>
+            <div style="text-align: center; padding: 20px; background: #1e1e1e; border-radius: 12px; border-left: 5px solid #FFD700; margin-bottom: 30px; border: 1px solid #2d2d2d;">
+                <h3 style="color: #FFD700; margin-top: 0;"><i class="fas fa-mobile-alt"></i> Your Attendance QR Code</h3>
+                <p style="color: #808080; margin-bottom: 15px;">Show this QR code to the officer for scanning:</p>
+                <div id="qrCodeContainer" style="display: flex; justify-content: center; padding: 15px; background: #121212; border-radius: 8px;"></div>
+                <p style="color: #808080;">An officer will scan your QR code to record your attendance.</p>
             </div>
 
-   <div class="filing-container" style="background: #f4f4f4; padding: 20px; border-radius: 10px; border-left: 5px solid #ffcc00;">
-            <h3 style="color: #1a1a1a;">📊 My Attendance Section</h3>
+   <div class="filing-container" style="background: #1e1e1e; padding: 20px; border-radius: 12px; border-left: 5px solid #FFD700; border: 1px solid #2d2d2d;">
+            <h3 style="color: #FFD700;"><i class="fas fa-chart-bar"></i> My Attendance Section</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
                 <% folders.forEach(folder => { %>
-                    <div class="folder-card" style="background: white; border-left: 5px solid #ffcc00; border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center;">
-                        <span style="font-size: 2.5rem; display: block;">📁</span>
-                        <strong style="font-size: 0.9rem;"><%= folder.name %></strong>
-                        <a href="/my-attendance/<%= folder._id %>" style="display: block; margin-top: 10px; color: blue; text-decoration: none; font-size: 0.8rem;">View Records</a>
+                    <div class="folder-card" style="background: #252525; border-left: 5px solid #FFD700; border: 1px solid #2d2d2d; padding: 15px; border-radius: 12px; text-align: center;">
+                        <span style="font-size: 2.5rem; display: block; color: #FFD700;"><i class="fas fa-folder"></i></span>
+                        <strong style="font-size: 0.9rem; color: #e0e0e0;"><%= folder.name %></strong>
+                        <a href="/my-attendance/<%= folder._id %>" style="display: block; margin-top: 10px; color: #FFD700; text-decoration: none; font-size: 0.8rem;">View Records</a>
                     </div>
                 <% }) %>
             </div>
@@ -376,108 +383,38 @@
 
 </div>
 
-
-</div>
-
-<div id="attendance-records" class="portal-section" style="display: none;">
-    <h2 style="color: #ffcc00;">📊 Master Attendance List</h2>
-    <table style="width: 100%; border-collapse: collapse; color: white;">
-        <thead>
-            <tr style="border-bottom: 2px solid #ffcc00;">
-                <th>Student Name</th>
-                <th>Event</th>
-                <th>Time</th>
-                <th>Session ID</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% allAttendance.forEach(record => { %>
-                <tr style="border-bottom: 1px solid #333;">
-                    <td><%= record.studentName %></td>
-                    <td><%= record.eventName %></td>
-                    <td><%= new Date(record.timestamp).toLocaleString() %></td>
-                    <td style="font-size: 0.8em; color: #888;"><%= record.sessionId %></td>
-                </tr>
-            <% }) %>
-    </table>
 </div>
 
 <% if (user.role === 'officer' || user.role === 'adviser') { %>
 <div id="qr-codes" class="portal-section" style="display: none;">
-    <h2>🎫 Student IDs & QR Codes</h2>
-    <p style="color: #333; margin-bottom: 20px;">Manage, view, and print student QR codes with MM-IDs.</p>
+    <h2><i class="fas fa-ticket-alt"></i> Student IDs & QR Codes</h2>
+    <p style="color: #808080; margin-bottom: 20px;">Manage, view, and print student QR codes with MM-IDs.</p>
     
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
-        <a href="/student-ids" style="background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; text-align: center; transition: all 0.3s ease;">
-            <div style="font-size: 2em; margin-bottom: 10px;">📋</div>
+        <a href="/student-ids" style="background: #1e1e1e; color: #FFD700; border: 2px solid #FFD700; padding: 20px; border-radius: 12px; cursor: pointer; font-weight: bold; text-decoration: none; text-align: center; transition: all 0.3s ease; border: 1px solid #2d2d2d;">
+            <div style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-list"></i></div>
             View Student List
         </a>
         
-        <a href="/print-student-cards" style="background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; text-align: center; transition: all 0.3s ease;">
-            <div style="font-size: 2em; margin-bottom: 10px;">🖨️</div>
+        <a href="/print-student-cards" style="background: #1e1e1e; color: #FFD700; border: 2px solid #FFD700; padding: 20px; border-radius: 12px; cursor: pointer; font-weight: bold; text-decoration: none; text-align: center; transition: all 0.3s ease; border: 1px solid #2d2d2d;">
+            <div style="font-size: 2em; margin-bottom: 10px;"><i class="fas fa-print"></i></div>
             Print Mini ID Cards
         </a>
     </div>
 
-    <button onclick="loadQRCodes()" style="background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px;">
-        🔄 Refresh List
+    <button onclick="loadQRCodes()" style="background: #1e1e1e; color: #FFD700; border: 2px solid #FFD700; padding: 12px 25px; border-radius: 12px; cursor: pointer; font-weight: bold; margin-bottom: 20px;">
+        <i class="fas fa-sync-alt"></i> Refresh List
     </button>
 
-    <div id="studentQRList" style="background: white; padding: 20px; border-radius: 8px;">
-        <p style="color: #666;">Loading student data...</p>
+    <div id="studentQRList" style="background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #2d2d2d;">
+        <p style="color: #c0c0c0;">Loading student data...</p>
     </div>
 </div>
 <% } %>
 
-<div id="my-attendance" class="portal-section" style="display: none;">
-    <h2 style="color: #ffcc00;">📅 My Attendance History</h2>
-    <div class="attendance-cards">
-        <% myAttendance.forEach(record => { %>
-            <div style="background: #222; border-left: 5px solid #ffcc00; padding: 10px; margin-bottom: 10px;">
-                <h4 style="margin: 0;"><%= record.eventName %></h4>
-                <p style="margin: 5px 0; font-size: 0.9em; color: #ccc;">
-                    Checked in at: <%= new Date(record.timestamp).toLocaleString() %>
-                </p>
-                <small style="color: #666;">Ref: <%= record.sessionId %></small>
-            </div>
-        <% }) %>
-    </div>
-</div>
-
-<div id="attendance-records" class="portal-section" style="display: none;">
-    <h2 style="color: #ffcc00;">📊 Master Attendance List</h2>
-    <table style="width: 100%; border-collapse: collapse; color: white; background: #111;">
-        <thead>
-            <tr style="border-bottom: 2px solid #ffcc00; text-align: left;">
-                <th>Student Name</th>
-                <th>Event</th>
-                <th>Time</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% allAttendance.forEach(record => { %>
-                <tr style="border-bottom: 1px solid #333;">
-                    <td><%= record.studentName %></td>
-                    <td><%= record.eventName %></td>
-                    <td><%= new Date(record.timestamp).toLocaleString() %></td>
-                </tr>
-            <% }) %>
-        </tbody>
-    </table>
-</div>
-
-<div id="my-attendance" class="portal-section" style="display: none;">
-    <h2 style="color: #ffcc00;">📅 My Attendance History</h2>
-    <% myAttendance.forEach(record => { %>
-        <div style="background: #222; border-left: 5px solid #ffcc00; padding: 15px; margin-bottom: 10px;">
-            <h4 style="margin: 0; color: #ffcc00;"><%= record.eventName %></h4>
-            <p style="margin: 5px 0; color: #fff;">Status: Present</p>
-            <small style="color: #888;"><%= new Date(record.timestamp).toLocaleString() %></small>
-        </div>
-    <% }) %>
-</div>
-
  <script>
+    const userRole = '<%= user.role %>';
+    
     function openSection(id) {
         // 1. Hide the main menu grid
         const mainMenu = document.getElementById('mainMenu');
@@ -500,8 +437,8 @@
                 loadQRCodes();
             }
             
-            // 6. Generate student QR code when attendance section is opened
-            if (id === 'attendance') {
+            // 6. Generate student QR code when attendance section is opened (only for students)
+            if (id === 'attendance' && userRole !== 'officer' && userRole !== 'adviser') {
                 generateStudentQRCode();
             }
         } else {
@@ -568,13 +505,13 @@
             console.log('Rendering ' + data.students.length + ' students');
 
             let html = `
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; background: white;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; background: #1e1e1e; border-radius: 12px; overflow: hidden; border: 1px solid #2d2d2d;">
                 <thead>
-                    <tr style="background: #000; color: #ffcc00; padding: 10px; text-align: left;">
-                        <th style="padding: 12px; border: 1px solid #ddd;">Student ID</th>
-                        <th style="padding: 12px; border: 1px solid #ddd;">Student Name</th>
-                        <th style="padding: 12px; border: 1px solid #ddd;">Email</th>
-                        <th style="padding: 12px; border: 1px solid #ddd;">Action</th>
+                    <tr style="background: #252525; color: #FFD700; padding: 10px; text-align: left;">
+                        <th style="padding: 12px; border: 1px solid #2d2d2d;">Student ID</th>
+                        <th style="padding: 12px; border: 1px solid #2d2d2d;">Student Name</th>
+                        <th style="padding: 12px; border: 1px solid #2d2d2d;">Email</th>
+                        <th style="padding: 12px; border: 1px solid #2d2d2d;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -582,13 +519,13 @@
 
             data.students.forEach(student => {
                 html += `
-                    <tr style="border-bottom: 1px solid #ddd; background: white;">
-                        <td style="padding: 12px; font-weight: bold; color: #800000;">${student.mmId || 'N/A'}</td>
-                        <td style="padding: 12px; color: #333;">${student.name || 'N/A'}</td>
-                        <td style="padding: 12px; color: #333;">${student.username || 'N/A'}</td>
+                    <tr style="border-bottom: 1px solid #2d2d2d; background: #1e1e1e;">
+                        <td style="padding: 12px; font-weight: bold; color: #FFD700;">${student.mmId || 'N/A'}</td>
+                        <td style="padding: 12px; color: #e0e0e0;">${student.name || 'N/A'}</td>
+                        <td style="padding: 12px; color: #e0e0e0;">${student.username || 'N/A'}</td>
                         <td style="padding: 12px;">
-                            <a href="/api/download-qr/${student._id}" class="qr-download-btn" style="background: #ffcc00; color: #000; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
-                                📥 Download QR
+                            <a href="/api/download-qr/${student._id}" class="qr-download-btn" style="background: #FFD700; color: #121212; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
+                                <i class="fas fa-download"></i> Download QR
                             </a>
                         </td>
                     </tr>
@@ -601,7 +538,7 @@
 
         } catch (error) {
             console.error('Error loading QR codes:', error);
-            document.getElementById('studentQRList').innerHTML = '<p style="color: #c00; padding: 20px; background: #ffe0e0; border-radius: 5px;">Error loading student data: ' + error.message + '</p>';
+            document.getElementById('studentQRList').innerHTML = '<p style="color: #ff6b6b; padding: 20px; background: rgba(255,107,107,0.15); border-radius: 8px; border: 1px solid #ff6b6b;">Error loading student data: ' + error.message + '</p>';
         }
     }
 
@@ -769,6 +706,53 @@
     })();
 
 })();
+
+// Delete folder confirmation
+function showDeleteFolderConfirmation(folderId, folderName) {
+    showDeleteConfirmation({
+        title: '⚠️ Delete Folder',
+        description: `Are you sure you want to delete the folder <strong>"${folderName}"</strong>?`,
+        warning: 'This will delete the folder and all its attendance records. This action cannot be undone.',
+        buttonText: 'Yes, Delete Folder',
+        onConfirm: function() {
+            window.location.href = `/delete-folder/${folderId}`;
+        }
+    });
+}
+
+// Validate announcement form before submission
+function validateAnnouncementForm(event) {
+    const messageField = event.target.querySelector('textarea[name="message"]');
+    const messageText = messageField.value.trim();
+    
+    if (!messageText) {
+        event.preventDefault();
+        alert('Please fill in the announcement body text before posting.');
+        messageField.focus();
+        return false;
+    }
+    return true;
+}
+
+// Delete announcement confirmation
+function showDeleteAnnouncementConfirmation(announcementId) {
+    showDeleteConfirmation({
+        title: '⚠️ Delete Announcement',
+        description: 'Are you sure you want to delete this announcement?',
+        warning: 'This announcement will be permanently deleted.',
+        buttonText: 'Yes, Delete Announcement',
+        onConfirm: function() {
+            const form = document.createElement('form');
+            form.action = '/delete-announcement';
+            form.method = 'POST';
+            form.innerHTML = `<input type="hidden" name="announcementId" value="${announcementId}">`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+
 </script>
+
 </body>
 </html>

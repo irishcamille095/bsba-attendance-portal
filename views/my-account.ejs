@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Account</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
+        /* My-account-specific overrides */
         * {
             margin: 0;
             padding: 0;
@@ -13,18 +16,66 @@
         
         body { 
             font-family: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f5f5f5;
+            background: #121212;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar { 
+            width: 250px;
+            background: #000;
+            color: #FFD700;
+            height: 100vh;
+            position: fixed;
             padding: 20px;
+            border-right: 4px solid #FFD700;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            border-bottom: 2px solid #FFD700;
+            padding-bottom: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .sidebar p {
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .logout-btn {
+            background: #FFD700;
+            color: #000;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            margin-top: 30px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #ffd700;
+        }
+
+        /* Main Content */
+        .content {
+            flex: 1;
+            margin-left: 290px;
+            padding: 30px;
         }
         
         .card { 
             max-width: 600px;
-            margin: 0 auto;
-            background: white;
+            margin: 20px auto;
+            background: #1e1e1e;
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-            border-top: 6px solid #1a1a1a;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border: 1px solid #FFD700;
         }
         
         .info-group { 
@@ -32,8 +83,8 @@
         }
         
         label { 
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: #FFD700;
             display: block;
             margin-bottom: 8px;
             font-size: 0.95em;
@@ -44,30 +95,34 @@
         input[type="file"] { 
             width: 100%;
             padding: 12px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #2d2d2d;
             border-radius: 8px;
             box-sizing: border-box;
             font-family: inherit;
             font-size: 1em;
             transition: all 0.3s ease;
+            background-color: #252525;
+            color: #E0E0E0;
         }
         
         input[type="text"]:focus,
         input[type="password"]:focus,
         input[type="file"]:focus {
             outline: none;
-            border-color: #ffcc00;
-            box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1);
+            border-color: #FFD700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+            background-color: #2a2a2a;
         }
         
         input[type="text"]:disabled {
-            background: #f9f9f9;
+            background: #1a1a1a;
             cursor: not-allowed;
+            color: #E0E0E0;
         }
         
         .btn-update { 
-            background: #ffcc00;
-            color: #1a1a1a;
+            background: #FFD700;
+            color: #000;
             border: none;
             padding: 14px;
             width: 100%;
@@ -80,44 +135,50 @@
         }
         
         .btn-update:hover {
-            background: #e6b800;
+            background: #ffd700;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
         }
         
         .btn-back { 
             display: inline-block;
             margin-bottom: 20px;
-            color: #1a1a1a;
+            color: #FFD700;
             text-decoration: none;
             font-weight: 700;
-            font-size: 1.1em;
+            font-size: 1em;
             transition: all 0.3s ease;
+            background: #000;
+            border: 2px solid #FFD700;
+            padding: 12px 20px;
+            border-radius: 8px;
         }
         
         .btn-back:hover {
-            color: #ffcc00;
+            background: #FFD700;
+            color: #000;
         }
         
         h2 {
-            color: #1a1a1a;
+            color: #E0E0E0;
             margin-bottom: 15px;
+            margin-top: 15px;
             font-size: 1.8em;
         }
         
         h3 {
-            color: #1a1a1a;
+            color: #E0E0E0;
             font-size: 1.1em;
             margin-top: 25px;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #ffcc00;
+            border-bottom: 2px solid #FFD700;
         }
         
         .role-badge {
             display: inline-block;
-            background: #1a1a1a;
-            color: #ffcc00;
+            background: #FFD700;
+            color: #000;
             padding: 8px 16px;
             border-radius: 25px;
             font-size: 0.85rem;
@@ -127,12 +188,12 @@
         }
         
         .success-message {
-            background-color: #d4edda;
-            color: #155724;
+            background-color: rgba(76, 175, 80, 0.2);
+            color: #90EE90;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
-            border: 2px solid #c3e6cb;
+            border: 2px solid #4CAF50;
             text-align: center;
             font-weight: 600;
             animation: slideDown 0.3s ease;
@@ -140,15 +201,15 @@
         
         .section-divider {
             border: 0;
-            border-top: 2px solid #f0f0f0;
+            border-top: 2px solid #2d2d2d;
             margin: 30px 0;
         }
         
         .file-input-label {
             display: inline-block;
             padding: 12px 20px;
-            background: #ffcc00;
-            color: #1a1a1a;
+            background: #FFD700;
+            color: #000;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
@@ -157,7 +218,7 @@
         }
         
         .file-input-label:hover {
-            background: #e6b800;
+            background: #ffd700;
             transform: translateY(-2px);
         }
         
@@ -168,35 +229,119 @@
         .file-name {
             display: block;
             margin-top: 10px;
-            color: #666;
+            color: #A0A0A0;
             font-size: 0.9em;
         }
         
         .cor-info {
-            background: #f9f9f9;
+            background: rgba(255, 215, 0, 0.1);
             padding: 15px;
             border-radius: 8px;
-            border-left: 4px solid #ffcc00;
+            border-left: 4px solid #FFD700;
             margin-bottom: 15px;
             font-size: 0.95em;
-            color: #555;
+            color: #E0E0E0;
         }
 
-        @media (max-width: 600px) {
+        .cor-uploaded {
+            background: rgba(76, 175, 80, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4CAF50;
+            color: #E0E0E0;
+        }
+
+        .cor-uploaded a {
+            color: #FFD700;
+            font-weight: 600;
+        }
+
+        .cor-uploaded a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            body { 
+                display: block; 
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 50px;
+                width: 100%;
+                height: auto;
+                max-height: calc(100vh - 50px);
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 2000;
+                padding: 15px;
+                border-right: none;
+                border-bottom: 2px solid #FFD700;
+                overflow-y: auto;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .content {
+                margin-left: 0;
+                padding: 0;
+            }
+
             .card {
                 padding: 20px;
+                margin: 20px auto;
             }
             
             h2 {
                 font-size: 1.5em;
             }
+
+            .btn-back {
+                max-width: 100%;
+            }
+        }
+
+        /* On Desktop: Show sidebar normally */
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                position: fixed !important;
+            }
+            header button {
+                display: none !important;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <a href="/dashboard" class="btn-back">← Back to Dashboard</a>
-        <h2>My Account Details</h2>
+    <div class="sidebar" id="sidebar">
+        <h2 style="color: #FFD700;">BSBA-MM</h2>
+        <p style="color: #fff;">User: <strong><%= user.name %></strong></p>
+        <p style="color: #fff;">Role: <strong><%= user.role %></strong></p>
+        
+        <hr style="border: 1px solid #FFD700;">
+        
+        <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
+            <button type="submit" class="logout-btn" style="width: 100%; padding: 12px; background: #FFD700; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; display: block;">
+                Logout
+            </button>
+        </form>
+    </div>
+
+    <div class="content">
+        <header style="background: #FFD700; color: #121212; padding: 12px 15px; display: flex; align-items: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; margin: -30px -30px 0 -30px; padding: 12px 45px;">
+            <button onclick="toggleSidebar()" style="background: rgba(18,18,18,0.15); border: 1px solid rgba(18,18,18,0.3); color: #121212; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-right: 15px; font-size: 1.2rem;">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #121212;">Marketing Management Portal</h1>
+        </header>
+        <div class="card">
+            <a href="/dashboard" class="btn-back">← Back to Menu</a>
+            <h2>My Account Details</h2>
         
         <div class="role-badge">
             <%= user.role %>
@@ -219,20 +364,20 @@
 
         <% if (showSuccess) { %>
             <div class="success-message">
-                ✅ Password updated successfully!
+                ✓ Password updated successfully!
             </div>
         <% } %>
 
         <% if (cor_success) { %>
             <div class="success-message">
-                ✅ Certificate of Registration (COR) uploaded successfully!
+                ✓ Certificate of Registration (COR) uploaded successfully!
             </div>
         <% } %>
 
         <hr class="section-divider">
 
         <!-- Password Update Section -->
-        <h3>🔐 Change Password</h3>
+        <h3>Change Password</h3>
         <form action="/update-password" method="POST" onsubmit="return validatePasswords()">
             <div class="info-group">
                 <label>New Password:</label>
@@ -250,14 +395,14 @@
         <hr class="section-divider">
 
         <!-- COR Upload Section -->
-        <h3>📄 Certificate of Registration (COR)</h3>
+        <h3>Certificate of Registration (COR)</h3>
         <div class="cor-info">
             Please upload a PDF or image of your Certificate of Registration. This will be visible to Officers and Advisers for verification purposes.
         </div>
 
         <% if (user.corPath) { %>
-            <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ffcc00;">
-                ✓ COR already uploaded: <a href="<%= user.corPath %>" target="_blank" style="color: #1a1a1a; font-weight: 600;">View File</a>
+            <div class="cor-uploaded">
+                ✓ COR already uploaded: <a href="<%= user.corPath %>" target="_blank">View File</a>
             </div>
         <% } %>
 
@@ -272,8 +417,28 @@
             <button type="submit" class="btn-update">Upload COR</button>
         </form>
     </div>
+    </div>
 
 <script>
+    function toggleSidebar() {
+        // This looks for the div with class="sidebar" and toggles the "active" style
+        const sidebar = document.querySelector('.sidebar');
+        sidebar.classList.toggle('active');
+    }
+
+    // This closes the sidebar if you tap anywhere on the page while it's open
+    document.addEventListener('click', function(event) {
+        const sidebar = document.querySelector('.sidebar');
+        const headerBtn = document.querySelector('header button');
+        
+        if (window.innerWidth <= 768 && 
+            sidebar.classList.contains('active') && 
+            !sidebar.contains(event.target) && 
+            !headerBtn.contains(event.target)) {
+            sidebar.classList.remove('active');
+        }
+    });
+
     // Show file name when selected
     document.getElementById('cor-file').addEventListener('change', function(e) {
         const fileName = e.target.files[0]?.name || 'No file selected';
@@ -295,12 +460,12 @@
         const confirmPass = document.getElementById('confirmPass').value;
         
         if (newPass !== confirmPass) {
-            alert('❌ Passwords do not match!');
+            alert('Passwords do not match!');
             return false;
         }
         
         if (newPass.length < 6) {
-            alert('❌ Password must be at least 6 characters long!');
+            alert('Password must be at least 6 characters long!');
             return false;
         }
         
@@ -309,4 +474,5 @@
 </script>
 
 </body>
+
 </html>
