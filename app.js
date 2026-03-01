@@ -1599,8 +1599,27 @@ app.get('/download-cor/:studentId', isAuthenticated, async (req, res) => {
                 const fileId = new mongoose.Types.ObjectId(student.corPath);
                 const downloadStream = gridFSBucket.openDownloadStream(fileId);
                 
-                res.setHeader('Content-Type', 'application/octet-stream');
-                res.setHeader('Content-Disposition', `attachment; filename="${student.mmId}_COR"`);
+                // Get file info to extract metadata
+                const filesCollection = mongoose.connection.collection('cors.files');
+                const fileInfo = await filesCollection.findOne({ _id: fileId });
+                
+                let downloadFileName = `${student.mmId}_COR`;
+                let contentType = 'application/octet-stream';
+                
+                if (fileInfo && fileInfo.metadata) {
+                    // Extract original filename for proper extension
+                    if (fileInfo.metadata.originalFilename) {
+                        const ext = path.extname(fileInfo.metadata.originalFilename);
+                        downloadFileName = `${student.mmId}_COR${ext}`;
+                    }
+                    // Use stored MIME type for proper file recognition
+                    if (fileInfo.metadata.mimeType) {
+                        contentType = fileInfo.metadata.mimeType;
+                    }
+                }
+                
+                res.setHeader('Content-Type', contentType);
+                res.setHeader('Content-Disposition', `attachment; filename="${downloadFileName}"`);
                 
                 downloadStream.pipe(res);
                 
@@ -1623,7 +1642,9 @@ app.get('/download-cor/:studentId', isAuthenticated, async (req, res) => {
                     return res.status(404).json({ error: "COR file not found" });
                 }
                 
-                res.download(filePath, `${student.mmId}_COR`);
+                // Extract extension from original file path
+                const ext = path.extname(filePath);
+                res.download(filePath, `${student.mmId}_COR${ext}`);
             } catch (fileErr) {
                 console.error("File System Download Error:", fileErr);
                 return res.status(500).json({ error: "Error downloading COR" });
@@ -1668,9 +1689,28 @@ app.get('/view-cor/:userId', isAuthenticated, async (req, res) => {
                 const fileId = new mongoose.Types.ObjectId(user.corPath);
                 const downloadStream = gridFSBucket.openDownloadStream(fileId);
                 
+                // Get file info to extract metadata
+                const filesCollection = mongoose.connection.collection('cors.files');
+                const fileInfo = await filesCollection.findOne({ _id: fileId });
+                
+                let viewFileName = `${user.mmId}_COR`;
+                let contentType = 'application/octet-stream';
+                
+                if (fileInfo && fileInfo.metadata) {
+                    // Extract original filename for proper extension
+                    if (fileInfo.metadata.originalFilename) {
+                        const ext = path.extname(fileInfo.metadata.originalFilename);
+                        viewFileName = `${user.mmId}_COR${ext}`;
+                    }
+                    // Use stored MIME type for proper file recognition
+                    if (fileInfo.metadata.mimeType) {
+                        contentType = fileInfo.metadata.mimeType;
+                    }
+                }
+                
                 // Don't force download - allow inline viewing
-                res.setHeader('Content-Type', 'application/octet-stream');
-                res.setHeader('Content-Disposition', `inline; filename="${user.mmId}_COR"`);
+                res.setHeader('Content-Type', contentType);
+                res.setHeader('Content-Disposition', `inline; filename="${viewFileName}"`);
                 
                 downloadStream.pipe(res);
                 
@@ -1693,8 +1733,9 @@ app.get('/view-cor/:userId', isAuthenticated, async (req, res) => {
                     return res.status(404).json({ error: "COR file not found" });
                 }
                 
-                // Send the file for inline viewing
-                res.setHeader('Content-Disposition', `inline; filename="${user.mmId}_COR"`);
+                // Send the file for inline viewing with proper extension
+                const ext = path.extname(filePath);
+                res.setHeader('Content-Disposition', `inline; filename="${user.mmId}_COR${ext}"`);
                 res.sendFile(filePath);
             } catch (fileErr) {
                 console.error("File System View Error:", fileErr);
