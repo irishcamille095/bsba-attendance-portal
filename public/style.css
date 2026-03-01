@@ -491,20 +491,41 @@ hr {
 
     .sidebar {
         width: 66.67% !important;
-        height: calc(100vh - 50px) !important;
+        height: 100vh !important;
         position: fixed;
-        top: 50px;
+        top: 0;
         left: 0;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
         z-index: 2000;
         border-right: 3px solid #FFD700;
         border-bottom: none;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
     }
 
     .sidebar.active {
         transform: translateX(0);
         overflow-y: auto;
+    }
+    
+    .sidebar-close-btn {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        background-color: transparent;
+        border: none;
+        color: #FFD700;
+        font-size: 1.8rem;
+        cursor: pointer;
+        padding: 8px;
+        z-index: 2001;
+        display: none;
+    }
+    
+    .sidebar.active .sidebar-close-btn {
+        display: block;
     }
 
     .content {

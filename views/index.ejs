@@ -40,8 +40,10 @@
         
         /* Mobile Styles */
         @media (max-width: 768px) {
-            .sidebar { width: 100%; height: auto; position: fixed; top: 50px; left: 0; transform: translateX(-100%); max-height: calc(100vh - 50px); border: none; }
-            .sidebar.active { transform: translateX(0); z-index: 999; }
+            .sidebar { width: 66.67%; height: 100vh; position: fixed; top: 0; left: 0; transform: translateX(-100%); border: none; padding: 20px; z-index: 999; }
+            .sidebar.active { transform: translateX(0); overflow-y: auto; }
+            .sidebar-close-btn { display: none; }
+            .sidebar.active .sidebar-close-btn { display: block; }
             .header-top { display: flex; }
             .main { margin-left: 0; padding: 15px 10px; }
             .header { padding: 15px; }
@@ -88,6 +90,7 @@
     </div>
     
     <div class="sidebar" id="sidebar">
+        <button class="sidebar-close-btn" onclick="toggleSidebar()" style="position: fixed; top: 15px; left: 15px; background: none; border: none; color: white; font-size: 1.8em; cursor: pointer; padding: 5px; z-index: 1001; display: none;"><i class="fas fa-times"></i></button>
     <a href="/dashboard">Dashboard</a>
     <a href="/my-attendance">My Attendance</a>
     <a href="/profile">My Profile</a>

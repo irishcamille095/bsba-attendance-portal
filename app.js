@@ -1289,23 +1289,75 @@ app.post('/upload-file', upload.single('file'), async (req, res) => {
     }
 });
 
+// CSV field escape function
+function escapeCSV(field) {
+    if (field === null || field === undefined || field === '---') return '---';
+    const fieldStr = String(field);
+    // If field contains comma, newline, or quotes, wrap in quotes and escape internal quotes
+    if (fieldStr.includes(',') || fieldStr.includes('\n') || fieldStr.includes('"')) {
+        return '"' + fieldStr.replace(/"/g, '""') + '"';
+    }
+    return fieldStr;
+}
+
 app.get('/download-attendance/:folderId', isAuthenticated, async (req, res) => {
     try {
         const eventName = req.query.event;
-        const records = await Attendance.find({ eventName }).sort({ userName: 1 });
+        const records = await Attendance.find({ eventName }).sort({ studentId: 1 });
+
+        // Group records by student (same logic as folder-details view)
+        const studentMap = {};
+        records.forEach(record => {
+            if (!studentMap[record.studentId]) {
+                studentMap[record.studentId] = {
+                    studentId: record.studentId,
+                    studentName: record.studentName,
+                    amIn: null,
+                    amOut: null,
+                    pmIn: null,
+                    pmOut: null
+                };
+            }
+            
+            if (record.sessionType === 'AM_IN') studentMap[record.studentId].amIn = record.timestamp;
+            if (record.sessionType === 'AM_OUT') studentMap[record.studentId].amOut = record.timestamp;
+            if (record.sessionType === 'PM_IN') studentMap[record.studentId].pmIn = record.timestamp;
+            if (record.sessionType === 'PM_OUT') studentMap[record.studentId].pmOut = record.timestamp;
+        });
+
+        // Convert to array and sort by studentId
+        const attendanceData = Object.values(studentMap).sort((a, b) => {
+            const aNum = parseInt(a.studentId.split('-')[1]) || 0;
+            const bNum = parseInt(b.studentId.split('-')[1]) || 0;
+            return aNum - bNum;
+        });
 
         // Create CSV Header
-        let csvContent = "Student Name,Session Type,Timestamp\n";
+        let csvContent = "Student ID,Student Name,AM IN,AM OUT,PM IN,PM OUT\n";
 
-        // Add records to CSV
-        records.forEach(r => {
-            csvContent += `${r.userName},${r.sessionType},${new Date(r.timestamp).toLocaleString()}\n`;
+        // Add records to CSV with Philippines timezone formatting (same as table display)
+        attendanceData.forEach(record => {
+            const amIn = formatToPhilippinesTime(record.amIn);
+            const amOut = formatToPhilippinesTime(record.amOut);
+            const pmIn = formatToPhilippinesTime(record.pmIn);
+            const pmOut = formatToPhilippinesTime(record.pmOut);
+            
+            // Properly escape CSV fields
+            const studentId = escapeCSV(record.studentId);
+            const studentName = escapeCSV(record.studentName);
+            const amInCSV = escapeCSV(amIn);
+            const amOutCSV = escapeCSV(amOut);
+            const pmInCSV = escapeCSV(pmIn);
+            const pmOutCSV = escapeCSV(pmOut);
+            
+            csvContent += `${studentId},${studentName},${amInCSV},${amOutCSV},${pmInCSV},${pmOutCSV}\n`;
         });
 
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename=${eventName}_Attendance.csv`);
         res.status(200).send(csvContent);
     } catch (err) {
+        console.error('Error generating CSV:', err);
         res.status(500).send("Error generating download");
     }
 });
@@ -1997,6 +2049,43 @@ app.get('/delete-event/:id/:folderId', async (req, res) => {
     } catch (err) {
         console.log(err);
         res.status(500).send("Error deleting event");
+    }
+});
+
+// === REMOVE ATTENDANCE ROUTE (Removes attendance records for a student at a specific event only) ===
+app.post('/remove-attendance', isAuthenticated, async (req, res) => {
+    try {
+        // Security check: only officers/advisers can remove attendance
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ success: false, error: 'Unauthorized' });
+        }
+
+        const { studentId, eventName } = req.body;
+
+        if (!studentId || !eventName) {
+            return res.status(400).json({ success: false, error: 'Missing studentId or eventName' });
+        }
+
+        // Delete all attendance records for this student at this specific event
+        const result = await Attendance.deleteMany({
+            studentId: studentId,
+            eventName: eventName
+        });
+
+        if (result.deletedCount > 0) {
+            res.json({ 
+                success: true, 
+                message: `Removed attendance for ${studentId} at event "${eventName}"`
+            });
+        } else {
+            res.json({ 
+                success: false, 
+                error: 'No attendance records found to delete'
+            });
+        }
+    } catch (err) {
+        console.error("Error removing attendance:", err);
+        res.status(500).json({ success: false, error: 'Error removing attendance' });
     }
 });
 

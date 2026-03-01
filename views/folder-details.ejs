@@ -887,6 +887,7 @@
 
             <h1>📁 <%= folder.name %></h1>
 
+        <% if (!selectedEvent) { %>
             <% if (user.role === 'officer' || user.role === 'adviser') { %>
                 <div class="create-event-section">
                     <h3 style="margin-top: 0;">➕ Create New Event</h3>
@@ -896,9 +897,8 @@
                         <button type="submit" style="padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">✓ Create</button>
                     </form>
                 </div>
-        <% } %>
+            <% } %>
 
-        <% if (!selectedEvent) { %>
             <h3>📅 Events in this Folder:</h3>
             <p style="color: #999; font-size: 0.9em;">Click an event to view attendance records.</p>
             <div style="margin-top: 20px;">
@@ -999,7 +999,7 @@
                                     <td data-label="PM OUT"><%= formatPhilippinesTime(record.pmOut) %></td>
                                     <% if (user.role === 'officer' || user.role === 'adviser') { %>
                                         <td class="action-cell" data-label="Actions">
-                                            <button type="button" class="btn-delete" onclick="openDeleteModal('<%= record.studentId %>', '<%= record.studentName %>')">
+                                            <button type="button" class="btn-delete" onclick="openDeleteModal('<%= record.studentId %>', '<%= record.studentName %>', '<%= selectedEvent %>')">
                                                 🗑️ Remove
                                             </button>
                                         </td>
@@ -1037,24 +1037,28 @@
         });
     }
 
-    function openDeleteModal(studentId, studentName) {
+    function openDeleteModal(studentId, studentName, eventName) {
         showDeleteConfirmation({
-            title: '⚠️ Delete Student',
-            description: `Are you sure you want to remove <strong>${studentName}</strong> (${studentId})?`,
-            warning: 'This will delete the student from the database and clear all their attendance records. This action cannot be undone.',
-            buttonText: 'Yes, Delete Student',
+            title: '⚠️ Remove Attendance',
+            description: `Are you sure you want to remove the attendance records for <strong>${studentName}</strong> (${studentId}) from the event <strong>"${eventName}"</strong>?`,
+            warning: 'This will only remove the attendance records at this event. The student account will remain in the system. This action cannot be undone.',
+            buttonText: 'Yes, Remove Attendance',
             onConfirm: function() {
-                confirmDelete(studentId);
+                confirmDelete(studentId, eventName);
             }
         });
     }
 
-    function confirmDelete(studentId) {
-        fetch(`/delete-student/${studentId}`, {
+    function confirmDelete(studentId, eventName) {
+        fetch(`/remove-attendance`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({
+                studentId: studentId,
+                eventName: eventName
+            })
         })
         .then(response => response.json())
         .then(result => {

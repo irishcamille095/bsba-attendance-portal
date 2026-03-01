@@ -478,18 +478,18 @@
             body { display: block; }
             
             .sidebar {
-                width: 100%;
-                height: auto;
+                width: 66.67% !important;
+                height: 100vh !important;
                 position: fixed;
                 left: 0;
-                top: 50px;
-                max-height: calc(100vh - 50px);
+                top: 0;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
                 z-index: 2000;
-                padding: 15px;
-                border-right: none;
-                border-bottom: 2px solid #FFD700;
+                padding: 20px;
+                border-right: 4px solid #FFD700;
+                border-bottom: none;
+                overflow-y: auto;
             }
 
             .sidebar.active {
@@ -697,6 +697,7 @@
 <body>
 
     <div class="sidebar" id="sidebar">
+    <button class="sidebar-close-btn" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
     <h2 style="color: #FFD700;">BSBA-MM</h2>
     <p style="color: #e0e0e0;">User: <strong><%= user.name %></strong></p>
     <p style="color: #e0e0e0;">Role: <strong><%= user.role %></strong></p>

@@ -106,6 +106,24 @@
             box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
         }
         
+        .btn-update:disabled,
+        .btn-update-disabled {
+            background: #808080;
+            cursor: not-allowed;
+            color: #e0e0e0;
+        }
+        
+        .btn-update-disabled:hover {
+            background: #808080;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-cor-upload {
+            width: auto;
+            padding: 12px 25px;
+        }
+        
         .btn-back { 
             display: inline-block;
             margin-bottom: 20px;
@@ -233,23 +251,40 @@
             }
 
             .sidebar {
+                width: 66.67%;
                 position: fixed;
                 left: 0;
-                top: 50px;
-                width: 100%;
-                height: auto;
-                max-height: calc(100vh - 50px);
+                top: 0;
+                height: 100vh;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
                 z-index: 2000;
                 padding: 15px;
-                border-right: none;
-                border-bottom: 2px solid #ffcc00;
+                border-right: 2px solid #ffcc00;
+                border-bottom: none;
                 overflow-y: auto;
             }
 
             .sidebar.active {
                 transform: translateX(0);
+            }
+            
+            .sidebar-close-btn {
+                position: fixed;
+                top: 15px;
+                left: 15px;
+                background-color: transparent;
+                border: none;
+                color: #ffcc00;
+                font-size: 1.8rem;
+                cursor: pointer;
+                padding: 8px;
+                z-index: 2001;
+                display: none;
+            }
+            
+            .sidebar.active .sidebar-close-btn {
+                display: block;
             }
 
             .content {
@@ -311,6 +346,7 @@
 </head>
 <body>
     <div class="sidebar" id="sidebar">
+        <button class="sidebar-close-btn" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
         <h2 style="color: #ffcc00;">BSBA-MM</h2>
         <p style="color: #e0e0e0;">User: <strong><%= user.name %></strong></p>
         <p style="color: #e0e0e0;">Role: <strong><%= user.role %></strong></p>
@@ -420,7 +456,7 @@
                 <span class="file-name" id="file-name">No file selected</span>
             </div>
 
-            <button type="submit" class="btn-update">Upload COR</button>
+            <button type="submit" id="cor-submit-btn" class="btn-update btn-update-disabled btn-cor-upload">Upload COR</button>
         </form>
     </div>
     </div>
@@ -445,10 +481,18 @@
         }
     });
 
-    // Show file name when selected
+    // Show file name when selected and toggle button state
     document.getElementById('cor-file').addEventListener('change', function(e) {
         const fileName = e.target.files[0]?.name || 'No file selected';
         document.getElementById('file-name').textContent = fileName;
+        
+        // Toggle button state based on file selection
+        const submitBtn = document.getElementById('cor-submit-btn');
+        if (e.target.files.length > 0) {
+            submitBtn.classList.remove('btn-update-disabled');
+        } else {
+            submitBtn.classList.add('btn-update-disabled');
+        }
     });
 
     // 1. Get the current URL search parameters
