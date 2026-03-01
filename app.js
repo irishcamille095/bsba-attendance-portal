@@ -36,9 +36,15 @@ const app = express();
 // IMPORTANT: Replace <password> with the password you created in MongoDB!
 const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://irishcamille095:February095@cluster0.c33gokn.mongodb.net/?appName=Cluster0';
 
+let gridFSBucket; // GridFS bucket for storing COR files
+
 mongoose.connect(mongoURI)
     .then(async () => {
         console.log('[SUCCESS] Connected to MongoDB Cloud!');
+        
+        // Initialize GridFS bucket for COR file storage
+        gridFSBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'cors' });
+        console.log('[SUCCESS] GridFS bucket initialized for COR storage!');
         
         async function initializeStudentIDPool() {
             try {
@@ -262,16 +268,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Multer configuration for COR uploads (Certificate of Registration)
-const corStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'public/uploads/cor/'); // COR files go to this folder
-    },
-    filename: (req, file, cb) => {
-        // File naming: mmId_timestamp_originalname
-        const mmId = req.session.user.mmId || 'unknown';
-        cb(null, `${mmId}_${Date.now()}_${file.originalname}`);
-    }
-});
+const corStorage = multer.memoryStorage(); // Store uploaded files in memory before piping to GridFS
 
 const uploadCor = multer({ 
     storage: corStorage,
@@ -1473,7 +1470,7 @@ app.post('/update-password', async (req, res) => {
     }
 });
 
-// COR Upload Route - Students can upload their COR
+// COR Upload Route - Students can upload their COR to MongoDB GridFS
 app.post('/upload-cor', isAuthenticated, uploadCor.single('cor'), async (req, res) => {
     try {
         // Security: Only students can upload their own COR
@@ -1485,32 +1482,100 @@ app.post('/upload-cor', isAuthenticated, uploadCor.single('cor'), async (req, re
             return res.status(400).send("❌ No file selected");
         }
 
-        const userId = req.session.user._id;
-        const corPath = `/uploads/cor/${req.file.filename}`;
-
-        // Update user's corPath in database
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { corPath: corPath },
-            { new: true }
-        );
-
-        if (!updatedUser) {
-            return res.status(404).send("User not found");
+        if (!gridFSBucket) {
+            return res.status(500).send("❌ File storage service is not available");
         }
 
-        // Update session
-        req.session.user.corPath = corPath;
+        const userId = req.session.user._id;
+        const mmId = req.session.user.mmId || 'unknown';
+        
+        // Get the user's previous COR file ID (if any) to delete it
+        const user = await User.findById(userId);
+        const oldCORFileId = user?.corPath;
+        
+        // Create a readable stream from the uploaded file buffer
+        const { Readable } = require('stream');
+        const readStream = Readable.from(req.file.buffer);
+        
+        // Create GridFS upload stream with unique filename
+        const uploadStream = gridFSBucket.openUploadStream(
+            `COR_${mmId}_${Date.now()}_${req.file.originalname}`,
+            {
+                metadata: {
+                    userId: userId.toString(),
+                    mmId: mmId,
+                    uploadedAt: new Date(),
+                    originalFilename: req.file.originalname,
+                    mimeType: req.file.mimetype
+                }
+            }
+        );
+        
+        // Pipe the file to GridFS
+        readStream.pipe(uploadStream);
+        
+        uploadStream.on('finish', async () => {
+            try {
+                // Store the file ID in the database
+                const corFileId = uploadStream.id.toString();
+                
+                // Delete old COR file from GridFS if it exists and is a GridFS ID
+                if (oldCORFileId && mongoose.Types.ObjectId.isValid(oldCORFileId) && oldCORFileId.length === 24) {
+                    try {
+                        const oldFileId = new mongoose.Types.ObjectId(oldCORFileId);
+                        await gridFSBucket.delete(oldFileId);
+                        console.log(`[INFO] Deleted old COR file from GridFS: ${oldFileId}`);
+                    } catch (deleteErr) {
+                        console.error("Error deleting old COR file:", deleteErr);
+                        // Continue anyway - the old file won't affect the new one
+                    }
+                } else if (oldCORFileId && oldCORFileId.startsWith('/uploads/')) {
+                    // Delete old disk-based file if it exists
+                    try {
+                        const oldFilePath = path.join(__dirname, 'public', oldCORFileId);
+                        if (fs.existsSync(oldFilePath)) {
+                            fs.unlinkSync(oldFilePath);
+                            console.log(`[INFO] Deleted old COR file from disk: ${oldFilePath}`);
+                        }
+                    } catch (diskErr) {
+                        console.error("Error deleting old disk COR file:", diskErr);
+                        // Continue anyway
+                    }
+                }
+                
+                // Update user's corFileId in database
+                const updatedUser = await User.findByIdAndUpdate(
+                    userId,
+                    { corPath: corFileId }, // Store GridFS file ID instead of path
+                    { new: true }
+                );
 
-        // Redirect back to my-account with success
-        res.redirect('/my-account?cor_success=true');
+                if (!updatedUser) {
+                    return res.status(404).send("User not found");
+                }
+
+                // Update session
+                req.session.user.corPath = corFileId;
+
+                // Redirect back to my-account with success
+                res.redirect('/my-account?cor_success=true');
+            } catch (err) {
+                console.error("COR Database Update Error:", err);
+                res.status(500).send("Error saving COR: " + err.message);
+            }
+        });
+        
+        uploadStream.on('error', (err) => {
+            console.error("COR GridFS Upload Error:", err);
+            res.status(500).send("Error uploading COR: " + err.message);
+        });
     } catch (err) {
         console.error("COR Upload Error:", err);
         res.status(500).send("Error uploading COR: " + err.message);
     }
 });
 
-// COR Download Route - Officers and advisers can download student COR
+// COR Download Route - Officers and advisers can download student COR (supports both GridFS and old disk files)
 app.get('/download-cor/:studentId', isAuthenticated, async (req, res) => {
     try {
         // Security: Only officers and advisers can download COR
@@ -1525,18 +1590,119 @@ app.get('/download-cor/:studentId', isAuthenticated, async (req, res) => {
             return res.status(404).json({ error: "COR not found" });
         }
 
-        // Send the file - construct the full path correctly
-        const filePath = path.join(__dirname, 'public', student.corPath);
-        
-        // Check if file exists before attempting download
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ error: "COR file not found on server" });
+        // Check if corPath is a GridFS ObjectId (new format) or file path (old format)
+        const isGridFSId = mongoose.Types.ObjectId.isValid(student.corPath) && student.corPath.length === 24;
+
+        if (isGridFSId && gridFSBucket) {
+            try {
+                // Download from GridFS (new format)
+                const fileId = new mongoose.Types.ObjectId(student.corPath);
+                const downloadStream = gridFSBucket.openDownloadStream(fileId);
+                
+                res.setHeader('Content-Type', 'application/octet-stream');
+                res.setHeader('Content-Disposition', `attachment; filename="${student.mmId}_COR"`);
+                
+                downloadStream.pipe(res);
+                
+                downloadStream.on('error', (err) => {
+                    console.error("COR Download Stream Error:", err);
+                    if (!res.headersSent) {
+                        res.status(404).json({ error: "COR file not found" });
+                    }
+                });
+            } catch (gridErr) {
+                console.error("GridFS Download Error:", gridErr);
+                return res.status(500).json({ error: "Error downloading COR" });
+            }
+        } else if (student.corPath.startsWith('/uploads/')) {
+            // Download from file system (old format for backward compatibility)
+            try {
+                const filePath = path.join(__dirname, 'public', student.corPath);
+                
+                if (!fs.existsSync(filePath)) {
+                    return res.status(404).json({ error: "COR file not found" });
+                }
+                
+                res.download(filePath, `${student.mmId}_COR`);
+            } catch (fileErr) {
+                console.error("File System Download Error:", fileErr);
+                return res.status(500).json({ error: "Error downloading COR" });
+            }
+        } else {
+            return res.status(400).json({ error: "Invalid COR file format" });
         }
-        
-        res.download(filePath, `${student.mmId}_COR`);
     } catch (err) {
         console.error("COR Download Error:", err);
-        res.status(500).json({ error: "Error downloading COR" });
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Error downloading COR" });
+        }
+    }
+});
+
+// COR Delete Route - Students can delete their own COR (supports both GridFS and old disk files)
+app.post('/delete-cor', isAuthenticated, async (req, res) => {
+    try {
+        // Security: Only students can delete their own COR
+        if (req.session.user.role !== 'student') {
+            return res.status(403).json({ success: false, message: "Only students can delete COR" });
+        }
+
+        const userId = req.session.user._id;
+        
+        // Get user's current COR file ID or path
+        const user = await User.findById(userId);
+        
+        if (!user || !user.corPath) {
+            return res.status(404).json({ success: false, message: "No COR file found" });
+        }
+
+        // Check if corPath is a GridFS ObjectId (new format) or file path (old format)
+        const isGridFSId = mongoose.Types.ObjectId.isValid(user.corPath) && user.corPath.length === 24;
+
+        if (isGridFSId && gridFSBucket) {
+            // Delete from GridFS (new format)
+            try {
+                const fileId = new mongoose.Types.ObjectId(user.corPath);
+                await gridFSBucket.delete(fileId);
+                console.log(`[INFO] Deleted COR file from GridFS: ${fileId}`);
+            } catch (gridErr) {
+                console.error("Error deleting COR file from GridFS:", gridErr);
+                // Continue with database update even if file deletion fails
+            }
+        } else if (user.corPath.startsWith('/uploads/')) {
+            // Delete from file system (old format for backward compatibility)
+            try {
+                const filePath = path.join(__dirname, 'public', user.corPath);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                    console.log(`[INFO] Deleted COR file from disk: ${filePath}`);
+                }
+            } catch (fileErr) {
+                console.error("Error deleting COR file from disk:", fileErr);
+                // Continue with database update even if file deletion fails
+            }
+        } else {
+            console.warn("Unknown COR file format:", user.corPath);
+        }
+
+        // Clear the corPath in the database
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { corPath: null },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Update session
+        req.session.user.corPath = null;
+
+        return res.json({ success: true, message: "COR deleted successfully" });
+    } catch (err) {
+        console.error("COR Delete Error:", err);
+        res.status(500).json({ success: false, message: "Error deleting COR: " + err.message });
     }
 });
 

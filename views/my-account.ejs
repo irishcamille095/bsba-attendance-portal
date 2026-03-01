@@ -245,6 +245,31 @@
             text-decoration: underline;
         }
 
+        .cor-action-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .btn-delete-cor {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-delete-cor:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
         @media (max-width: 768px) {
             body { 
                 display: block; 
@@ -444,7 +469,11 @@
 
         <% if (user.corPath) { %>
             <div class="cor-uploaded">
-                ✓ COR already uploaded: <a href="<%= user.corPath %>" target="_blank">View File</a>
+                ✓ COR already uploaded: 
+                <div class="cor-action-buttons">
+                    <a href="<%= user.corPath %>" target="_blank">View File</a>
+                    <button type="button" class="btn-delete-cor" onclick="deleteCOR()">Delete</button>
+                </div>
             </div>
         <% } %>
 
@@ -530,6 +559,25 @@
         
         return true;
     }
+
+    function deleteCOR() {
+        if (confirm('Are you sure you want to delete this COR? You can upload a new one.')) {
+            fetch('/delete-cor', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('COR deleted successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error deleting COR: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error deleting COR: ' + error);
+                });
+        }
+    }
+
 </script>
 
 </body>
