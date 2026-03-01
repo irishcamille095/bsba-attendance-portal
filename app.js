@@ -1473,9 +1473,9 @@ app.post('/update-password', async (req, res) => {
 // COR Upload Route - Students can upload their COR to MongoDB GridFS
 app.post('/upload-cor', isAuthenticated, uploadCor.single('cor'), async (req, res) => {
     try {
-        // Security: Only students can upload their own COR
-        if (req.session.user.role !== 'student') {
-            return res.status(403).send("❌ Only students can upload COR");
+        // Security: Students and officers can upload their own COR
+        if (req.session.user.role !== 'student' && req.session.user.role !== 'officer') {
+            return res.status(403).send("❌ Only students and officers can upload COR");
         }
 
         if (!req.file) {
@@ -1635,6 +1635,78 @@ app.get('/download-cor/:studentId', isAuthenticated, async (req, res) => {
         console.error("COR Download Error:", err);
         if (!res.headersSent) {
             res.status(500).json({ error: "Error downloading COR" });
+        }
+    }
+});
+
+// COR View Route - Anyone can view their own COR file (for inline viewing)
+app.get('/view-cor/:userId', isAuthenticated, async (req, res) => {
+    try {
+        // Security: Users can only view their own COR, or officers/advisers can view any student's COR
+        if (req.session.user._id.toString() !== req.params.userId && 
+            req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        if (!gridFSBucket) {
+            return res.status(500).json({ error: "File storage service is not available" });
+        }
+
+        // Get user data including corPath
+        const user = await User.findById(req.params.userId);
+
+        if (!user || !user.corPath) {
+            return res.status(404).json({ error: "COR not found" });
+        }
+
+        // Check if corPath is a GridFS ObjectId (new format) or file path (old format)
+        const isGridFSId = mongoose.Types.ObjectId.isValid(user.corPath) && user.corPath.length === 24;
+
+        if (isGridFSId && gridFSBucket) {
+            try {
+                // View from GridFS (new format) - inline view
+                const fileId = new mongoose.Types.ObjectId(user.corPath);
+                const downloadStream = gridFSBucket.openDownloadStream(fileId);
+                
+                // Don't force download - allow inline viewing
+                res.setHeader('Content-Type', 'application/octet-stream');
+                res.setHeader('Content-Disposition', `inline; filename="${user.mmId}_COR"`);
+                
+                downloadStream.pipe(res);
+                
+                downloadStream.on('error', (err) => {
+                    console.error("COR View Stream Error:", err);
+                    if (!res.headersSent) {
+                        res.status(404).json({ error: "COR file not found" });
+                    }
+                });
+            } catch (gridErr) {
+                console.error("GridFS View Error:", gridErr);
+                return res.status(500).json({ error: "Error viewing COR" });
+            }
+        } else if (user.corPath.startsWith('/uploads/')) {
+            // View from file system (old format for backward compatibility)
+            try {
+                const filePath = path.join(__dirname, 'public', user.corPath);
+                
+                if (!fs.existsSync(filePath)) {
+                    return res.status(404).json({ error: "COR file not found" });
+                }
+                
+                // Send the file for inline viewing
+                res.setHeader('Content-Disposition', `inline; filename="${user.mmId}_COR"`);
+                res.sendFile(filePath);
+            } catch (fileErr) {
+                console.error("File System View Error:", fileErr);
+                return res.status(500).json({ error: "Error viewing COR" });
+            }
+        } else {
+            return res.status(400).json({ error: "Invalid COR file format" });
+        }
+    } catch (err) {
+        console.error("COR View Error:", err);
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Error viewing COR" });
         }
     }
 });

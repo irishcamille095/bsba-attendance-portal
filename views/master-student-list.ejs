@@ -303,6 +303,38 @@
             margin-top: 5px;
         }
 
+        /* Sticky Pagination Navigation */
+        .pagination-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e1e1e;
+            border-top: 2px solid #FFD700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 20px;
+            flex-wrap: wrap;
+            z-index: 500;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .page-info {
+            padding: 12px 24px;
+            background: #252525;
+            border-radius: 8px;
+            color: #e0e0e0;
+            border: 1px solid #2d2d2d;
+            white-space: nowrap;
+        }
+
+        /* Adjust content to account for fixed pagination bar */
+        body {
+            padding-bottom: 90px;
+        }
+
         /* Modal */
         .modal {
             display: none;
@@ -619,6 +651,29 @@
                 padding: 6px 10px;
                 margin: 0;
             }
+
+            /* Mobile pagination nav adjustments */
+            .pagination-nav {
+                padding: 12px 10px;
+                gap: 8px;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
+
+            .page-info {
+                padding: 10px 12px;
+                font-size: 0.9em;
+            }
+
+            .btn {
+                padding: 10px 12px;
+                font-size: 0.9em;
+            }
+
+            body {
+                padding-bottom: 80px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -679,6 +734,28 @@
                 width: 100%;
                 text-align: center;
                 margin-bottom: 0;
+            }
+
+            /* Extra small screen pagination nav adjustments */
+            .pagination-nav {
+                padding: 10px 8px;
+                gap: 6px;
+            }
+
+            .page-info {
+                padding: 8px 10px;
+                font-size: 0.85em;
+                order: -1;
+                flex-basis: 100%;
+            }
+
+            .btn {
+                padding: 9px 10px;
+                font-size: 0.85em;
+            }
+
+            body {
+                padding-bottom: 85px;
             }
         }
 
@@ -830,13 +907,13 @@
         </div>
 
         <!-- Pagination Controls -->
-        <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+        <div class="pagination-nav">
             <% if (page > 1) { %>
                 <a href="/admin/students?page=1" class="btn btn-secondary">⏮️ First</a>
                 <a href="/admin/students?page=<%= page - 1 %>" class="btn btn-secondary">◀ Previous</a>
             <% } %>
             
-            <span style="padding: 12px 24px; background: #252525; border-radius: 8px; align-self: center; color: #e0e0e0; border: 1px solid #2d2d2d;">
+            <span class="page-info">
                 Page <%= page %> of <%= totalPages %> (50 students per page)
             </span>
             
