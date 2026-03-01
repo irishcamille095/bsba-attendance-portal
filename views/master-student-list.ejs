@@ -112,6 +112,7 @@
             overflow: hidden;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            margin-bottom: 5px;
         }
 
         table {
@@ -276,7 +277,8 @@
             background: #1e1e1e;
             padding: 15px;
             border-radius: 8px;
-            margin-top: 20px;
+            margin-top: 0;
+            margin-bottom: 120px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
@@ -313,26 +315,41 @@
             border-top: 2px solid #FFD700;
             display: flex;
             justify-content: center;
-            align-items: center;
-            gap: 10px;
-            padding: 15px 20px;
-            flex-wrap: wrap;
+            align-items: stretch;
+            gap: 0;
+            padding: 0;
+            flex-wrap: nowrap;
             z-index: 500;
             box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.4);
+            height: 80px;
+        }
+
+        .pagination-nav a.btn,
+        .pagination-nav .btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1;
+            padding: 0;
+            border-radius: 0;
+            border-right: 1px solid #2d2d2d;
+            font-size: 1.2em;
+            height: 80px;
+        }
+
+        .pagination-nav a.btn:last-child,
+        .pagination-nav .btn:last-child {
+            border-right: none;
         }
 
         .page-info {
-            padding: 12px 24px;
-            background: #252525;
-            border-radius: 8px;
-            color: #e0e0e0;
-            border: 1px solid #2d2d2d;
-            white-space: nowrap;
+            display: none;
         }
 
         /* Adjust content to account for fixed pagination bar */
         body {
-            padding-bottom: 90px;
+            padding-bottom: 0;
         }
 
         /* Modal */
@@ -654,25 +671,27 @@
 
             /* Mobile pagination nav adjustments */
             .pagination-nav {
-                padding: 12px 10px;
-                gap: 8px;
-                bottom: 0;
-                left: 0;
-                right: 0;
+                padding: 0;
+                gap: 0;
+                height: 70px;
+            }
+
+            .pagination-nav a.btn,
+            .pagination-nav .btn {
+                height: 70px;
+                font-size: 1em;
             }
 
             .page-info {
-                padding: 10px 12px;
-                font-size: 0.9em;
+                display: none;
             }
 
-            .btn {
-                padding: 10px 12px;
-                font-size: 0.9em;
+            .table-container {
+                margin-bottom: 90px;
             }
 
-            body {
-                padding-bottom: 80px;
+            .stats {
+                margin-bottom: 90px;
             }
         }
 
@@ -738,24 +757,27 @@
 
             /* Extra small screen pagination nav adjustments */
             .pagination-nav {
-                padding: 10px 8px;
-                gap: 6px;
+                padding: 0;
+                gap: 0;
+                height: 60px;
+            }
+
+            .pagination-nav a.btn,
+            .pagination-nav .btn {
+                height: 60px;
+                font-size: 0.9em;
             }
 
             .page-info {
-                padding: 8px 10px;
-                font-size: 0.85em;
-                order: -1;
-                flex-basis: 100%;
+                display: none;
             }
 
-            .btn {
-                padding: 9px 10px;
-                font-size: 0.85em;
+            .stats {
+                margin-bottom: 80px;
             }
 
-            body {
-                padding-bottom: 85px;
+            .table-container {
+                margin-bottom: 80px;
             }
         }
 
