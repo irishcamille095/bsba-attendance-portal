@@ -292,7 +292,8 @@ const AnnouncementSchema = new mongoose.Schema({
     message: String,
     imageUrl: String,
     date: { type: Date, default: Date.now },
-    author: String
+    author: String,
+    viewedBy: { type: [String], default: [] } // Array of user IDs who have viewed this announcement
 });
 const Announcement = mongoose.model('Announcement', AnnouncementSchema);
 
@@ -382,7 +383,17 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
         const allAttendance = await Attendance.find().sort({ timestamp: -1 });
         const myAttendance = await Attendance.find({ studentId: user.mmId }).sort({ timestamp: -1 });
 
-        // 3. Render the page once with ALL variables
+        // 3. Count notification items
+        let pendingResetRequestsCount = 0;
+        if (user.role === 'adviser' || user.role === 'officer') {
+            pendingResetRequestsCount = await User.countDocuments({ resetRequest: true });
+        }
+        // Count only unviewed announcements for this user (handle missing viewedBy for old announcements)
+        const newAnnouncementsCount = announcements.filter(ann => 
+            !ann.viewedBy || !ann.viewedBy.includes(user._id.toString())
+        ).length;
+
+        // 4. Render the page once with ALL variables
         res.render('dashboard', { 
             user, 
             announcements, 
@@ -394,7 +405,9 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
             myAttendance,
             user: req.session.user,
             folders: folders,
-            events: events
+            events: events,
+            pendingResetRequestsCount: pendingResetRequestsCount,
+            newAnnouncementsCount: newAnnouncementsCount
         });
     } catch (err) {
         console.error("Dashboard Loading Error:", err);
@@ -1158,6 +1171,31 @@ app.post('/delete-announcement', isAuthenticated, async (req, res) => {
     }
 });
 
+// Mark all announcements as viewed for current user
+app.post('/mark-announcements-viewed', async (req, res) => {
+    try {
+        // Check if user is authenticated
+        if (!req.session.user || !req.session.user._id) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const userId = req.session.user._id.toString();
+        console.log('Marking announcements as viewed for user:', userId);
+        
+        // Add current user to viewedBy array for all announcements that don't already have them
+        const result = await Announcement.updateMany(
+            { viewedBy: { $ne: userId } },
+            { $push: { viewedBy: userId } }
+        );
+        
+        console.log('Announcements updated:', result.modifiedCount, 'documents modified');
+        res.json({ success: true, modifiedCount: result.modifiedCount });
+    } catch (err) {
+        console.error('Error marking announcements as viewed:', err);
+        res.status(500).json({ error: 'Error marking announcements as viewed' });
+    }
+});
+
 app.post('/delete-file', isAuthenticated, async (req, res) => {
     if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
         return res.status(403).send("Unauthorized");
@@ -1421,7 +1459,7 @@ app.get('/my-attendance/:folderId', isAuthenticated, async (req, res) => {
     }
 });
 
-app.get('/my-account', (req, res) => {
+app.get('/my-account', async (req, res) => {
     // 1. Check if user is logged in
     if (!req.session.user) {
         return res.redirect('/login');
@@ -1431,11 +1469,18 @@ app.get('/my-account', (req, res) => {
     const successStatus = req.query.success === 'true';
     const corSuccessStatus = req.query.cor_success === 'true';
 
-    // 3. Render the page and PASS the variables
+    // 3. Count notification items
+    let pendingResetRequestsCount = 0;
+    if (req.session.user.role === 'adviser' || req.session.user.role === 'officer') {
+        pendingResetRequestsCount = await User.countDocuments({ resetRequest: true });
+    }
+
+    // 4. Render the page and PASS the variables
     res.render('my-account', { 
         user: req.session.user, 
         showSuccess: successStatus,
-        cor_success: corSuccessStatus
+        cor_success: corSuccessStatus,
+        pendingResetRequestsCount: pendingResetRequestsCount
     });
 });
 
@@ -1898,13 +1943,20 @@ app.get('/admin/students', isAuthenticated, async (req, res) => {
         // Get total count of assigned students
         const totalAssigned = allUsersInDb.length;
 
+        // Count pending reset requests for notification badge
+        let pendingResetRequestsCount = 0;
+        if (req.session.user.role === 'adviser' || req.session.user.role === 'officer') {
+            pendingResetRequestsCount = await User.countDocuments({ resetRequest: true });
+        }
+
         res.render('master-student-list', { 
             students: students,
             user: req.session.user,
             page: page,
             pageSize: pageSize,
             totalPages: totalPages,
-            totalAssigned: totalAssigned
+            totalAssigned: totalAssigned,
+            pendingResetRequestsCount: pendingResetRequestsCount
         });
     } catch (err) {
         console.error('Error loading master student list:', err);

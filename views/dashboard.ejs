@@ -37,6 +37,42 @@
         .menu-card:hover { background: #ffcc00; color: #000; transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
         .menu-card:active { transform: translateY(-1px); }
 
+        /* Notification Badge Styles */
+        .notification-badge {
+            display: inline-block;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 68, 68, 0); }
+        }
+
+        .sidebar-notification-badge {
+            display: inline-block;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+
         /* Sections (Hidden by Default) */
         .portal-section { display: none; background: white; padding: 20px; border-radius: 12px; border: 2px solid #000; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .back-btn { background: #000; color: #ffcc00; border: 2px solid #ffcc00; padding: 12px 20px; cursor: pointer; margin-bottom: 15px; display: inline-block; font-weight: bold; border-radius: 8px; font-size: 1em; transition: all 0.3s; max-width: 200px; }
@@ -242,6 +278,9 @@
     <div style="padding: 10px 0px; border-bottom: 1px solid #ffcc00; margin-bottom: 10px;">
         <a href="/admin/reset-requests" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px;">
             <i class="fas fa-key"></i> <span style="font-weight: bold;">Password Reset Requests</span>
+            <% if (pendingResetRequestsCount > 0) { %>
+                <span class="sidebar-notification-badge"><%= pendingResetRequestsCount %></span>
+            <% } %>
         </a>
     </div>
     <% } %>
@@ -266,7 +305,12 @@
         <button id="backBtn" class="back-btn" onclick="showMenu()" style="display: none; margin-bottom: 15px; background: transparent; color: #FFD700; border: 2px solid #FFD700;"><i class="fas fa-arrow-left"></i> Back to Menu</button>
 
         <div id="mainMenu" class="menu-grid">
-            <div class="menu-card" onclick="openSection('announcements')"><i class="fas fa-bullhorn"></i><br>Announcements</div>
+            <div class="menu-card" onclick="openSection('announcements')" style="position: relative;">
+                <i class="fas fa-bullhorn"></i><br>Announcements
+                <% if (newAnnouncementsCount > 0) { %>
+                    <span class="notification-badge" style="position: absolute; top: 10px; right: 10px; margin-left: 0;"><%= newAnnouncementsCount %></span>
+                <% } %>
+            </div>
             <div class="menu-card" onclick="openSection('attendance')"><i class="fas fa-camera"></i><br>Attendance</div>
             <a href="/my-account" class="menu-card" style="text-decoration: none; display: flex; align-items: center; justify-content: center;"><i class="fas fa-user"></i><br>Profile</a>
             <% if (user.role === 'officer' || user.role === 'adviser') { %>
@@ -472,6 +516,34 @@
             // 6. Generate student QR code when attendance section is opened (only for students)
             if (id === 'attendance' && userRole !== 'officer' && userRole !== 'adviser') {
                 generateStudentQRCode();
+            }
+
+            // 7. Mark announcements as viewed when announcements section is opened
+            if (id === 'announcements') {
+                fetch('/mark-announcements-viewed', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }).then(response => {
+                    console.log('Mark announcements response status:', response.status);
+                    return response.text().then(text => {
+                        console.log('Response body:', text);
+                        if (response.ok) {
+                            // Hide the notification badge immediately on client-side
+                            const badge = document.querySelector('.menu-card .notification-badge');
+                            console.log('Badge element:', badge);
+                            if (badge) {
+                                badge.style.display = 'none';
+                                console.log('Badge hidden successfully');
+                            }
+                            return { ok: true };
+                        }
+                        throw new Error(`Server responded with status ${response.status}: ${text}`);
+                    });
+                }).catch(err => {
+                    console.error('Error marking announcements as viewed:', err);
+                });
             }
         } else {
             console.error("Section with ID " + id + " not found!");

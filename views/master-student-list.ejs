@@ -791,6 +791,27 @@
                 display: none !important;
             }
         }
+
+        /* Notification Badge Styles */
+        .sidebar-notification-badge {
+            display: inline-block;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 68, 68, 0); }
+        }
     </style>
 </head>
 <body>
@@ -805,6 +826,9 @@
     <div style="padding: 10px 0px; border-bottom: 1px solid #ffcc00; margin-bottom: 10px;">
         <a href="/admin/reset-requests" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px;">
             <i class="fas fa-key"></i> <span style="font-weight: bold;">Password Reset Requests</span>
+            <% if (pendingResetRequestsCount > 0) { %>
+                <span class="sidebar-notification-badge"><%= pendingResetRequestsCount %></span>
+            <% } %>
         </a>
     </div>
     <% } %>
