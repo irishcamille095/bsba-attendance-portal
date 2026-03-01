@@ -1525,9 +1525,15 @@ app.get('/download-cor/:studentId', isAuthenticated, async (req, res) => {
             return res.status(404).json({ error: "COR not found" });
         }
 
-        // Send the file
-        const filePath = `${student.corPath}`;
-        res.download(`public${filePath}`, `${student.mmId}_COR`);
+        // Send the file - construct the full path correctly
+        const filePath = path.join(__dirname, 'public', student.corPath);
+        
+        // Check if file exists before attempting download
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: "COR file not found on server" });
+        }
+        
+        res.download(filePath, `${student.mmId}_COR`);
     } catch (err) {
         console.error("COR Download Error:", err);
         res.status(500).json({ error: "Error downloading COR" });
