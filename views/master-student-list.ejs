@@ -239,6 +239,12 @@
             color: #e0e0e0;
         }
 
+        select option {
+            background: #252525;
+            color: #e0e0e0;
+            padding: 8px;
+        }
+
         .btn-sm {
             background: none;
             border: none;
@@ -303,6 +309,59 @@
             font-weight: 700;
             color: #FFD700;
             margin-top: 5px;
+        }
+
+        /* Sort/Filter Section */
+        .sort-filter-section {
+            background: #1e1e1e;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border-left: 3px solid #FFD700;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .sort-filter-section h3 {
+            color: #FFD700;
+            font-size: 0.9em;
+            margin: 0;
+            padding: 0;
+            display: inline-block;
+            margin-right: 12px;
+            font-weight: 600;
+        }
+
+        .sort-filter-group {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-x: auto;
+            padding: 2px 0;
+        }
+
+        .sort-filter-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .sort-filter-item input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+            accent-color: #FFD700;
+            flex-shrink: 0;
+        }
+
+        .sort-filter-item label {
+            color: #e0e0e0;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.8em;
         }
 
         /* Sticky Pagination Navigation */
@@ -499,6 +558,143 @@
             to { opacity: 1; }
         }
 
+        /* Notification Modal */
+        .notification-modal {
+            display: none;
+            position: fixed;
+            z-index: 2500;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .notification-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-content {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            padding: 40px 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            border: 3px solid #2d2d2d;
+            text-align: center;
+            animation: slideUp 0.3s ease;
+        }
+
+        .notification-content.success {
+            border-color: #28a745;
+        }
+
+        .notification-content.error {
+            border-color: #ff6464;
+        }
+
+        .notification-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .notification-icon.success {
+            color: #28a745;
+        }
+
+        .notification-icon.error {
+            color: #ff6464;
+        }
+
+        .notification-content h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+
+        .notification-content.success h3 {
+            color: #28a745;
+        }
+
+        .notification-content.error h3 {
+            color: #ff6464;
+        }
+
+        .notification-content p {
+            margin: 0 0 25px 0;
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+
+        .notification-content .details {
+            background: rgba(100, 180, 200, 0.1);
+            border-left: 4px solid #64b4c8;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 5px;
+            text-align: left;
+            color: #64b4c8;
+            font-size: 0.9em;
+            font-family: monospace;
+        }
+
+        .notification-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .notification-buttons button {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .notification-buttons .btn-ok {
+            background: #28a745;
+            color: white;
+        }
+
+        .notification-buttons .btn-ok:hover {
+            background: #209d3a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .notification-buttons .btn-ok-error {
+            background: #ff6464;
+            color: white;
+        }
+
+        .notification-buttons .btn-ok-error:hover {
+            background: #ff4444;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 100, 100, 0.3);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         #searchResults table {
             width: 100%;
             border-collapse: collapse;
@@ -641,12 +837,19 @@
 
             table {
                 font-size: 0.9em;
-                min-width: 700px;
+                min-width: 800px;
             }
 
             th, td {
                 padding: 8px 10px;
                 white-space: normal;
+            }
+
+            /* Year Level column - wider on mobile */
+            th:nth-child(3),
+            td:nth-child(3) {
+                width: 120px;
+                min-width: 120px;
             }
 
             .qr-code {
@@ -659,6 +862,7 @@
                 width: 100%;
                 margin-bottom: 5px;
                 padding: 6px 10px;
+                min-width: 120px;
             }
 
             td .btn-sm {
@@ -844,10 +1048,18 @@
 
                 <div class="content">
             <header style="background: #FFD700; color: #121212; padding: 12px 15px; display: flex; align-items: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-    <button onclick="toggleSidebar()" style="background: rgba(18,18,18,0.15); border: 1px solid rgba(18,18,18,0.3); color: #121212; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-right: 15px; font-size: 1.2rem;">
+    <button onclick="toggleSidebar()" style="position: relative; background: rgba(18,18,18,0.15); border: 1px solid rgba(18,18,18,0.3); color: #121212; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-right: 15px; font-size: 1.2rem;">
         <i class="fas fa-bars"></i>
+        <% if (pendingResetRequestsCount > 0) { %>
+            <span class="sidebar-notification-badge" style="position: absolute; top: -8px; right: -8px;"><%= pendingResetRequestsCount %></span>
+        <% } %>
     </button>
     <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #121212;">Marketing Management Portal</h1>
+
+    <!-- Global students data for sorting across all pages -->
+    <script>
+        window.allStudentsForGlobalSort = <%- allStudentsJSON %>;
+    </script>
 </header>
 
         <button id="backBtn" class="back-btn" onclick="goBack()" style="margin-bottom: 15px; background: transparent; color: #FFD700; border: 2px solid #FFD700;"><i class="fas fa-arrow-left"></i> Back to Menu</button>
@@ -868,6 +1080,25 @@
         <!-- Search Results Container -->
         <div id="searchResults" style="display: none; background: #1e1e1e; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); margin-bottom: 20px; overflow: hidden;"></div>
 
+        <!-- Sort and Filter Section -->
+        <div class="sort-filter-section">
+            <h3>Sort:</h3>
+            <div class="sort-filter-group">
+                <div class="sort-filter-item">
+                    <input type="checkbox" id="sortByName" onchange="applySorting()">
+                    <label for="sortByName">Name</label>
+                </div>
+                <div class="sort-filter-item">
+                    <input type="checkbox" id="sortByYearLevel" onchange="applySorting()">
+                    <label for="sortByYearLevel">Year</label>
+                </div>
+                <div class="sort-filter-item">
+                    <input type="checkbox" id="sortByRole" onchange="applySorting()">
+                    <label for="sortByRole">Role</label>
+                </div>
+            </div>
+        </div>
+
         <!-- Table -->
         <div class="table-container">
             <table id="studentTable">
@@ -875,6 +1106,7 @@
                     <tr>
                         <th style="width: 12%;">Student ID</th>
                         <th style="width: 22%;">Name</th>
+                        <th style="width: 12%;">Year Level</th>
                         <th style="width: 15%;">Role</th>
                         <th style="width: 12%;">QR Code</th>
                         <th style="width: 12%;">COR</th>
@@ -883,12 +1115,47 @@
                 </thead>
                 <tbody>
                     <% students.forEach((student) => { %>
-                        <tr class="<%= student.isAssigned ? 'assigned' : '' %>" data-id="<%= student.mmId %>" data-name="<%= student.name || '' %>">
+                        <tr class="<%= student.isAssigned ? 'assigned' : '' %>" data-id="<%= student.mmId %>" data-name="<%= student.name || '' %>" data-first-name="<%= student.firstName || '' %>" data-last-name="<%= student.lastName || '' %>" data-middle-name="<%= student.middleName || '' %>" data-year-level="<%= student.yearLevel || '1st Year' %>" data-role="<%= student.role || 'student' %>">
                             <td class="student-id"><%= student.mmId %></td>
                             <td>
                                 <span class="<%= student.isAssigned ? 'student-name' : 'empty-slot' %>">
-                                    <%= student.isAssigned ? student.name : '(Empty Slot)' %>
+                                    <% if (student.isAssigned) { %>
+                                        <% 
+                                            const firstName = student.firstName || '';
+                                            const lastName = student.lastName || '';
+                                            const middleName = student.middleName || '';
+                                            let displayName = '';
+                                            if (lastName && firstName && middleName) {
+                                                displayName = lastName + ', ' + firstName + ' ' + middleName;
+                                            } else if (lastName && firstName) {
+                                                displayName = lastName + ', ' + firstName;
+                                            } else {
+                                                displayName = student.name || '(No Name)';
+                                            }
+                                        %>
+                                        <%= displayName %>
+                                    <% } else { %>
+                                        (Empty Slot)
+                                    <% } %>
                                 </span>
+                            </td>
+                            <td>
+                                <% if (student.isAssigned) { %>
+                                    <% if (student.role !== 'adviser' && (user.role === 'officer' || user.role === 'adviser')) { %>
+                                        <select onchange="changeYearLevel('<%= student.mmId %>', this.value)" style="margin-right: 5px;">
+                                            <option value="1st Year" <%= (student.yearLevel || '1st Year') === '1st Year' ? 'selected' : '' %>>1st Year</option>
+                                            <option value="2nd Year" <%= student.yearLevel === '2nd Year' ? 'selected' : '' %>>2nd Year</option>
+                                            <option value="3rd Year" <%= student.yearLevel === '3rd Year' ? 'selected' : '' %>>3rd Year</option>
+                                            <option value="4th Year" <%= student.yearLevel === '4th Year' ? 'selected' : '' %>>4th Year</option>
+                                        </select>
+                                    <% } else if (student.role === 'adviser') { %>
+                                        <span class="empty-slot">—</span>
+                                    <% } else { %>
+                                        <span class="empty-slot"><%= student.yearLevel || '1st Year' %></span>
+                                    <% } %>
+                                <% } else { %>
+                                    <span class="empty-slot">—</span>
+                                <% } %>
                             </td>
                             <td>
                                 <% if (student.isAssigned) { %>
@@ -921,6 +1188,7 @@
                                         <option value="officer" <%= student.role === 'officer' ? 'selected' : '' %>>Officer</option>
                                         <option value="adviser" <%= student.role === 'adviser' ? 'selected' : '' %>>Adviser</option>
                                     </select>
+                                    <button class="btn-sm" onclick="openEditNameModal('<%= student._id %>', '<%= student.firstName || '' %>', '<%= student.lastName || '' %>', '<%= student.middleName || '' %>')" style="color: #17a2b8; margin-right: 5px;"><i class="fas fa-edit"></i> Edit Name</button>
                                     <button class="btn-sm" onclick="removeStudent('<%= student.mmId %>', '<%= student.name %>')" ><i class="fas fa-trash"></i> Remove</button>
                                 <% } else { %>
                                     <span class="empty-slot">No actions</span>
@@ -982,7 +1250,90 @@
     <!-- Confirmation Modal -->
     <!-- Now using universal delete-confirmation modal from delete-confirmation.js -->
 
+    <!-- Notification Modal for Success/Error Messages -->
+    <div id="notificationModal" class="notification-modal">
+        <div class="notification-content" id="notificationContent">
+            <div class="notification-icon" id="notificationIcon"></div>
+            <h3 id="notificationTitle">Success</h3>
+            <p id="notificationMessage">Operation completed successfully.</p>
+            <div id="notificationDetails" style="display: none;" class="details"></div>
+            <div class="notification-buttons">
+                <button class="btn-ok" id="notificationBtn" onclick="closeNotification()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Name Modal -->
+    <div id="editNameModal" class="modal" style="display: none;">
+        <div class="modal-content" style="background: #252525; border: 2px solid #FFD700; border-radius: 12px; padding: 30px; max-width: 500px;">
+            <span class="close" onclick="closeEditNameModal()" style="color: #FFD700; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+            <h2 style="color: #FFD700; margin-bottom: 20px;">Edit Student Name</h2>
+            <form id="editNameForm" onsubmit="submitEditName(event)">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; color: #FFD700; font-weight: bold; margin-bottom: 8px;">First Name:</label>
+                    <input type="text" id="editFirstName" name="firstName" required style="width: 100%; padding: 10px; background: #1e1e1e; color: #e0e0e0; border: 1px solid #2d2d2d; border-radius: 6px;">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; color: #FFD700; font-weight: bold; margin-bottom: 8px;">Last Name:</label>
+                    <input type="text" id="editLastName" name="lastName" required style="width: 100%; padding: 10px; background: #1e1e1e; color: #e0e0e0; border: 1px solid #2d2d2d; border-radius: 6px;">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; color: #FFD700; font-weight: bold; margin-bottom: 8px;">Middle Name (Optional):</label>
+                    <input type="text" id="editMiddleName" name="middleName" style="width: 100%; padding: 10px; background: #1e1e1e; color: #e0e0e0; border: 1px solid #2d2d2d; border-radius: 6px;">
+                </div>
+                <input type="hidden" id="editUserId" name="userId">
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeEditNameModal()" style="background: #2d2d2d; color: #e0e0e0; border: 1px solid #2d2d2d; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Cancel</button>
+                    <button type="submit" style="background: #FFD700; color: #000; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        // Notification Modal Functions
+        function showNotification(type, title, message, details = null) {
+            const modal = document.getElementById('notificationModal');
+            const content = document.getElementById('notificationContent');
+            const icon = document.getElementById('notificationIcon');
+            const titleEl = document.getElementById('notificationTitle');
+            const msgEl = document.getElementById('notificationMessage');
+            const detailsEl = document.getElementById('notificationDetails');
+            const btn = document.getElementById('notificationBtn');
+
+            // Update content
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            if (type === 'success') {
+                icon.textContent = '✓';
+                icon.className = 'notification-icon success';
+                content.className = 'notification-content success';
+                btn.className = 'btn-ok';
+            } else {
+                icon.textContent = '✕';
+                icon.className = 'notification-icon error';
+                content.className = 'notification-content error';
+                btn.className = 'btn-ok btn-ok-error';
+            }
+
+            // Show details if provided
+            if (details) {
+                detailsEl.innerHTML = details;
+                detailsEl.style.display = 'block';
+            } else {
+                detailsEl.style.display = 'none';
+            }
+
+            // Show modal
+            modal.classList.add('active');
+        }
+
+        function closeNotification() {
+            const modal = document.getElementById('notificationModal');
+            modal.classList.remove('active');
+        }
+
         // QR Code cache to avoid fetching the same code twice
         const qrCache = {};
 
@@ -1057,16 +1408,78 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    alert('Error: ' + data.error);
-                    location.reload();
+                    showNotification('error', 'Update Failed', data.error || 'Error updating role.');
                     return;
                 }
 
-                alert(data.message);
-                location.reload();
+                // Update local data
+                const studentIndex = window.allStudentsForGlobalSort.findIndex(s => s.mmId === mmId);
+                if (studentIndex !== -1) {
+                    window.allStudentsForGlobalSort[studentIndex].role = newRole;
+                }
+
+                showNotification('success', 'Role Updated', `Role changed to ${newRole} successfully!`, 
+                    `<strong>Student ID:</strong> ${mmId}<br><strong>New Role:</strong> ${newRole}`);
+                
+                // Re-apply sorting if any sort is active
+                const sortByName = document.getElementById('sortByName').checked;
+                const sortByYearLevel = document.getElementById('sortByYearLevel').checked;
+                const sortByRole = document.getElementById('sortByRole').checked;
+                
+                if (sortByName || sortByYearLevel || sortByRole) {
+                    applySorting();
+                }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error updating role');
+                showNotification('error', 'Connection Error', 'Failed to update role: ' + error.message);
+            }
+        }
+
+        // Change Year Level
+        async function changeYearLevel(mmId, newYearLevel) {
+            if (!newYearLevel) return;
+
+            try {
+                const response = await fetch('/admin/update-student-year-level', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mmId, yearLevel: newYearLevel })
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('Error response:', text);
+                    showNotification('error', 'Update Failed', 'Failed to update year level. Please try again.');
+                    return;
+                }
+
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (data.savedUser) {
+                    console.log('✓ Data saved to cloud database:', data.savedUser);
+                }
+
+                // Update local data
+                const studentIndex = window.allStudentsForGlobalSort.findIndex(s => s.mmId === mmId);
+                if (studentIndex !== -1) {
+                    window.allStudentsForGlobalSort[studentIndex].yearLevel = newYearLevel;
+                }
+
+                showNotification('success', 'Year Level Updated', `Year level changed to ${newYearLevel} successfully!`, 
+                    `<strong>Student ID:</strong> ${mmId}<br><strong>New Year Level:</strong> ${newYearLevel}`);
+                
+                // Re-apply sorting if any sort is active
+                const sortByName = document.getElementById('sortByName').checked;
+                const sortByYearLevel = document.getElementById('sortByYearLevel').checked;
+                const sortByRole = document.getElementById('sortByRole').checked;
+                
+                if (sortByName || sortByYearLevel || sortByRole) {
+                    applySorting();
+                }
+            } catch (error) {
+                console.error('Error updating year level:', error);
+                showNotification('error', 'Connection Error', 'Failed to update year level: ' + error.message);
             }
         }
 
@@ -1093,8 +1506,30 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Update local data - mark student as unassigned
+                    const studentIndex = window.allStudentsForGlobalSort.findIndex(s => s.mmId === mmId);
+                    if (studentIndex !== -1) {
+                        window.allStudentsForGlobalSort[studentIndex].isAssigned = false;
+                        window.allStudentsForGlobalSort[studentIndex].firstName = '';
+                        window.allStudentsForGlobalSort[studentIndex].lastName = '';
+                        window.allStudentsForGlobalSort[studentIndex].middleName = '';
+                        window.allStudentsForGlobalSort[studentIndex].name = '';
+                        window.allStudentsForGlobalSort[studentIndex].role = '';
+                        window.allStudentsForGlobalSort[studentIndex].yearLevel = '';
+                    }
+
                     alert(data.message);
-                    location.reload();
+                    
+                    // Re-apply sorting if any sort is active
+                    const sortByName = document.getElementById('sortByName').checked;
+                    const sortByYearLevel = document.getElementById('sortByYearLevel').checked;
+                    const sortByRole = document.getElementById('sortByRole').checked;
+                    
+                    if (sortByName || sortByYearLevel || sortByRole) {
+                        applySorting();
+                    } else {
+                        location.reload();
+                    }
                 } else {
                     alert('Error: ' + data.error);
                 }
@@ -1198,6 +1633,262 @@
                 sidebar.classList.remove('active');
             }
         });
+
+        // Edit Name Modal Functions
+        function openEditNameModal(userId, firstName, lastName, middleName) {
+            document.getElementById('editUserId').value = userId;
+            document.getElementById('editFirstName').value = decodeURIComponent(firstName);
+            document.getElementById('editLastName').value = decodeURIComponent(lastName);
+            document.getElementById('editMiddleName').value = decodeURIComponent(middleName);
+            document.getElementById('editNameModal').style.display = 'flex';
+        }
+
+        function closeEditNameModal() {
+            document.getElementById('editNameModal').style.display = 'none';
+        }
+
+        function submitEditName(event) {
+            event.preventDefault();
+            
+            const userId = document.getElementById('editUserId').value;
+            const firstName = document.getElementById('editFirstName').value.trim();
+            const lastName = document.getElementById('editLastName').value.trim();
+            const middleName = document.getElementById('editMiddleName').value.trim();
+
+            // Basic validation
+            if (!firstName || !lastName) {
+                alert('First name and last name are required!');
+                return;
+            }
+
+            if (firstName.length < 2) {
+                alert('First name must be at least 2 characters!');
+                return;
+            }
+
+            if (lastName.length < 2) {
+                alert('Last name must be at least 2 characters!');
+                return;
+            }
+
+            // Send update request
+            fetch('/admin/update-student-name', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, firstName, lastName, middleName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update local data
+                    const studentIndex = window.allStudentsForGlobalSort.findIndex(s => s._id === userId);
+                    if (studentIndex !== -1) {
+                        window.allStudentsForGlobalSort[studentIndex].firstName = firstName;
+                        window.allStudentsForGlobalSort[studentIndex].lastName = lastName;
+                        window.allStudentsForGlobalSort[studentIndex].middleName = middleName;
+                    }
+
+                    showNotification('success', 'Name Updated', `Student name has been updated successfully!`);
+                    closeEditNameModal();
+                    
+                    // Re-apply sorting if any sort is active
+                    const sortByName = document.getElementById('sortByName').checked;
+                    const sortByYearLevel = document.getElementById('sortByYearLevel').checked;
+                    const sortByRole = document.getElementById('sortByRole').checked;
+                    
+                    if (sortByName || sortByYearLevel || sortByRole) {
+                        applySorting();
+                    } else {
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                } else {
+                    showNotification('error', 'Error', data.error || 'Failed to update name');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('error', 'Error', 'Failed to update name: ' + error.message);
+            });
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('editNameModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // ===== SORTING FUNCTIONS =====
+        // Get year level as a number for sorting (1st -> 1, 2nd -> 2, etc.)
+        function getYearLevelValue(yearLevelStr) {
+            const year = String(yearLevelStr || '1st Year').match(/\d+/);
+            return year ? parseInt(year[0]) : 1;
+        }
+
+        // Get role priority (Adviser=1, Officer=2, Student=3)
+        function getRolePriority(role) {
+            switch(String(role || 'student').toLowerCase()) {
+                case 'adviser': return 1;
+                case 'officer': return 2;
+                case 'student': return 3;
+                default: return 3;
+            }
+        }
+
+        // Sorting function with hierarchy: Year Level -> Name -> Role (GLOBAL - all students)
+        function applySorting() {
+            const sortByName = document.getElementById('sortByName').checked;
+            const sortByYearLevel = document.getElementById('sortByYearLevel').checked;
+            const sortByRole = document.getElementById('sortByRole').checked;
+
+            // If no sorting is selected, auto-reset to original order
+            if (!sortByName && !sortByYearLevel && !sortByRole) {
+                location.reload(); // Reload to restore original pagination
+                return;
+            }
+
+            // Sort ALL students globally (not just current page) - EXCLUDING EMPTY SLOTS
+            let allStudents = JSON.parse(JSON.stringify(window.allStudentsForGlobalSort || []));
+            
+            // Filter out unassigned students (empty slots)
+            let assignedStudents = allStudents.filter(s => s.isAssigned === true);
+            
+            assignedStudents.sort((a, b) => {
+                // PRIMARY: Sort by Year Level (1st -> 2nd -> 3rd -> 4th)
+                if (sortByYearLevel) {
+                    const yearA = getYearLevelValue(a.yearLevel);
+                    const yearB = getYearLevelValue(b.yearLevel);
+                    if (yearA !== yearB) {
+                        return yearA - yearB;
+                    }
+                }
+
+                // SECONDARY: Sort by Name (A-Z) using lastName, then firstName
+                if (sortByName) {
+                    const lastNameA = (a.lastName || '').toLowerCase().trim();
+                    const lastNameB = (b.lastName || '').toLowerCase().trim();
+                    
+                    if (lastNameA !== lastNameB) {
+                        return lastNameA.localeCompare(lastNameB);
+                    }
+
+                    // If last names are same, sort by first name
+                    const firstNameA = (a.firstName || '').toLowerCase().trim();
+                    const firstNameB = (b.firstName || '').toLowerCase().trim();
+                    
+                    if (firstNameA !== firstNameB) {
+                        return firstNameA.localeCompare(firstNameB);
+                    }
+                }
+
+                // TERTIARY: Sort by Role (Adviser -> Officer -> Student)
+                if (sortByRole) {
+                    const roleA = getRolePriority(a.role);
+                    const roleB = getRolePriority(b.role);
+                    if (roleA !== roleB) {
+                        return roleA - roleB;
+                    }
+                }
+
+                // If all sorting criteria are equal, maintain original order
+                return 0;
+            });
+
+            // Build HTML for sorted table
+            let html = '<table id="studentTable">' +
+                       '<thead>' +
+                       '<tr>' +
+                       '<th style="width: 12%;">Student ID</th>' +
+                       '<th style="width: 22%;">Name</th>' +
+                       '<th style="width: 12%;">Year Level</th>' +
+                       '<th style="width: 15%;">Role</th>' +
+                       '<th style="width: 12%;">QR Code</th>' +
+                       '<th style="width: 12%;">COR</th>' +
+                       '<th style="width: 27%;">Actions</th>' +
+                       '</tr>' +
+                       '</thead>' +
+                       '<tbody>';
+
+            assignedStudents.forEach((student) => {
+                const assigned = student.isAssigned ? 'assigned' : '';
+                
+                // Build display name
+                let displayName = '';
+                if (student.lastName && student.firstName && student.middleName) {
+                    displayName = student.lastName + ', ' + student.firstName + ' ' + student.middleName;
+                } else if (student.lastName && student.firstName) {
+                    displayName = student.lastName + ', ' + student.firstName;
+                } else {
+                    displayName = student.name || '(No Name)';
+                }
+
+                html += '<tr class="assigned" data-id="' + student.mmId + '" data-name="' + (student.name || '') + '" ' +
+                        'data-first-name="' + (student.firstName || '') + '" data-last-name="' + (student.lastName || '') + '" ' +
+                        'data-middle-name="' + (student.middleName || '') + '" data-year-level="' + (student.yearLevel || '1st Year') + '" ' +
+                        'data-role="' + (student.role || 'student') + '">' +
+                        '<td class="student-id">' + student.mmId + '</td>' +
+                        '<td><span class="student-name">' + displayName + '</span></td>';
+
+                // Year Level - WITH DROPDOWN
+                html += '<td>';
+                if (student.role !== 'adviser') {
+                    html += '<select onchange="changeYearLevel(\'' + student.mmId + '\', this.value)" style="margin-right: 5px;">' +
+                            '<option value="1st Year"' + ((student.yearLevel || '1st Year') === '1st Year' ? ' selected' : '') + '>1st Year</option>' +
+                            '<option value="2nd Year"' + (student.yearLevel === '2nd Year' ? ' selected' : '') + '>2nd Year</option>' +
+                            '<option value="3rd Year"' + (student.yearLevel === '3rd Year' ? ' selected' : '') + '>3rd Year</option>' +
+                            '<option value="4th Year"' + (student.yearLevel === '4th Year' ? ' selected' : '') + '>4th Year</option>' +
+                            '</select>';
+                } else {
+                    html += '<span class="empty-slot">—</span>';
+                }
+                html += '</td>';
+
+                // Role
+                html += '<td>';
+                const roleClass = 'role-' + (student.role || 'student').toLowerCase();
+                html += '<span class="role-badge ' + roleClass + '">' + (student.role || 'student') + '</span>';
+                html += '</td>';
+
+                // QR Code (placeholder)
+                html += '<td><div class="qr-placeholder" data-mmid="' + student.mmId + '" onclick="loadAndShowQR(\'' + student.mmId + '\')">' +
+                        '<span style="cursor: pointer; color: #FFD700;">Click to load</span></div></td>';
+
+                // COR
+                html += '<td>';
+                if (student.corPath) {
+                    html += '<a href="/download-cor/' + student._id + '" class="btn-sm" style="color: #28a745; text-decoration: none; font-weight: 600;">' +
+                            '<i class="fas fa-file"></i> Download</a>';
+                } else {
+                    html += '<span class="empty-slot">—</span>';
+                }
+                html += '</td>';
+
+                // Actions
+                html += '<td>';
+                html += '<select onchange="changeRole(\'' + student.mmId + '\', this.value)" style="margin-right: 5px;">' +
+                        '<option value="">Change Role</option>' +
+                        '<option value="student"' + (student.role === 'student' ? ' selected' : '') + '>Student</option>' +
+                        '<option value="officer"' + (student.role === 'officer' ? ' selected' : '') + '>Officer</option>' +
+                        '<option value="adviser"' + (student.role === 'adviser' ? ' selected' : '') + '>Adviser</option>' +
+                        '</select>' +
+                        '<button class="btn-sm" onclick="openEditNameModal(\'' + student._id + '\', \'' + encodeURIComponent(student.firstName || '') + '\', \'' + encodeURIComponent(student.lastName || '') + '\', \'' + encodeURIComponent(student.middleName || '') + '\')" style="color: #17a2b8; margin-right: 5px;"><i class="fas fa-edit"></i> Edit Name</button>' +
+                            '<button class="btn-sm" onclick="removeStudent(\'' + student.mmId + '\', \'' + displayName + '\')"><i class="fas fa-trash"></i> Remove</button>';
+                html += '</td></tr>';
+            });
+
+            html += '</tbody></table>';
+
+            // Replace the table container content
+            const tableContainer = document.querySelector('.table-container');
+            tableContainer.innerHTML = html;
+
+            console.log('✓ Sorting applied globally across ' + assignedStudents.length + ' assigned students:', {
+                sortByName,
+                sortByYearLevel,
+                sortByRole
+            });
+        }
     </script>
 </body>
 </html>

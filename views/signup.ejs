@@ -17,11 +17,17 @@
         body { 
             display: flex; 
             justify-content: center; 
-            align-items: center; 
+            align-items: flex-start; 
             min-height: 100vh; 
             padding: 10px; 
+            overflow-x: hidden;
         }
-        .login-box { border-top: 6px solid #800000; }
+        .login-box { 
+            border-top: 6px solid #800000;
+            width: 100%;
+            max-width: 500px;
+            overflow-y: auto;
+        }
         h2 { color: #800000; }
         input:focus, select:focus { border-color: #800000; }
         button { background: #800000; color: gold; }
@@ -30,6 +36,28 @@
         .info-box div { font-family: 'Courier New', monospace; font-size: 1.3em; font-weight: 700; color: #000; }
         .input-group { margin-bottom: 15px; }
         .signup-link a { color: #800000; }
+        
+        /* Mobile responsive */
+        @media (max-width: 480px) {
+            body {
+                align-items: flex-start;
+                padding: 5px;
+            }
+            .login-box {
+                padding: 20px 15px;
+                border-radius: 8px;
+            }
+            input, select, label {
+                font-size: 16px;
+            }
+            .input-group {
+                margin-bottom: 12px;
+            }
+            .info-box {
+                padding: 12px;
+                margin-bottom: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -46,8 +74,18 @@
             <input type="hidden" name="mmId" value="<%= mmId %>">
             
             <div class="input-group">
-                <label for="name">Full Name</label>
-                <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="firstName" placeholder="Enter your first name" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" name="lastName" placeholder="Enter your last name" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="middleName">Middle Name (Optional)</label>
+                <input type="text" id="middleName" name="middleName" placeholder="Enter your middle name (optional)">
             </div>
             
             <div class="input-group">
@@ -62,12 +100,24 @@
             
             <div class="input-group">
                 <label for="role">Select Your Role</label>
-                <select id="role" name="role" required>
+                <select id="role" name="role" required onchange="updateYearLevelRequirement()">
                     <option value="">-- Select a Role --</option>
                     <option value="student">Student</option>
                     <option value="officer">Officer</option>
                     <option value="adviser">Adviser</option>
                 </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="yearLevel">Year Level <span id="yearLevelRequired" style="color: red;">*</span></label>
+                <select id="yearLevel" name="yearLevel" required>
+                    <option value="">-- Select Year Level --</option>
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                </select>
+                <small id="yearLevelHint" style="color: #666;">Select your academic year level</small>
             </div>
             
             <button type="submit">Register</button>
@@ -78,6 +128,40 @@
         </div>
     </div>
     <script src="/pwa-install.js"></script>
-</body>
+    <script>
+        function updateYearLevelRequirement() {
+            const role = document.getElementById('role').value;
+            const yearLevelSelect = document.getElementById('yearLevel');
+            const yearLevelRequired = document.getElementById('yearLevelRequired');
+            const yearLevelHint = document.getElementById('yearLevelHint');
+
+            if (role === 'adviser') {
+                // Advisers don't need to select a year level
+                yearLevelSelect.disabled = true;
+                yearLevelSelect.value = '';
+                yearLevelSelect.required = false;
+                yearLevelRequired.style.display = 'none';
+                yearLevelHint.textContent = 'Not applicable for advisers';
+                yearLevelHint.style.color = '#999';
+            } else if (role === 'student' || role === 'officer') {
+                // Students and Officers must select a year level
+                yearLevelSelect.disabled = false;
+                yearLevelSelect.required = true;
+                yearLevelRequired.style.display = 'inline';
+                yearLevelHint.textContent = 'Select your academic year level';
+                yearLevelHint.style.color = '#666';
+            } else {
+                // No role selected yet
+                yearLevelSelect.disabled = true;
+                yearLevelSelect.required = false;
+                yearLevelRequired.style.display = 'inline';
+                yearLevelHint.textContent = 'Select your role first';
+                yearLevelHint.style.color = '#999';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', updateYearLevelRequirement);
+    </script>
 
 </html>

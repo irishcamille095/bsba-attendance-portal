@@ -30,6 +30,38 @@ function formatToPhilippinesTime(utcDate) {
     });
 }
 
+// Utility function to sanitize and validate name fields
+function sanitizeName(name) {
+    if (!name || typeof name !== 'string') return '';
+    return name.trim().replace(/\s+/g, ' '); // Trim and collapse multiple spaces
+}
+
+// Utility function to validate name fields
+function validateNames(firstName, lastName, middleName = '') {
+    const errors = [];
+    
+    // Validate firstName
+    if (!firstName || !firstName.trim()) {
+        errors.push('First name is required');
+    } else if (firstName.trim().length < 2 || firstName.trim().length > 50) {
+        errors.push('First name must be between 2 and 50 characters');
+    }
+    
+    // Validate lastName
+    if (!lastName || !lastName.trim()) {
+        errors.push('Last name is required');
+    } else if (lastName.trim().length < 2 || lastName.trim().length > 50) {
+        errors.push('Last name must be between 2 and 50 characters');
+    }
+    
+    // Validate middleName (optional)
+    if (middleName && middleName.trim().length > 50) {
+        errors.push('Middle name must be 50 characters or less');
+    }
+    
+    return errors;
+}
+
 const app = express();
 
 // Paste your link here. 
@@ -484,7 +516,7 @@ app.post('/logout', (req, res) => {
 
 app.post('/signup', async (req, res) => {
     try {
-        const { mmId, name, email, password, role } = req.body;
+        const { mmId, name, firstName, lastName, middleName, email, password, role, yearLevel } = req.body;
         
         // 1. Validate MM-ID format
         if (!mmId || !/^MM-[0-9]{3}$/.test(mmId)) {
@@ -508,21 +540,46 @@ app.post('/signup', async (req, res) => {
             console.error("Warning: Could not fetch QR code from StudentIDPool:", e);
         }
 
-        // 4. Create the new user with the specified MM-ID
+        // 4. Process name fields (support both new separate fields and legacy single name field)
+        let processedFirstName = firstName ? sanitizeName(firstName) : null;
+        let processedLastName = lastName ? sanitizeName(lastName) : null;
+        let processedMiddleName = middleName ? sanitizeName(middleName) : '';
+        
+        // If only legacy 'name' field is provided, split it
+        if (!processedFirstName && !processedLastName && name) {
+            const nameParts = name.trim().split(/\s+/);
+            processedLastName = nameParts.pop(); // Last part is last name
+            processedFirstName = nameParts.shift() || ''; // First part is first name
+            if (nameParts.length > 0) {
+                processedMiddleName = nameParts.join(' '); // Middle parts are middle name
+            }
+        }
+        
+        // Validate name fields
+        const nameErrors = validateNames(processedFirstName, processedLastName, processedMiddleName);
+        if (nameErrors.length > 0) {
+            return res.status(400).send(`❌ ${nameErrors[0]}`);
+        }
+
+        // 5. Create the new user with the specified MM-ID
         const newUser = new User({ 
-            name, 
+            firstName: processedFirstName,
+            lastName: processedLastName,
+            middleName: processedMiddleName,
+            name: `${processedFirstName} ${processedMiddleName} ${processedLastName}`.trim(), // Keep for backward compatibility
             username: email, // Use email as username
             email,
             password, 
             role: role || 'student',
             mmId: mmId,
-            qrCode: qrCode
+            qrCode: qrCode,
+            yearLevel: role === 'adviser' ? '' : (yearLevel || '1st Year')
         });
 
-        // 5. Save the user
+        // 6. Save the user
         await newUser.save();
 
-        // 6. Mark the MM-ID as assigned in the pool (for consistency)
+        // 7. Mark the MM-ID as assigned in the pool (for consistency)
         try {
             await StudentIDPool.findOneAndUpdate(
                 { mmId },
@@ -1515,6 +1572,106 @@ app.post('/update-password', async (req, res) => {
     }
 });
 
+// Route for users to update their own name
+app.post('/update-name', async (req, res) => {
+    try {
+        const { firstName, lastName, middleName } = req.body;
+
+        // 1. Check if the user is in the session
+        if (!req.session.user || !req.session.user._id) {
+            return res.status(401).json({ error: 'Please log out and log back in to refresh your session.' });
+        }
+
+        // 2. Sanitize and validate name fields
+        const sanitizedFirstName = sanitizeName(firstName);
+        const sanitizedLastName = sanitizeName(lastName);
+        const sanitizedMiddleName = sanitizeName(middleName || '');
+
+        const nameErrors = validateNames(sanitizedFirstName, sanitizedLastName, sanitizedMiddleName);
+        if (nameErrors.length > 0) {
+            return res.status(400).json({ error: nameErrors[0] });
+        }
+
+        // 3. Update the user
+        const userId = req.session.user._id;
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            { 
+                firstName: sanitizedFirstName,
+                lastName: sanitizedLastName,
+                middleName: sanitizedMiddleName,
+                // Also update the legacy name field for backward compatibility
+                name: `${sanitizedFirstName} ${sanitizedMiddleName} ${sanitizedLastName}`.trim()
+            }, 
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // 4. Update session data
+        req.session.user.firstName = sanitizedFirstName;
+        req.session.user.lastName = sanitizedLastName;
+        req.session.user.middleName = sanitizedMiddleName;
+        req.session.user.name = updatedUser.name;
+
+        res.redirect('/my-account?name_success=true');
+    } catch (err) {
+        console.error('Error updating name:', err);
+        res.status(500).json({ error: 'Error updating name' });
+    }
+});
+
+// Route for officers/advisers to update any user's name
+app.post('/admin/update-student-name', isAuthenticated, async (req, res) => {
+    try {
+        // Verify authorization
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        const { userId, firstName, lastName, middleName } = req.body;
+
+        // Validate userId
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        // Sanitize and validate name fields
+        const sanitizedFirstName = sanitizeName(firstName);
+        const sanitizedLastName = sanitizeName(lastName);
+        const sanitizedMiddleName = sanitizeName(middleName || '');
+
+        const nameErrors = validateNames(sanitizedFirstName, sanitizedLastName, sanitizedMiddleName);
+        if (nameErrors.length > 0) {
+            return res.status(400).json({ error: nameErrors[0] });
+        }
+
+        // Update the user
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            { 
+                firstName: sanitizedFirstName,
+                lastName: sanitizedLastName,
+                middleName: sanitizedMiddleName,
+                // Also update the legacy name field for backward compatibility
+                name: `${sanitizedFirstName} ${sanitizedMiddleName} ${sanitizedLastName}`.trim()
+            }, 
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'Student not found' });
+        }
+
+        res.json({ success: true, message: 'Name updated successfully', user: updatedUser });
+    } catch (err) {
+        console.error('Error updating student name:', err);
+        res.status(500).json({ error: 'Error updating name' });
+    }
+});
+
 // COR Upload Route - Students can upload their COR to MongoDB GridFS
 app.post('/upload-cor', isAuthenticated, uploadCor.single('cor'), async (req, res) => {
     try {
@@ -1905,7 +2062,7 @@ app.get('/admin/students', isAuthenticated, async (req, res) => {
 
         // Get all students from database
         const allUsersInDb = await User.find()
-            .select('name username mmId role corPath _id')
+            .select('name username mmId role corPath yearLevel _id firstName lastName middleName')
             .lean();
 
         // Create a map for quick lookup
@@ -1933,8 +2090,12 @@ app.get('/admin/students', isAuthenticated, async (req, res) => {
                     mmId: mmId,
                     name: '',
                     username: '',
+                    firstName: '',
+                    lastName: '',
+                    middleName: '',
                     role: '',
                     corPath: null,
+                    yearLevel: '',
                     isAssigned: false
                 });
             }
@@ -1942,6 +2103,34 @@ app.get('/admin/students', isAuthenticated, async (req, res) => {
 
         // Get total count of assigned students
         const totalAssigned = allUsersInDb.length;
+
+        // Build complete list of all 300 slots for sorting (both assigned and empty)
+        const allStudents = [];
+        for (let i = 1; i <= totalSlots; i++) {
+            const mmId = `MM-${String(i).padStart(3, '0')}`;
+            if (userMap[mmId]) {
+                // Student is assigned
+                allStudents.push({
+                    ...userMap[mmId],
+                    isAssigned: true
+                });
+            } else {
+                // Empty slot
+                allStudents.push({
+                    _id: null,
+                    mmId: mmId,
+                    name: '',
+                    username: '',
+                    firstName: '',
+                    lastName: '',
+                    middleName: '',
+                    role: '',
+                    corPath: null,
+                    yearLevel: '',
+                    isAssigned: false
+                });
+            }
+        }
 
         // Count pending reset requests for notification badge
         let pendingResetRequestsCount = 0;
@@ -1951,6 +2140,7 @@ app.get('/admin/students', isAuthenticated, async (req, res) => {
 
         res.render('master-student-list', { 
             students: students,
+            allStudentsJSON: JSON.stringify(allStudents),
             user: req.session.user,
             page: page,
             pageSize: pageSize,
@@ -1978,7 +2168,7 @@ app.get('/api/search-students', isAuthenticated, async (req, res) => {
 
         // Get all users from database
         const allUsers = await User.find()
-            .select('name username mmId role corPath _id')
+            .select('name username mmId role corPath yearLevel _id')
             .lean();
 
         // Create a map for quick lookup
@@ -2006,6 +2196,7 @@ app.get('/api/search-students', isAuthenticated, async (req, res) => {
                     page: page,
                     isAssigned: !!userMap[mmId],
                     role: userMap[mmId]?.role || '',
+                    yearLevel: userMap[mmId]?.yearLevel || '',
                     username: userMap[mmId]?.username || '',
                     _id: userMap[mmId]?._id || null
                 });
@@ -2037,7 +2228,7 @@ app.get('/api/master-students', isAuthenticated, async (req, res) => {
 
         // Get paginated students (no QR codes)
         const assignedStudents = await User.find()
-            .select('name username mmId role corPath')
+            .select('name username mmId role corPath yearLevel')
             .sort({ mmId: 1 })
             .skip(skip)
             .limit(pageSize)
@@ -2087,6 +2278,71 @@ app.post('/admin/update-student-role', isAuthenticated, async (req, res) => {
     } catch (err) {
         console.error('Error updating role:', err);
         res.status(500).json({ error: 'Error updating role' });
+    }
+});
+
+// Update student year level (Officer/Adviser only)
+app.post('/admin/update-student-year-level', isAuthenticated, async (req, res) => {
+    try {
+        console.log('[INFO] Year level update request received:', {
+            userId: req.session.user._id,
+            userRole: req.session.user.role,
+            body: req.body
+        });
+
+        // Role-based security: only officer or adviser can update year level
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            console.log('[ERROR] Unauthorized - user role is:', req.session.user.role);
+            return res.status(403).json({ error: 'Unauthorized access. Only officers and advisers can update year levels.' });
+        }
+
+        const { mmId, yearLevel } = req.body;
+        console.log('[INFO] Processing update for mmId:', mmId, 'yearLevel:', yearLevel);
+
+        // Validate year level input
+        const validYearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+        if (!yearLevel || !validYearLevels.includes(yearLevel)) {
+            console.log('[ERROR] Invalid year level:', yearLevel, 'Valid options:', validYearLevels);
+            return res.status(400).json({ error: 'Invalid year level selected' });
+        }
+
+        // Find the user by mmId
+        const user = await User.findOne({ mmId });
+        if (!user) {
+            console.log('[ERROR] Student not found with mmId:', mmId);
+            return res.status(404).json({ error: 'Student not found' });
+        }
+
+        console.log('[INFO] Found user:', user.name, '- updating yearLevel to:', yearLevel);
+        
+        // Update the year level
+        const updatedUser = await User.findByIdAndUpdate(
+            user._id, 
+            { yearLevel }, 
+            { new: true }  // Returns the updated document
+        );
+
+        console.log('[SUCCESS] Year level updated in MongoDB for user:', updatedUser.name);
+        console.log('[VERIFY] Updated user record:', {
+            name: updatedUser.name,
+            mmId: updatedUser.mmId,
+            yearLevel: updatedUser.yearLevel,
+            role: updatedUser.role,
+            savedToCloud: true
+        });
+
+        res.json({ 
+            success: true, 
+            message: `Year level updated to ${yearLevel}`,
+            savedUser: {
+                name: updatedUser.name,
+                mmId: updatedUser.mmId,
+                yearLevel: updatedUser.yearLevel
+            }
+        });
+    } catch (err) {
+        console.error('[ERROR] Exception in year level update:', err);
+        res.status(500).json({ error: 'Server error: ' + err.message });
     }
 });
 

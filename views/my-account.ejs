@@ -368,6 +368,28 @@
             box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
         }
 
+        .small-toggle-btn {
+            background: transparent;
+            color: #ffcc00;
+            border: 1px solid #ffcc00;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .small-toggle-btn:hover {
+            background: rgba(255, 204, 0, 0.1);
+            border-color: #ffdd33;
+            color: #ffdd33;
+        }
+
         /* Notification Badge Styles */
         .sidebar-notification-badge {
             display: inline-block;
@@ -435,6 +457,31 @@
         <div class="info-group">
             <label>Account Name:</label>
             <input type="text" value="<%= user.name %>" disabled>
+            <button type="button" class="small-toggle-btn" onclick="toggleNameSection()" title="Edit your name">
+                <i class="fas fa-pencil"></i> Edit
+            </button>
+        </div>
+
+        <!-- Name Update Section -->
+        <div id="nameSection" class="password-section-hidden" style="display: none; margin-top: 20px; padding: 15px; background: #252525; border-left: 3px solid #ffcc00; border-radius: 4px;">
+            <form action="/update-name" method="POST">
+                <div class="info-group">
+                    <label>First Name:</label>
+                    <input type="text" name="firstName" id="firstName" value="<%= user.firstName || '' %>" placeholder="Enter your first name" required>
+                </div>
+
+                <div class="info-group">
+                    <label>Last Name:</label>
+                    <input type="text" name="lastName" id="lastName" value="<%= user.lastName || '' %>" placeholder="Enter your last name" required>
+                </div>
+
+                <div class="info-group">
+                    <label>Middle Name (Optional):</label>
+                    <input type="text" name="middleName" id="middleName" value="<%= user.middleName || '' %>" placeholder="Enter your middle name">
+                </div>
+
+                <button type="submit" class="btn-update">Update Name</button>
+            </form>
         </div>
 
         <div class="info-group">
@@ -445,6 +492,11 @@
         <div class="info-group">
             <label>Student ID (MM-ID):</label>
             <input type="text" value="<%= user.mmId || 'N/A' %>" disabled>
+        </div>
+
+        <div class="info-group">
+            <label>Year Level:</label>
+            <input type="text" value="<%= user.yearLevel || (user.role === 'adviser' ? 'N/A' : '1st Year') %>" disabled>
         </div>
 
         <% if (showSuccess) { %>
@@ -459,15 +511,23 @@
             </div>
         <% } %>
 
-        <hr class="section-divider">
+        <% if (showSuccess && showSuccess.includes('name')) { %>
+            <div class="success-message">
+                ✓ Name updated successfully!
+            </div>
+        <% } %>
 
-        <!-- Password Update Section -->
-        <button type="button" class="password-toggle-btn" onclick="togglePasswordSection()">
-            <i class="fas fa-chevron-right" id="toggle-icon"></i>
-            <span>Change Password</span>
-        </button>
+        <hr class="section-divider">
         
-        <div id="passwordSection" class="password-section-hidden">
+        <!-- Change Password Section -->
+        <div style="margin-top: 30px;">
+            <h3 style="margin-top: 0;">Security</h3>
+            <button type="button" class="small-toggle-btn" onclick="togglePasswordSection()" title="Change your password">
+                <i class="fas fa-key"></i> Change Password
+            </button>
+        </div>
+        
+        <div id="passwordSection" class="password-section-hidden" style="display: none; margin-top: 15px;">
             <form action="/update-password" method="POST" onsubmit="return validatePasswords()">
                 <div class="info-group">
                     <label>New Password:</label>
@@ -558,13 +618,36 @@
         window.history.replaceState({}, document.title, cleanUrl);
     }
 
+    function toggleNameSection() {
+        const section = document.getElementById('nameSection');
+        if (!section) {
+            alert('Error: nameSection not found');
+            return;
+        }
+        
+        if (section.style.display === 'none' || section.style.display === '') {
+            section.style.display = 'block';
+            console.log('Name section is now VISIBLE');
+        } else {
+            section.style.display = 'none';
+            console.log('Name section is now HIDDEN');
+        }
+    }
+
     function togglePasswordSection() {
         const section = document.getElementById('passwordSection');
-        const icon = document.getElementById('toggle-icon');
+        if (!section) {
+            alert('Error: passwordSection not found');
+            return;
+        }
         
-        section.classList.toggle('password-section-hidden');
-        icon.classList.toggle('fa-chevron-right');
-        icon.classList.toggle('fa-chevron-down');
+        if (section.style.display === 'none' || section.style.display === '') {
+            section.style.display = 'block';
+            console.log('Password section is now VISIBLE');
+        } else {
+            section.style.display = 'none';
+            console.log('Password section is now HIDDEN');
+        }
     }
 
     function validatePasswords() {
