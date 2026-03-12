@@ -1805,14 +1805,14 @@ app.get('/download-cor/:studentId', isAuthenticated, async (req, res) => {
                 const filesCollection = mongoose.connection.collection('cors.files');
                 const fileInfo = await filesCollection.findOne({ _id: fileId });
                 
-                let downloadFileName = `${student.mmId}_COR`;
+                let downloadFileName = `${student.lastName}, ${student.firstName}_COR`;
                 let contentType = 'application/octet-stream';
                 
                 if (fileInfo && fileInfo.metadata) {
                     // Extract original filename for proper extension
                     if (fileInfo.metadata.originalFilename) {
                         const ext = path.extname(fileInfo.metadata.originalFilename);
-                        downloadFileName = `${student.mmId}_COR${ext}`;
+                        downloadFileName = `${student.lastName}, ${student.firstName}_COR${ext}`;
                     }
                     // Use stored MIME type for proper file recognition
                     if (fileInfo.metadata.mimeType) {
@@ -1846,7 +1846,7 @@ app.get('/download-cor/:studentId', isAuthenticated, async (req, res) => {
                 
                 // Extract extension from original file path
                 const ext = path.extname(filePath);
-                res.download(filePath, `${student.mmId}_COR${ext}`);
+                res.download(filePath, `${student.lastName}, ${student.firstName}_COR${ext}`);
             } catch (fileErr) {
                 console.error("File System Download Error:", fileErr);
                 return res.status(500).json({ error: "Error downloading COR" });
