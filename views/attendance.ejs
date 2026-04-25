@@ -425,42 +425,76 @@
                 folderId.value = selectedFolderId;
 
                 if (selectedFolderId) {
+                    eventSelect.innerHTML = '<option value="" disabled selected>Loading events...</option>';
+                    eventSelect.disabled = true;
+
                     try {
-                        const response = await fetch(`/folder-details/${selectedFolderId}`);
-                        const html = await response.text();
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        
-                        // Extract events from the response
-                        fetch(`/api/folder-events/${selectedFolderId}`)
-                            .then(res => res.json())
-                            .then(data => {
-                                eventSelect.innerHTML = '<option value="" disabled selected>-- Select Event --</option>';
-                                data.events.forEach(event => {
-                                    const option = document.createElement('option');
-                                    option.value = event;
-                                    option.textContent = event;
-                                    eventSelect.appendChild(option);
-                                });
-                                eventSelect.disabled = false;
-                            })
-                            .catch(err => {
-                                console.error('Error loading events:', err);
-                                eventSelect.disabled = true;
+                        const response = await fetch(`/api/folder-events/${selectedFolderId}`);
+                        const data = await response.json();
+
+                        if (Array.isArray(data) && data.length > 0) {
+                            eventSelect.innerHTML = '<option value="" disabled selected>-- Select Event --</option>';
+                            data.forEach(event => {
+                                const option = document.createElement('option');
+                                option.value = event.eventName;
+                                option.textContent = event.eventName;
+                                option.dataset.eventType = event.eventType || 'Whole Day';
+                                eventSelect.appendChild(option);
                             });
+                            eventSelect.disabled = false;
+                        } else {
+                            eventSelect.innerHTML = '<option value="" disabled selected>No events in this folder</option>';
+                            eventSelect.disabled = true;
+                        }
                     } catch (err) {
-                        console.error('Error:', err);
+                        console.error('Error loading events:', err);
+                        eventSelect.innerHTML = '<option value="" disabled selected>Error loading events</option>';
+                        eventSelect.disabled = true;
                     }
                 }
+            });
+
+            const sessionTypeSelect = document.querySelector('select[name="sessionType"]');
+            const renderSessionOptions = (eventType) => {
+                const sessionOptions = [
+                    { value: 'AM_IN', label: 'Morning Check-In (AM IN)' },
+                    { value: 'AM_OUT', label: 'Morning Check-Out (AM OUT)' }
+                ];
+
+                if (eventType === 'Whole Day') {
+                    sessionOptions.push(
+                        { value: 'PM_IN', label: 'Afternoon Check-In (PM IN)' },
+                        { value: 'PM_OUT', label: 'Afternoon Check-Out (PM OUT)' }
+                    );
+                }
+
+                sessionTypeSelect.innerHTML = '';
+                sessionOptions.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt.value;
+                    option.textContent = opt.label;
+                    sessionTypeSelect.appendChild(option);
+                });
+            };
+
+            eventSelect.addEventListener('change', () => {
+                const selectedOption = eventSelect.options[eventSelect.selectedIndex];
+                const selectedEventType = selectedOption?.dataset?.eventType || 'Whole Day';
+                renderSessionOptions(selectedEventType);
             });
 
             scanForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const folderIdVal = folderId.value;
                 const eventName = eventSelect.value;
-                const sessionType = document.querySelector('select[name="sessionType"]').value;
-                
-                window.location.href = `/scanner?folderId=${folderIdVal}&eventName=${eventName}&sessionType=${sessionType}`;
+                const sessionType = sessionTypeSelect.value;
+
+                if (!eventName) {
+                    alert('Please select an event before opening the scanner.');
+                    return;
+                }
+
+                window.location.href = `/scanner?folderId=${folderIdVal}&eventName=${encodeURIComponent(eventName)}&sessionType=${sessionType}`;
             });
         }
 

@@ -2427,10 +2427,15 @@ app.get('/api/folder-events/:folderId', isAuthenticated, async (req, res) => {
     try {
         const sessions = await AttendanceSession.find({ folderId: req.params.folderId });
         
-        // Get unique event names
-        const uniqueEvents = [...new Set(sessions.map(s => s.eventName))].map(name => ({
-            eventName: name
-        }));
+        // Get unique event names with their event type
+        const uniqueEventNames = [...new Set(sessions.map(s => s.eventName))];
+        const uniqueEvents = uniqueEventNames.map(name => {
+            const session = sessions.find(s => s.eventName === name);
+            return {
+                eventName: name,
+                eventType: session?.eventType || 'Whole Day'
+            };
+        });
         
         res.json(uniqueEvents);
     } catch (err) {
@@ -4643,29 +4648,39 @@ app.post('/create-event/:folderId', isAuthenticated, async (req, res) => {
         // Create absence records for all students with fines
         const allStudents = await User.find({ role: 'student' });
         const sessionFine = eventType === 'Half Day' ? 50 : 30;
+        const sessionTypeSets = {
+            'Whole Day': ['AM_IN', 'AM_OUT', 'PM_IN', 'PM_OUT'],
+            'Half Day': ['AM_IN', 'AM_OUT']
+        };
+        const sessionTypes = sessionTypeSets[eventType] || ['AM_IN', 'AM_OUT', 'PM_IN', 'PM_OUT'];
         
-        const bulkOps = allStudents.map(student => ({
-            updateOne: {
-                filter: {
-                    studentId: student.mmId,
-                    eventName: eventName.trim(),
-                    sessionType: 'General'
-                },
-                update: {
-                    $setOnInsert: {
-                        studentName: `${student.lastName}, ${student.firstName}`,
-                        firstName: student.firstName,
-                        lastName: student.lastName,
-                        yearLevel: student.yearLevel || '1st Year',
-                        folderId: folderId,
-                        timestamp: null,
-                        status: 'Absent',
-                        fine: sessionFine
+        const bulkOps = [];
+        allStudents.forEach(student => {
+            sessionTypes.forEach(sessionType => {
+                bulkOps.push({
+                    updateOne: {
+                        filter: {
+                            studentId: student.mmId,
+                            eventName: eventName.trim(),
+                            sessionType: sessionType
+                        },
+                        update: {
+                            $setOnInsert: {
+                                studentName: `${student.lastName}, ${student.firstName}`,
+                                firstName: student.firstName,
+                                lastName: student.lastName,
+                                yearLevel: student.yearLevel || '1st Year',
+                                folderId: folderId,
+                                timestamp: null,
+                                status: 'Absent',
+                                fine: sessionFine
+                            }
+                        },
+                        upsert: true
                     }
-                },
-                upsert: true // Create if not exists, leave unchanged if exists
-            }
-        }));
+                });
+            });
+        });
         
         if (bulkOps.length > 0) {
             await Attendance.bulkWrite(bulkOps);
