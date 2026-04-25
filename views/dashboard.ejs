@@ -23,6 +23,30 @@
         .sidebar a { color: white; padding: 12px; display: block; text-decoration: none; transition: all 0.2s; }
         .sidebar a:hover { color: #ffcc00; background: rgba(255, 204, 0, 0.1); }
         
+        /* Sidebar Close Button */
+        .sidebar-close-btn {
+            background: transparent;
+            border: none;
+            color: #ffcc00;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 4px;
+            width: 32px;
+            height: 32px;
+            display: none;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 2001;
+            transition: all 0.3s;
+            line-height: 1;
+            text-align: center;
+        }
+        
+        .sidebar-close-btn:hover {
+            color: #fff;
+        }
+        
         /* Main Content */
         .content { flex: 1; margin-left: 290px; padding: 20px; }
         header { border-bottom: 3px solid #000; margin-bottom: 20px; padding: 10px 15px; }
@@ -117,6 +141,10 @@
                 transform: translateX(0);
                 overflow-y: auto;
             }
+            
+            .sidebar-close-btn {
+                display: block !important;
+            }
 
             .content {
                 margin-left: 0;
@@ -146,6 +174,7 @@
                 border-radius: 4px;
                 cursor: pointer;
                 margin-right: 10px;
+                position: relative;
             }
 
             header h1 {
@@ -264,30 +293,52 @@
         .install-btn i {
             margin-right: 8px;
         }
+
+        /* Sidebar Menu Item Hover Styles */
+        .sidebar a:hover,
+        .sidebar div[onclick]:hover {
+            color: #FFD700 !important;
+            background: rgba(255, 204, 0, 0.15) !important;
+            padding-left: 16px !important;
+            transition: all 0.2s ease !important;
+        }
     </style>
 </head>
 <body>
 
     <div class="sidebar" id="sidebar">
     <button class="sidebar-close-btn" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
-    <h2 style="color: #FFD700;">BSBA-MM</h2>
-    <p style="color: #e0e0e0;">User: <strong><%= user.name %></strong></p>
-    <p style="color: #e0e0e0;">Role: <strong><%= user.role %></strong></p>
     
-    <% if (user.role === 'adviser' || user.role === 'officer') { %>
-    <div style="padding: 10px 0px; border-bottom: 1px solid #ffcc00; margin-bottom: 10px;">
-        <a href="/admin/reset-requests" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px;">
-            <i class="fas fa-key"></i> <span style="font-weight: bold;">Password Reset Requests</span>
-            <% if (pendingResetRequestsCount > 0) { %>
-                <span class="sidebar-notification-badge"><%= pendingResetRequestsCount %></span>
-            <% } %>
-        </a>
-    </div>
+    <hr style="border: 1px solid #FFD700; margin: 50px 0 15px 0;">
+    
+    <!-- Sidebar Menu Items -->
+    <a href="/my-account" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-user"></i> <span style="font-weight: bold;">Account Profile</span>
+    </a>
+    
+    <a href="/attendance" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-camera"></i> <span style="font-weight: bold;">Attendance</span>
+    </a>
+    
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+    <a href="/admin/students" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-users"></i> <span style="font-weight: bold;">Master Student List</span>
+    </a>
     <% } %>
     
-    <hr style="border: 1px solid #FFD700;">
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+    <a href="/fines-management" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-file-invoice-dollar"></i> <span style="font-weight: bold;">Fines Management</span>
+    </a>
+    <% } %>
     
-    <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
+    <a href="/my-documents" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-file-contract"></i> <span style="font-weight: bold;">My Documents</span>
+    </a>
+    
+    <hr style="border: 1px solid #FFD700; margin: 15px 0;">
+    
+    <form action="/logout" method="POST" style="margin-top: 15px; display: block !important;">
         <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #FFD700; color: #121212; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: block;">
             <i class="fas fa-sign-out-alt"></i> Logout
         </button>
@@ -295,34 +346,68 @@
 </div>
 
                 <div class="content">
-            <header style="background: #FFD700; color: #121212; padding: 12px 15px; display: flex; align-items: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-    <button onclick="toggleSidebar()" style="background: rgba(18,18,18,0.15); border: 1px solid rgba(18,18,18,0.3); color: #121212; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-right: 15px; font-size: 1.2rem;">
-        <i class="fas fa-bars"></i>
-    </button>
-    <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #121212;">Marketing Management Portal</h1>
+            <header style="background: #FFD700; color: #121212; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+    <div style="display: flex; align-items: center;">
+        <button onclick="toggleSidebar()" style="background: rgba(18,18,18,0.15); border: 1px solid rgba(18,18,18,0.3); color: #121212; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-right: 15px; font-size: 1.2rem; position: relative;">
+            <i class="fas fa-bars"></i>
+            <span id="hamburgerBadge" style="position: absolute; top: -8px; right: -8px; background: #ff4444; color: white; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; text-align: center; font-size: 0.7em; font-weight: bold; display: none;"></span>
+        </button>
+        <h1 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #121212;">Marketing Management Portal</h1>
+    </div>
+    
+    <div style="width: 40px;"></div>
 </header>
 
-        <button id="backBtn" class="back-btn" onclick="showMenu()" style="display: none; margin-bottom: 15px; background: transparent; color: #FFD700; border: 2px solid #FFD700;"><i class="fas fa-arrow-left"></i> Back to Menu</button>
-
-        <div id="mainMenu" class="menu-grid">
-            <div class="menu-card" onclick="openSection('announcements')" style="position: relative;">
-                <i class="fas fa-bullhorn"></i><br>Announcements
-                <% if (newAnnouncementsCount > 0) { %>
-                    <span class="notification-badge" style="position: absolute; top: 10px; right: 10px; margin-left: 0;"><%= newAnnouncementsCount %></span>
+        <!-- User Profile Header - Visible to All Users -->
+        <header style="background: #FFD700; color: #121212; padding: 8px 15px; display: flex; align-items: center; justify-content: space-between; z-index: 999; box-shadow: 0 1px 4px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <% if (user.profilePhoto) { %>
+                    <img src="<%= user.profilePhoto %>" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #121212;">
+                <% } else { %>
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; border: 2px solid #121212;">
+                        <i class="fas fa-user" style="font-size: 1.2rem; color: #999;"></i>
+                    </div>
                 <% } %>
+                <span style="font-weight: 600; font-size: 0.95rem;"><%= user.firstName %> <%= user.lastName %></span>
             </div>
-            <div class="menu-card" onclick="openSection('attendance')"><i class="fas fa-camera"></i><br>Attendance</div>
-            <a href="/my-account" class="menu-card" style="text-decoration: none; display: flex; align-items: center; justify-content: center;"><i class="fas fa-user"></i><br>Profile</a>
-            <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                <a href="/admin/students" class="menu-card" style="text-decoration: none; display: flex; align-items: center; justify-content: center;"><i class="fas fa-users"></i><br>Master Student List</a>
-            <% } %>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <% if (user.role === 'adviser' || user.role === 'officer') { %>
+                    <a href="/admin/reset-requests" style="position: relative; color: #121212; text-decoration: none; font-size: 1.3rem; transition: all 0.3s; padding: 4px 8px; border-radius: 8px;" title="Password Reset Requests">
+                        <i class="fas fa-lock"></i>
+                        <% if (pendingResetRequestsCount > 0) { %>
+                            <span style="position: absolute; top: -8px; right: -8px; background: #ff4444; color: white; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; text-align: center; font-size: 0.7em; font-weight: bold;">
+                                <%= pendingResetRequestsCount %>
+                            </span>
+                        <% } %>
+                    </a>
+                <% } %>
+                <a href="/wallet" style="position: relative; color: #121212; text-decoration: none; font-size: 1.3rem; transition: all 0.3s; padding: 4px 8px; border-radius: 8px;" title="Wallet & Fines">
+                    <i class="fas fa-wallet"></i>
+                    <% if (studentTotalFine > 0) { %>
+                        <span style="position: absolute; top: -8px; right: -8px; background: #ff4444; color: white; border-radius: 50%; width: auto; min-width: 22px; height: 22px; line-height: 22px; text-align: center; font-size: 0.6em; font-weight: bold; padding: 0 4px;">₱<%= studentTotalFine.toFixed(0) %></span>
+                    <% } %>
+                </a>
+            </div>
+        </header>
+
+        <button id="backBtn" class="back-btn" onclick="showMenu()" style="display: none; margin-bottom: 15px; background: transparent; color: #FFD700; border: 2px solid #FFD700;"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+
+        <!-- Welcome Section -->
+        <div id="welcomeSection" style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); color: #FFD700; padding: 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-left: 5px solid #FFD700;">
+            <h1 style="margin: 0; font-size: 2em; color: #FFD700;">Welcome, <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %></h1>
         </div>
 
-        <div id="announcements" class="portal-section">
-    <h2><i class="fas fa-bullhorn"></i> Announcements</h2>
+        <!-- Latest Announcements Section -->
+        <div id="announcementsSection">
+            <h2 style="color: #FFD700; margin-bottom: 20px;"><i class="fas fa-bullhorn"></i> Latest Announcements</h2>
 
     <% if (user.role === 'officer' || user.role === 'adviser') { %>
-        <div style="background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #2d2d2d;">
+        <div style="margin-bottom: 20px;">
+            <button onclick="toggleAnnouncementForm()" style="background: #FFD700; color: #121212; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+                <i class="fas fa-plus"></i> Post New Update
+            </button>
+        </div>
+        <div id="announcementForm" style="background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #2d2d2d; display: none;">
             <h3 style="color: #FFD700; margin-top: 0;">Post New Update</h3>
             <form action="/post-announcement" method="POST" enctype="multipart/form-data" onsubmit="return validateAnnouncementForm(event)">
                 <input type="text" name="title" placeholder="Announcement Title" required style="margin: 8px 0;">
@@ -335,20 +420,29 @@
 
     <div id="announcementList">
     <% announcements.forEach(post => { %>
-        <div class="announcement-item" style="position: relative;">
-            
-            <% if (user.role === 'officer' || user.role === 'adviser') { %>
+        <% if (user.role === 'officer' || user.role === 'adviser') { %>
+            <div style="display: flex; gap: 10px; margin-bottom: 8px; justify-content: flex-end;">
+                <button type="button" 
+                        onclick="openEditAnnouncementModal('<%= post._id %>', '<%= post.title.replace(/'/g, "\\'") %>', '<%= post.message.replace(/'/g, "\\'").replace(/\n/g, '\\n') %>')"
+                        style="background:none; border:none; cursor:pointer; font-size: 1.2em; color: #e0e0e0; transition: all 0.3s ease; padding: 5px 10px;"
+                        onmouseover="this.style.color='#4da6ff'"
+                        onmouseout="this.style.color='#e0e0e0'"
+                        title="Edit announcement">
+                    <i class="fas fa-edit"></i>
+                </button>
                 <button type="button" 
                         onclick="showDeleteAnnouncementConfirmation('<%= post._id %>')"
-                        style="position: absolute; top: 10px; right: 10px; background:none; border:none; cursor:pointer; font-size: 1.2em; color: #e0e0e0; transition: all 0.3s ease;"
+                        style="background:none; border:none; cursor:pointer; font-size: 1.2em; color: #e0e0e0; transition: all 0.3s ease; padding: 5px 10px;"
                         onmouseover="this.style.color='#ff6b6b'"
-                        onmouseout="this.style.color='#e0e0e0'">
+                        onmouseout="this.style.color='#e0e0e0'"
+                        title="Delete announcement">
                     <i class="fas fa-trash"></i>
                 </button>
-            <% } %>
-
+            </div>
+        <% } %>
+        <div class="announcement-item">
             <h3><%= post.title %></h3>
-            <p><%= post.message %></p>
+            <p style="white-space: pre-wrap; word-wrap: break-word;"><%= post.message %></p>
             
             <% if (post.imageUrl) { %>
                 <img src="<%= post.imageUrl %>" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">
@@ -459,6 +553,30 @@
 
 </div>
 
+<% if (user.role === 'student') { %>
+<div id="myFines" class="portal-section" style="display: none;">
+    <h2><i class="fas fa-file-invoice-dollar"></i> My Fines</h2>
+    
+    <div id="finesContainer" style="background: #1e1e1e; padding: 20px; border-radius: 12px; border-left: 5px solid #FFD700; border: 1px solid #2d2d2d;">
+        <div style="text-align: center; color: #e0e0e0;">
+            <p>Loading your fines...</p>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<% if (user.role === 'officer' || user.role === 'adviser') { %>
+<div id="departmentFines" class="portal-section" style="display: none;">
+    <h2><i class="fas fa-chart-bar"></i> Department Fines Overview</h2>
+    
+    <div id="departmentFinesContainer" style="background: #1e1e1e; padding: 20px; border-radius: 12px; border-left: 5px solid #FFD700; border: 1px solid #2d2d2d;">
+        <div style="text-align: center; color: #e0e0e0;">
+            <p>Loading department fines...</p>
+        </div>
+    </div>
+</div>
+<% } %>
+
 </div>
 
 <% if (user.role === 'officer' || user.role === 'adviser') { %>
@@ -492,9 +610,12 @@
     const userRole = '<%= user.role %>';
     
     function openSection(id) {
-        // 1. Hide the main menu grid
-        const mainMenu = document.getElementById('mainMenu');
-        if (mainMenu) mainMenu.style.setProperty('display', 'none', 'important');
+        // 1. Hide the welcome and announcements section
+        const welcomeSection = document.getElementById('welcomeSection');
+        if (welcomeSection) welcomeSection.style.setProperty('display', 'none', 'important');
+        
+        const announcementsSection = document.getElementById('announcementsSection');
+        if (announcementsSection) announcementsSection.style.setProperty('display', 'none', 'important');
 
         // 2. Hide ALL portal sections first
         document.querySelectorAll('.portal-section').forEach(section => {
@@ -505,7 +626,7 @@
         const targetSection = document.getElementById(id);
         if (targetSection) {
             targetSection.style.setProperty('display', 'block', 'important');
-            // 4. Show the Back to Menu button
+            // 4. Show the Back to Dashboard button
             document.getElementById('backBtn').style.display = 'block';
             
             // 5. Auto-load QR codes when qr-codes section is opened
@@ -551,8 +672,9 @@
     }
 
     function showMenu() {
-        // Show menu and hide sections
-        document.getElementById('mainMenu').style.display = 'grid';
+        // Show welcome and announcements section and hide other sections
+        document.getElementById('welcomeSection').style.display = 'block';
+        document.getElementById('announcementsSection').style.display = 'block';
         document.querySelectorAll('.portal-section').forEach(s => s.style.display = 'none');
         document.getElementById('backBtn').style.display = 'none';
     }
@@ -662,6 +784,34 @@
         // This looks for the div with class="sidebar" and toggles the "active" style
         const sidebar = document.querySelector('.sidebar');
         sidebar.classList.toggle('active');
+    }
+    
+    function updateHamburgerBadge() {
+        const badge = document.getElementById('hamburgerBadge');
+        const hasPendingResets = <%= pendingResetRequestsCount || 0 %> > 0;
+        const hasStudentFine = <%= studentTotalFine || 0 %> > 0;
+        
+        if (hasPendingResets || hasStudentFine) {
+            badge.style.display = 'block';
+            let badgeText = '';
+            if (hasPendingResets) badgeText += '<%= pendingResetRequestsCount %>';
+            if (hasStudentFine && hasPendingResets) badgeText = '2';
+            else if (hasStudentFine) badgeText = '1';
+            badge.innerHTML = badgeText;
+        }
+    }
+    
+    // Initialize badge on page load
+    window.addEventListener('load', updateHamburgerBadge);
+    if (document.readyState === 'complete') updateHamburgerBadge();
+
+    function toggleAnnouncementForm() {
+        const form = document.getElementById('announcementForm');
+        if (form.style.display === 'none') {
+            form.style.display = 'block';
+        } else {
+            form.style.display = 'none';
+        }
     }
 
     // This closes the sidebar if you tap anywhere on the dashboard while it's open
@@ -853,6 +1003,71 @@ function validateAnnouncementForm(event) {
 }
 
 // Delete announcement confirmation
+function openEditAnnouncementModal(announcementId, title, message) {
+    message = message.replace(/\\n/g, '\n');
+    
+    const modal = document.createElement('div');
+    modal.id = 'editAnnouncementModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: #1e1e1e; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; border: 2px solid #FFD700;">
+            <h2 style="color: #FFD700; margin-top: 0; margin-bottom: 20px;">Edit Announcement</h2>
+            <form id="editForm" onsubmit="submitEditAnnouncement(event, '${announcementId}')">
+                <input type="text" id="editTitle" placeholder="Announcement Title" required style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; font-size: 1em; color: #000; box-sizing: border-box;" value="${title}">
+                <textarea id="editMessage" placeholder="Write your message here..." required style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; font-size: 1em; color: #000; box-sizing: border-box; min-height: 120px;">${message}</textarea>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" style="flex: 1; background: #FFD700; color: #121212; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='#FFC700'" onmouseout="this.style.background='#FFD700'">Update Announcement</button>
+                    <button type="button" onclick="closeEditAnnouncementModal()" style="flex: 1; background: #555; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='#777'" onmouseout="this.style.background='#555'">Cancel</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeEditAnnouncementModal();
+        }
+    });
+}
+
+function closeEditAnnouncementModal() {
+    const modal = document.getElementById('editAnnouncementModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function submitEditAnnouncement(e, announcementId) {
+    e.preventDefault();
+    const title = document.getElementById('editTitle').value;
+    const message = document.getElementById('editMessage').value;
+    
+    const form = document.createElement('form');
+    form.action = '/edit-announcement';
+    form.method = 'POST';
+    form.innerHTML = `
+        <input type="hidden" name="announcementId" value="${announcementId}">
+        <input type="hidden" name="title" value="${title}">
+        <textarea name="message" style="display: none;">${message}</textarea>
+    `;
+    document.body.appendChild(form);
+    form.submit();
+}
+
 function showDeleteAnnouncementConfirmation(announcementId) {
     showDeleteConfirmation({
         title: '⚠️ Delete Announcement',
@@ -870,7 +1085,110 @@ function showDeleteAnnouncementConfirmation(announcementId) {
     });
 }
 
+// Load student fines
+function loadStudentFines() {
+    const container = document.getElementById('finesContainer');
+    
+    fetch('/api/student-fines')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = '<table style="width: 100%; border-collapse: collapse;">';
+                html += '<thead><tr style="background: #000; color: #ffcc00;"><th style="padding: 12px; text-align: left; border-bottom: 2px solid #ffcc00;">Event</th><th style="padding: 12px; text-align: center; border-bottom: 2px solid #ffcc00;">Total Fine</th></tr></thead>';
+                html += '<tbody>';
+                
+                let totalFine = 0;
+                data.events.forEach((event, index) => {
+                    html += `<tr style="background: ${index % 2 === 0 ? '#252525' : '#1e1e1e'}; border-bottom: 1px solid #2d2d2d;">`;
+                    html += `<td style="padding: 12px; color: #e0e0e0;">${event.eventName}</td>`;
+                    html += `<td style="padding: 12px; text-align: center; color: #ffcc00; font-weight: 700;">₱${event.totalFine}</td>`;
+                    html += '</tr>';
+                    totalFine += event.totalFine;
+                });
+                
+                html += `<tr style="background: #000; margin-top: 10px; border-top: 2px solid #ffcc00;"><td style="padding: 12px; color: #ffcc00; font-weight: 700;">TOTAL</td><td style="padding: 12px; text-align: center; color: #ffcc00; font-weight: 700; font-size: 1.2em;">₱${totalFine}</td></tr>`;
+                html += '</tbody></table>';
+                
+                if (data.events.length === 0) {
+                    html = '<p style="text-align: center; color: #4ade80; font-weight: 700;">✅ No fines recorded. Great job!</p>';
+                }
+                
+                container.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = '<p style="color: #ff6b6b;">Error loading fines data.</p>';
+        });
+}
+
+// Load department fines
+function loadDepartmentFines() {
+    const container = document.getElementById('departmentFinesContainer');
+    
+    fetch('/api/all-student-fines')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">';
+                
+                // Stats cards
+                html += `<div style="background: #252525; border-left: 5px solid #ffcc00; padding: 15px; border-radius: 8px; border: 1px solid #2d2d2d;">
+                    <p style="color: #999; margin: 0; font-size: 0.9em;">Total Students with Fines</p>
+                    <h3 style="color: #ffcc00; margin: 10px 0 0 0;">${data.students.length}</h3>
+                </div>`;
+                
+                html += `<div style="background: #252525; border-left: 5px solid #4ade80; padding: 15px; border-radius: 8px; border: 1px solid #2d2d2d;">
+                    <p style="color: #999; margin: 0; font-size: 0.9em;">Total Fines Collected</p>
+                    <h3 style="color: #4ade80; margin: 10px 0 0 0;">₱${data.totalCollected}</h3>
+                </div>`;
+                
+                html += '</div>';
+                
+                // Fines table
+                html += '<table style="width: 100%; border-collapse: collapse;">';
+                html += '<thead><tr style="background: #000; color: #ffcc00;"><th style="padding: 12px; text-align: left; border-bottom: 2px solid #ffcc00;">Student Name</th><th style="padding: 12px; text-align: center; border-bottom: 2px solid #ffcc00;">Year Level</th><th style="padding: 12px; text-align: center; border-bottom: 2px solid #ffcc00;">Absences</th><th style="padding: 12px; text-align: center; border-bottom: 2px solid #ffcc00;">Total Fine</th></tr></thead>';
+                html += '<tbody>';
+                
+                data.students.forEach((student, index) => {
+                    html += `<tr style="background: ${index % 2 === 0 ? '#252525' : '#1e1e1e'}; border-bottom: 1px solid #2d2d2d;">`;
+                    html += `<td style="padding: 12px; color: #e0e0e0;">${student.studentName}</td>`;
+                    html += `<td style="padding: 12px; text-align: center; color: #ffcc00;">${student.yearLevel}</td>`;
+                    html += `<td style="padding: 12px; text-align: center; color: #ff6b6b;">${student.absences}</td>`;
+                    html += `<td style="padding: 12px; text-align: center; color: #ffcc00; font-weight: 700;">₱${student.totalFine}</td>`;
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table>';
+                
+                container.innerHTML = html;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = '<p style="color: #ff6b6b;">Error loading fines data.</p>';
+        });
+}
+
+// Override openSection to load fines when section is opened
+const originalOpenSection = openSection;
+openSection = function(sectionId) {
+    originalOpenSection(sectionId);
+    
+    if (sectionId === 'myFines') {
+        loadStudentFines();
+    } else if (sectionId === 'departmentFines') {
+        loadDepartmentFines();
+    }
+};
+
 </script>
 <script src="/pwa-install.js"></script>
+<script src="/document-notifications.js" data-user-role="<%= user.role %>"></script>
+<script>
+    // Add user role to document element for role-based checks
+    document.documentElement.setAttribute('data-user-role', '<%= user.role %>');
+</script>
+<%- include('./_footer.ejs') %>
 </body>
 </html>

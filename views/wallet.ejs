@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#FFD700">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/img/logo.jpg">
+    <title>Wallet & Fines - BSBA Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #121212;
+        }
+        
+        /* Sidebar */
+        .sidebar { 
+            width: 250px;
+            background: #000;
+            color: #ffcc00;
+            height: 100vh;
+            position: fixed;
+            padding: 20px;
+            border-right: 4px solid #ffcc00;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            border-bottom: 2px solid #ffcc00;
+            padding-bottom: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .sidebar a {
+            color: white;
+            padding: 12px;
+            display: block;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .sidebar a:hover {
+            color: #ffcc00;
+            background: rgba(255, 204, 0, 0.1);
+        }
+
+        .sidebar-notification-badge {
+            display: inline-block;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 68, 68, 0); }
+        }
+
+        .logout-btn {
+            background: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            margin-top: 30px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #e6b800;
+        }
+        
+        /* Main Content */
+        .content { 
+            margin-left: 290px; 
+            padding: 30px;
+        }
+        
+        /* Header */
+        header {
+            background: #FFD700;
+            color: #121212;
+            padding: 20px 24px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 2px solid #800000;
+        }
+
+        header a {
+            color: #121212;
+            text-decoration: none;
+            font-size: 1.2em;
+            background: rgba(128, 0, 0, 0.15);
+            padding: 6px 10px;
+            border-radius: 3px;
+            transition: all 0.3s;
+            border: 1px solid #800000;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        header a:hover {
+            background: rgba(128, 0, 0, 0.25);
+            color: #800000;
+        }
+
+        header h1 {
+            flex: 1;
+            margin: 0;
+            font-size: 1.3em;
+            color: #121212;
+            line-height: 1;
+        }
+        
+        /* Balance Card */
+        .balance-card {
+            background: linear-gradient(135deg, #800000 0%, #600000 100%);
+            color: #FFD700;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 45px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            border: 2px solid #FFD700;
+        }
+
+        .balance-card h2 {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            opacity: 0.95;
+            margin-bottom: 15px;
+            font-weight: 500;
+            color: #FFD700;
+        }
+
+        .balance-card .amount {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+            color: #FFD700;
+        }
+
+        .balance-card p {
+            opacity: 0.95;
+            font-size: 0.95em;
+            color: #e0e0e0;
+        }
+
+        .exemption-notice {
+            background: linear-gradient(135deg, #90EE90 0%, #7FCD7F 100%);
+            color: #2e7d32;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 45px;
+            margin-bottom: 20px;
+            border: 2px solid #2e7d32;
+            text-align: center;
+        }
+
+        .exemption-notice h2 {
+            margin-top: 0;
+            color: #2e7d32;
+        }
+
+        .exemption-notice p {
+            margin: 10px 0 0 0;
+            font-weight: 500;
+        }
+
+        /* Section Card */
+        .card {
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+            border-top: 4px solid #800000;
+            border: 1px solid #2d2d2d;
+        }
+
+        .card h3 {
+            color: #FFD700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 3px solid #FFD700;
+            padding-bottom: 15px;
+        }
+
+        .card h3 i {
+            font-size: 1.3em;
+            color: #FFD700;
+        }
+
+        /* Form Styling */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #FFD700;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #2d2d2d;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 1em;
+            background: #252525;
+            color: #e0e0e0;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Button Styling */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #800000;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+        }
+
+        .btn-primary:hover {
+            background: #600000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(128, 0, 0, 0.3);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #2d2d2d;
+            color: #e0e0e0;
+            border: 1px solid #404040;
+        }
+
+        .btn-secondary:hover {
+            background: #3d3d3d;
+        }
+
+        /* Payment History */
+        .payment-item {
+            background: #252525;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid #800000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payment-item-info h4 {
+            margin: 0 0 5px 0;
+            color: #FFD700;
+        }
+
+        .payment-item-info p {
+            margin: 3px 0;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .payment-item-amount {
+            text-align: right;
+            font-weight: bold;
+            color: #FFD700;
+            font-size: 1.2em;
+        }
+
+        .payment-item-status {
+            text-align: right;
+            margin-left: 20px;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85em;
+            margin: 3px;
+        }
+
+        .status-pending {
+            background: #FFD700;
+            color: #800000;
+        }
+
+        .status-verified {
+            background: #90EE90;
+            color: #2e7d32;
+        }
+
+        .status-rejected {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .status-absent {
+            background: #ffebee;
+            color: #c62828;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            display: inline-block;
+        }
+
+        .status-present {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            display: inline-block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .divider {
+            height: 1px;
+            background: #2d2d2d;
+            margin: 25px 0;
+        }
+
+        .fines-table tbody tr:hover {
+            background: #2d2d2d;
+        }
+
+        .fines-table th {
+            background: #800000;
+            color: #FFD700;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #800000;
+        }
+
+        .fines-table td {
+            padding: 12px;
+            border-bottom: 1px solid #2d2d2d;
+            color: #e0e0e0;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 66.67%;
+                height: 100vh;
+                position: fixed;
+                left: 0;
+                top: 0;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 2000;
+                padding: 20px;
+                border-right: 4px solid #FFD700;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+                overflow-y: auto;
+            }
+
+            .content {
+                margin-left: 0;
+                padding: 15px;
+                padding-top: 20px;
+            }
+
+            header {
+                padding: 16px 18px;
+                margin-bottom: 15px;
+                gap: 7px;
+                border-radius: 5px;
+            }
+
+            header a {
+                padding: 5px 9px;
+                font-size: 1.1em;
+                border-radius: 3px;
+            }
+
+            header h1 {
+                font-size: 1.1em;
+            }
+
+            .balance-card {
+                padding: 20px;
+            }
+
+            .balance-card .amount {
+                font-size: 2.2em;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            .payment-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .payment-item-amount,
+            .payment-item-status {
+                text-align: left;
+                margin: 10px 0 0 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content {
+                padding: 12px;
+                padding-top: 18px;
+            }
+
+            header {
+                padding: 15px 16px;
+                margin-bottom: 15px;
+                gap: 6px;
+                border-radius: 4px;
+            }
+
+            header a {
+                padding: 4px 8px;
+                font-size: 1em;
+                border-radius: 2px;
+            }
+
+            header h1 {
+                font-size: 1em;
+            }
+
+            .card {
+                padding: 12px;
+            }
+
+            .balance-card {
+                padding: 15px;
+            }
+
+            .balance-card .amount {
+                font-size: 1.8em;
+            }
+        }
+
+        /* On Desktop: Show sidebar normally */
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                position: fixed !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <h2 style="color: #FFD700;">BSBA-MM</h2>
+        <a href="/dashboard" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-home"></i> <span style="font-weight: bold;">Dashboard</span>
+        </a>
+        <a href="/my-account" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-user"></i> <span style="font-weight: bold;">My Account</span>
+        </a>
+        <a href="/wallet" class="active" style="text-decoration: none; color: #FFD700; display: flex; align-items: center; gap: 10px; background: rgba(255, 215, 0, 0.1) !important; border-radius: 8px;">
+            <i class="fas fa-wallet"></i> <span style="font-weight: bold;">Wallet & Fines</span>
+        </a>
+        
+        <hr style="border: 1px solid #FFD700; margin: 15px 0;">
+        
+        <form action="/logout" method="POST" style="margin-top: 15px;">
+            <button type="submit" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </form>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <!-- Header -->
+        <header>
+            <a href="/dashboard" title="Back to Dashboard"><i class="fas fa-arrow-left"></i></a>
+            <h1><i class="fas fa-wallet"></i> Fines Balance</h1>
+        </header>
+
+        <!-- Balance Card -->
+        <% if (user.role === 'officer' || user.role === 'adviser') { %>
+            <div class="exemption-notice">
+                <h2><i class="fas fa-check-circle"></i> Fines Exemption</h2>
+                <p>As an <%= user.role === 'officer' ? 'Officer' : 'Adviser' %>, you are exempt from attendance fines.</p>
+            </div>
+        <% } else { %>
+            <div class="balance-card">
+                <h2>Total Fines Balance</h2>
+                <div class="amount">₱<%= totalFinesBalance.toFixed(2) %></div>
+                <% if (totalFinesBalance > 0) { %>
+                    <p>You have pending fines. Submit a payment below to reduce your balance.</p>
+                <% } else { %>
+                    <p style="color: #90EE90;">✓ No pending fines. You're all set!</p>
+                <% } %>
+            </div>
+        <% } %>
+
+        <!-- Payment Submission Section -->
+        <% if (user.role === 'student') { %>
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3><i class="fas fa-plus-circle"></i> Submit Payment</h3>
+                <button type="button" class="toggle-btn" onclick="togglePaymentForm()" style="background: #FFD700; color: #000; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    <i class="fas fa-chevron-down" id="toggleIcon"></i>
+                </button>
+            </div>
+            
+            <form id="paymentForm" style="display: none;">
+                <div class="form-group">
+                    <label for="amount">Amount (PHP) *</label>
+                    <input type="number" id="amount" name="amount" placeholder="Enter amount" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentMethod">Payment Method *</label>
+                    <select id="paymentMethod" name="paymentMethod" required>
+                        <option value="">Select a payment method</option>
+                        <option value="cash">Cash Payment</option>
+                        <option value="service">Service Payment</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description (Optional)</label>
+                    <textarea id="description" name="description" placeholder="Add any notes about this payment (e.g., where/how you paid)"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Submit Payment</button>
+                    <button type="reset" class="btn btn-secondary">Clear</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Payment History Section -->
+        <div class="card">
+            <h3><i class="fas fa-history"></i> Payment History</h3>
+
+            <% if (paymentHistory && paymentHistory.length > 0) { %>
+                <% paymentHistory.forEach((payment, index) => { %>
+                    <div class="payment-item">
+                        <div class="payment-item-info">
+                            <h4>
+                                <% if (payment.paymentMethod === 'cash') { %>
+                                    <i class="fas fa-money-bill"></i> Cash Payment
+                                <% } else { %>
+                                    <i class="fas fa-briefcase"></i> Service Payment
+                                <% } %>
+                            </h4>
+                            <p><strong>Submitted:</strong> <%= new Date(payment.submittedAt).toLocaleDateString() %> <%= new Date(payment.submittedAt).toLocaleTimeString() %></p>
+                            <% if (payment.description) { %>
+                                <p><strong>Notes:</strong> <%= payment.description %></p>
+                            <% } %>
+                            <% if (payment.status === 'rejected' && payment.rejectionReason) { %>
+                                <p style="color: #ff6b6b;"><strong>Rejection Reason:</strong> <%= payment.rejectionReason %></p>
+                            <% } %>
+                        </div>
+                        <div class="payment-item-status">
+                            <div class="payment-item-amount">₱<%= payment.amount.toFixed(2) %></div>
+                            <span class="status-badge status-<%= payment.status %>"><%= payment.status.toUpperCase() %></span>
+                            <% if (payment.status === 'verified' && payment.verifiedBy) { %>
+                                <p style="font-size: 0.85em; margin-top: 5px; color: #999;">Verified by: <%= payment.verifiedBy %></p>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No payment history yet. Submit your first payment above!</p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Fines Breakdown Section -->
+        <div class="card">
+            <h3><i class="fas fa-list"></i> Fines Breakdown</h3>
+
+            <!-- Semester/Folder Selector -->
+            <% if (folders && folders.length > 0) { %>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="folderSelect">📁 Select Semester/Folder:</label>
+                    <select id="folderSelect" onchange="updateFinesDisplay()" style="width: 100%; padding: 10px; border-radius: 5px; background: #252525; color: #e0e0e0; border: 1px solid #2d2d2d;">
+                        <option value="">-- View All Fines --</option>
+                        <% folders.forEach(folder => { %>
+                            <option value="<%= folder._id %>" <% if (selectedFolder && selectedFolder._id.toString() === folder._id.toString()) { %>selected<% } %>><%= folder.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+            <% } %>
+
+            <% if (finesBreakdown && finesBreakdown.length > 0) { %>
+                <div style="overflow-x: auto;">
+                    <table class="fines-table">
+                        <thead>
+                            <tr>
+                                <th>Event Name</th>
+                                <th style="text-align: center;">Session Type</th>
+                                <th style="text-align: center;">Status</th>
+                                <th style="text-align: right;">Fine Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% let totalDisplayFines = 0; %>
+                            <% finesBreakdown.forEach((record) => { %>
+                                <tr>
+                                    <td><%= record.eventName %></td>
+                                    <td style="text-align: center;"><%= record.sessionType %></td>
+                                    <td style="text-align: center;"><span class="<%= record.status === 'Absent' ? 'status-absent' : 'status-present' %>"><%= record.status %></span></td>
+                                    <td style="text-align: right; font-weight: bold; color: #FFD700;">₱<%= (record.fine || 0).toFixed(2) %></td>
+                                    <% totalDisplayFines += record.fine || 0; %>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" style="text-align: right;">TOTAL FINES (SELECTED SEMESTER):</td>
+                                <td style="text-align: right; font-size: 1.1em;">₱<%= totalDisplayFines.toFixed(2) %></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p><% if (selectedFolder) { %>No fines for this semester.<% } else { %>No attendance fines recorded.<% } %> Great job!</p>
+                </div>
+            <% } %>
+
+            <!-- Fines Summary -->
+            <div style="background: #2a2a2a; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; font-size: 0.95em;">
+                    <div>
+                        <p style="color: #888;">Total Fines (All Events)</p>
+                        <p style="font-size: 1.2em; color: #FFD700; font-weight: bold;">₱<%= totalAllEventsFines.toFixed(2) %></p>
+                    </div>
+                    <div>
+                        <p style="color: #888;">Verified Payments</p>
+                        <p style="font-size: 1.2em; color: #90EE90; font-weight: bold;">-₱<%= verifiedPayments.toFixed(2) %></p>
+                    </div>
+                    <div>
+                        <p style="color: #888;">Remaining Balance Due</p>
+                        <p id="remainingBalancePara" style="font-size: 1.3em; color: #FFD700; font-weight: bold;">₱<%= remainingBalance.toFixed(2) %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+    </div>
+
+    <script>
+        // Toggle payment form visibility
+        function togglePaymentForm() {
+            const form = document.getElementById('paymentForm');
+            const icon = document.getElementById('toggleIcon');
+            
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                form.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
+        // Handle payment form submission
+        if (document.getElementById('paymentForm')) {
+            document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const amount = parseFloat(document.getElementById('amount').value);
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                const description = document.getElementById('description').value;
+
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid amount');
+                    return;
+                }
+
+                if (!paymentMethod) {
+                    alert('Please select a payment method');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/submit-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount, paymentMethod, description })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        alert('Payment submitted successfully! It will be verified by an officer.');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to submit payment'));
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error submitting payment');
+                }
+            });
+        }
+
+        // Handle folder selection change
+        function updateFinesDisplay() {
+            const folderSelect = document.getElementById('folderSelect');
+            const folderId = folderSelect.value;
+            
+            if (folderId) {
+                window.location.href = `/wallet?folderId=${folderId}`;
+            } else {
+                window.location.href = '/wallet';
+            }
+        }
+
+        // Set dynamic color for remaining balance
+        // eslint-disable-next-line no-undef
+        const balanceValue = <%= remainingBalance %>;
+        const balanceElement = document.getElementById('remainingBalancePara');
+        if (balanceElement) {
+            balanceElement.style.color = balanceValue > 0 ? '#FFD700' : '#90EE90';
+        }
+    </script>
+<%- include('./_footer.ejs') %>
+</body>
+</html>

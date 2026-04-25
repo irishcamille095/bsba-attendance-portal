@@ -39,6 +39,15 @@
             text-align: center;
             margin-bottom: 20px;
         }
+        
+        /* Sidebar Menu Item Hover Styles */
+        .sidebar a:hover,
+        .sidebar div[onclick]:hover {
+            color: #FFD700 !important;
+            background: rgba(255, 204, 0, 0.15) !important;
+            padding-left: 16px !important;
+            transition: all 0.2s ease !important;
+        }
 
         .sidebar p {
             color: #fff;
@@ -60,6 +69,27 @@
 
         .logout-btn:hover {
             background: #e6b800;
+        }
+        
+        /* Sidebar Notification Badge */
+        .sidebar-notification-badge {
+            display: inline-block;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            text-align: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 68, 68, 0); }
         }
 
         /* Main Content */
@@ -210,10 +240,43 @@
             box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.1);
         }
 
+        .year-level-section {
+            margin-top: 30px;
+            margin-bottom: 30px;
+            border-left: 5px solid #ffcc00;
+        }
+
+        .year-level-header {
+            background: #252525;
+            padding: 16px;
+            border-bottom: 2px solid #ffcc00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .year-level-title {
+            color: #ffcc00;
+            font-size: 1.2em;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .attendance-percentage {
+            font-size: 0.8rem;
+            color: #e0e0e0;
+            background: #1e1e1e;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #2d2d2d;
+        }
+
         table { 
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 0;
         }
 
         .table-wrapper {
@@ -851,32 +914,209 @@
                 min-width: 100px;
             }
         }
+
+        /* Fines and Status Styling */
+        .status-present {
+            color: #4ade80;
+            font-weight: 700;
+            padding: 4px 8px;
+            background: #0f3f1f;
+            border-radius: 4px;
+            border: 1px solid #22c55e;
+            display: inline-block;
+        }
+
+        .status-absent {
+            color: #ff6b6b;
+            font-weight: 700;
+            padding: 4px 8px;
+            background: #3f0f0f;
+            border-radius: 4px;
+            border: 1px solid #dc3545;
+            display: inline-block;
+        }
+
+        .status-excused {
+            color: #fbbf24;
+            font-weight: 700;
+            padding: 4px 8px;
+            background: #3f2d0f;
+            border-radius: 4px;
+            border: 1px solid #fbbf24;
+            display: inline-block;
+        }
+
+        .fine-amount {
+            color: #ffcc00;
+            font-weight: 700;
+            padding: 4px 8px;
+            background: #2d2d00;
+            border-radius: 4px;
+            border: 1px solid #ffcc00;
+            display: inline-block;
+        }
+
+        .btn-excused {
+            background: #fbbf24;
+            color: #000;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .btn-excused:hover {
+            background: #f59e0b;
+            transform: translateY(-2px);
+        }
+
+        .btn-undo-excused {
+            background: #6b7280;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .btn-undo-excused:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+        }
+
+        /* Modal Styles for Excused Confirmation */
+        .excused-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .excused-modal.show {
+            display: flex;
+        }
+
+        .excused-modal-content {
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid #2d2d2d;
+            border-left: 5px solid #fbbf24;
+        }
+
+        .excused-modal-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fbbf24;
+            margin-bottom: 15px;
+        }
+
+        .excused-modal-body {
+            margin: 15px 0;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .excused-modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-confirm-excused {
+            background: #fbbf24;
+            color: #000;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .btn-confirm-excused:hover {
+            background: #f59e0b;
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel-excused {
+            background: #555;
+            color: #e0e0e0;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel-excused:hover {
+            background: #666;
+            transform: translateY(-2px);
+        }
     </style>
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <h2 style="color: #ffcc00;">BSBA-MM</h2>
-        <p style="color: #fff;">User: <strong><%= user.name %></strong></p>
-        <p style="color: #fff;">Role: <strong><%= user.role %></strong></p>
-        
-        <% if (user.role === 'adviser' || user.role === 'officer') { %>
-        <div style="padding: 10px 20px;">
-            <a href="/request-reset" style="text-decoration: none; color: white; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-lock"></i> <span style="font-weight: bold;">Reset Officer Password</span>
-            </a>
-        </div>
-        <% } %>
-        
-        <hr style="border: 1px solid #ffcc00;">
-        
-        <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
-            <button type="submit" class="logout-btn" style="width: 100%; padding: 12px; background: #ffcc00; color: #000; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; display: block;">
-                🚪 Logout
-            </button>
-        </form>
-    </div>
+    <div class="sidebar" id="sidebar">
+    <button class="sidebar-close-btn" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+    
+    <hr style="border: 1px solid #FFD700; margin: 50px 0 15px 0;">
+    
+    <!-- Sidebar Menu Items -->
+    <a href="/my-account" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-user"></i> <span style="font-weight: bold;">Account Profile</span>
+    </a>
+    
+    <a href="/dashboard" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-camera"></i> <span style="font-weight: bold;">Attendance</span>
+    </a>
+    
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+    <a href="/admin/students" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-users"></i> <span style="font-weight: bold;">Master Student List</span>
+    </a>
+    <% } %>
+    
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+    <a href="/fines-management" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-file-invoice-dollar"></i> <span style="font-weight: bold;">Fines Management</span>
+    </a>
+    <% } %>
+    
+    <a href="/my-documents" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-file-contract"></i> <span style="font-weight: bold;">My Documents</span>
+    </a>
+    
+
+    
+
+    
+    <hr style="border: 1px solid #FFD700; margin: 15px 0;">
+    
+    <form action="/logout" method="POST" style="margin-top: 15px; display: block !important;">
+        <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #FFD700; color: #121212; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: block;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </form>
+</div>
 
     <div class="content">
         <div class="container">
@@ -889,11 +1129,21 @@
 
         <% if (!selectedEvent) { %>
             <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                <div class="create-event-section">
+                <div style="margin-bottom: 20px;">
+                    <button onclick="toggleEventForm()" style="background: #FFD700; color: #121212; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+                        <i class="fas fa-plus"></i> Create New Event
+                    </button>
+                </div>
+                <div id="eventForm" class="create-event-section" style="display: none;">
                     <h3 style="margin-top: 0;">➕ Create New Event</h3>
                     <p style="color: #999; font-size: 0.9em;">📁 Folder ID: <code><%= folder._id %></code></p>
-                    <form action="/create-event/<%= folder._id %>" method="POST" style="display: flex; gap: 10px;">
+                    <form action="/create-event/<%= folder._id %>" method="POST" style="display: flex; gap: 10px; align-items: flex-end;">
                         <input type="text" name="eventName" placeholder="Event Name (e.g., Christmas Party, Monthly Meeting)" required style="flex: 1; padding: 10px; border-radius: 5px;">
+                        <select name="eventType" required style="padding: 10px; border-radius: 5px; background: #1e1e1e; color: #e0e0e0; border: 1px solid #2d2d2d;">
+                            <option value="">Select Event Type...</option>
+                            <option value="Half Day">Half Day (₱50 per Absent)</option>
+                            <option value="Whole Day">Whole Day (₱30 per Absent)</option>
+                        </select>
                         <button type="submit" style="padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">✓ Create</button>
                     </form>
                 </div>
@@ -957,7 +1207,7 @@
                             </tr>
                         </thead>
                         <tbody id="attendanceTable">
-                            <tr class="attendance-row" data-student-id="<%= myRecord.studentId %>" data-student-name="<%= myRecord.studentName %>">
+                            <tr class="attendance-row" data-student-id="<%= myRecord.studentId %>" data-student-name="<%= myRecord.studentName %>" data-year-level="<%= myRecord.yearLevel %>">
                                 <td data-label="Student ID"><strong><%= myRecord.studentId %></strong></td>
                                 <td data-label="Student Name"><%= myRecord.studentName %></td>
                                 <td data-label="AM IN"><%= formatPhilippinesTime(myRecord.amIn) %></td>
@@ -973,42 +1223,154 @@
                 <% } %>
             <% } else { %>
                 <% if (attendanceData && attendanceData.length > 0) { %>
-                    <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Student ID</th>
-                                <th>Student Name</th>
-                                <th>AM IN</th>
-                                <th>AM OUT</th>
-                                <th>PM IN</th>
-                                <th>PM OUT</th>
-                                <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                                    <th>Actions</th>
-                                <% } %>
-                            </tr>
-                        </thead>
-                        <tbody id="attendanceTable">
-                            <% attendanceData.forEach(record => { %>
-                                <tr class="attendance-row" data-student-id="<%= record.studentId %>" data-student-name="<%= record.studentName %>">
-                                    <td data-label="Student ID"><strong><%= record.studentId %></strong></td>
-                                    <td data-label="Student Name"><%= record.studentName %></td>
-                                    <td data-label="AM IN"><%= formatPhilippinesTime(record.amIn) %></td>
-                                    <td data-label="AM OUT"><%= formatPhilippinesTime(record.amOut) %></td>
-                                    <td data-label="PM IN"><%= formatPhilippinesTime(record.pmIn) %></td>
-                                    <td data-label="PM OUT"><%= formatPhilippinesTime(record.pmOut) %></td>
-                                    <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                                        <td class="action-cell" data-label="Actions">
-                                            <button type="button" class="btn-delete" onclick="openDeleteModal('<%= record.studentId %>', '<%= record.studentName %>', '<%= selectedEvent %>')">
-                                                🗑️ Remove
-                                            </button>
-                                        </td>
-                                    <% } %>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
+                    <!-- Year Level Tabs (Like Excel Sheets) -->
+                    <% const yearLevelOrder = ['1st Year', '2nd Year', '3rd Year', '4th Year']; %>
+                    <% const yearLevelsWithData = yearLevelOrder.filter(yearLevel => attendanceData.some(r => r.yearLevel === yearLevel)); %>
+                    
+                    <div style="border-bottom: 2px solid #2d2d2d; margin-bottom: 20px; display: flex; gap: 5px; overflow-x: auto; padding-bottom: 0;">
+                        <% yearLevelsWithData.forEach((yearLevel, index) => { %>
+                            <button 
+                                class="year-level-tab" 
+                                onclick="switchYearLevel('<%= yearLevel.replace(/ /g, '-') %>')"
+                                style="
+                                    padding: 12px 20px;
+                                    background: <%= index === 0 ? '#800000' : '#252525' %>;
+                                    color: <%= index === 0 ? '#FFD700' : '#999' %>;
+                                    border: none;
+                                    border-bottom: 3px solid <%= index === 0 ? '#FFD700' : 'transparent' %>;
+                                    cursor: pointer;
+                                    font-weight: 600;
+                                    transition: all 0.3s;
+                                    white-space: nowrap;
+                                    border-radius: 8px 8px 0 0;
+                                "
+                                onmouseover="if (!this.id.startsWith('active')) this.style.background = '#333333'"
+                                onmouseout="if (!this.id.startsWith('active')) this.style.background = '#252525'"
+                                id="<%= index === 0 ? 'active-tab' : '' %>"
+                            >
+                                <%= yearLevel %>
+                            </button>
+                        <% }) %>
                     </div>
+
+                    <!-- Year Level Content Sections -->
+                    <% yearLevelOrder.forEach((yearLevel, mainIndex) => { %>
+                        <% const studentsInYear = attendanceData.filter(r => r.yearLevel === yearLevel); %>
+                        <% if (studentsInYear.length > 0) { %>
+                            <div class="year-level-section" id="tab-<%= yearLevel.replace(/ /g, '-') %>" style="display: <%= yearLevelsWithData.indexOf(yearLevel) === 0 ? 'block' : 'none' %>;">
+                                <div class="year-level-header">
+                                    <h3 class="year-level-title">📅 <%= yearLevel %></h3>
+                                    <div class="attendance-percentage">
+                                        <% const presentCount = studentsInYear.filter(r => r.amIn || r.pmIn).length; %>
+                                        <% const attendancePercentage = Math.round((presentCount / studentsInYear.length) * 100); %>
+                                        <strong style="color: #ffcc00;"><%= yearLevel %> Attendance:</strong> <span style="color: #4ade80;"><%= attendancePercentage %>%</span> (<%= presentCount %>/<%= studentsInYear.length %> Present)
+                                    </div>
+                                </div>
+                                <div class="table-wrapper">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Student ID</th>
+                                                <th>Student Name</th>
+                                                <% if (user.role === 'officer' || user.role === 'adviser') { %>
+                                                    <th>AM IN</th>
+                                                    <th>AM OUT</th>
+                                                    <th>PM IN</th>
+                                                    <th>PM OUT</th>
+                                                    <th>Total Fine</th>
+                                                    <th>Actions</th>
+                                                <% } else { %>
+                                                    <th>AM IN</th>
+                                                    <th>AM OUT</th>
+                                                    <th>PM IN</th>
+                                                    <th>PM OUT</th>
+                                                <% } %>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="year-level-body">
+                                            <% studentsInYear.forEach(record => { %>
+                                                <tr class="attendance-row" data-student-id="<%= record.studentId %>" data-student-name="<%= record.studentName %>" data-year-level="<%= record.yearLevel %>">
+                                                    <td data-label="Student ID"><strong><%= record.studentId %></strong></td>
+                                                    <td data-label="Student Name"><%= record.studentName %></td>
+                                                    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+                                                        <td data-label="AM IN" style="text-align: center;">
+                                                            <div>
+                                                                <% if (record.amInStatus === 'Present' && record.amIn) { %>
+                                                                    <small><%= formatPhilippinesTime(record.amIn) %></small>
+                                                                <% } else if (record.amInStatus === 'Absent' || record.amInStatus === 'Excused') { %>
+                                                                    <span class="status-<%= record.amInStatus.toLowerCase() %>"><%= record.amInStatus %></span><br/>
+                                                                    <% if (record.amInStatus === 'Absent') { %>
+                                                                        <a href="#" onclick="openExcusedModal('<%= record.amInRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'AM IN', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
+                                                                    <% } else if (record.amInStatus === 'Excused') { %>
+                                                                        <a href="#" onclick="undoExcused('<%= record.amInRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                    <% } %>
+                                                                <% } %>
+                                                            </div>
+                                                        </td>
+                                                        <td data-label="AM OUT" style="text-align: center;">
+                                                            <div>
+                                                                <% if (record.amOutStatus === 'Present' && record.amOut) { %>
+                                                                    <small><%= formatPhilippinesTime(record.amOut) %></small>
+                                                                <% } else if (record.amOutStatus === 'Absent' || record.amOutStatus === 'Excused') { %>
+                                                                    <span class="status-<%= record.amOutStatus.toLowerCase() %>"><%= record.amOutStatus %></span><br/>
+                                                                    <% if (record.amOutStatus === 'Absent') { %>
+                                                                        <a href="#" onclick="openExcusedModal('<%= record.amOutRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'AM OUT', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
+                                                                    <% } else if (record.amOutStatus === 'Excused') { %>
+                                                                        <a href="#" onclick="undoExcused('<%= record.amOutRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                    <% } %>
+                                                                <% } %>
+                                                            </div>
+                                                        </td>
+                                                        <td data-label="PM IN" style="text-align: center;">
+                                                            <div>
+                                                                <% if (record.pmInStatus === 'Present' && record.pmIn) { %>
+                                                                    <small><%= formatPhilippinesTime(record.pmIn) %></small>
+                                                                <% } else if (record.pmInStatus === 'Absent' || record.pmInStatus === 'Excused') { %>
+                                                                    <span class="status-<%= record.pmInStatus.toLowerCase() %>"><%= record.pmInStatus %></span><br/>
+                                                                    <% if (record.pmInStatus === 'Absent') { %>
+                                                                        <a href="#" onclick="openExcusedModal('<%= record.pmInRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'PM IN', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
+                                                                    <% } else if (record.pmInStatus === 'Excused') { %>
+                                                                        <a href="#" onclick="undoExcused('<%= record.pmInRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                    <% } %>
+                                                                <% } %>
+                                                            </div>
+                                                        </td>
+                                                        <td data-label="PM OUT" style="text-align: center;">
+                                                            <div>
+                                                                <% if (record.pmOutStatus === 'Present' && record.pmOut) { %>
+                                                                    <small><%= formatPhilippinesTime(record.pmOut) %></small>
+                                                                <% } else if (record.pmOutStatus === 'Absent' || record.pmOutStatus === 'Excused') { %>
+                                                                    <span class="status-<%= record.pmOutStatus.toLowerCase() %>"><%= record.pmOutStatus %></span><br/>
+                                                                    <% if (record.pmOutStatus === 'Absent') { %>
+                                                                        <a href="#" onclick="openExcusedModal('<%= record.pmOutRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'PM OUT', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
+                                                                    <% } else if (record.pmOutStatus === 'Excused') { %>
+                                                                        <a href="#" onclick="undoExcused('<%= record.pmOutRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                    <% } %>
+                                                                <% } %>
+                                                            </div>
+                                                        </td>
+                                                        <td data-label="Total Fine" style="text-align: center;">
+                                                            <span class="fine-amount">₱<%= record.amInFine + record.amOutFine + record.pmInFine + record.pmOutFine %></span>
+                                                        </td>
+                                                        <td class="action-cell" data-label="Actions">
+                                                            <button type="button" class="btn-delete" onclick="openDeleteModal('<%= record.studentId %>', '<%= record.studentName %>', '<%= selectedEvent %>')">
+                                                                🗑️ Remove
+                                                            </button>
+                                                        </td>
+                                                    <% } else { %>
+                                                        <td data-label="AM IN"><%= formatPhilippinesTime(record.amIn) %></td>
+                                                        <td data-label="AM OUT"><%= formatPhilippinesTime(record.amOut) %></td>
+                                                        <td data-label="PM IN"><%= formatPhilippinesTime(record.pmIn) %></td>
+                                                        <td data-label="PM OUT"><%= formatPhilippinesTime(record.pmOut) %></td>
+                                                    <% } %>
+                                                </tr>
+                                            <% }) %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        <% } %>
+                    <% }) %>
                 <% } else { %>
                     <p style="color: #999; font-style: italic; padding: 20px; text-align: center;">No attendance records found for this event yet.</p>
                 <% } %>
@@ -1035,6 +1397,45 @@
                 window.location.href = `/delete-event/${sessionId}/${folderId}`;
             }
         });
+    }
+
+    function toggleEventForm() {
+        const form = document.getElementById('eventForm');
+        if (form.style.display === 'none') {
+            form.style.display = 'block';
+        } else {
+            form.style.display = 'none';
+        }
+    }
+
+    // Switch between year level tabs
+    function switchYearLevel(yearLevelId) {
+        // Hide all sections
+        const allSections = document.querySelectorAll('.year-level-section');
+        allSections.forEach(section => {
+            section.style.display = 'none';
+        });
+        
+        // Show selected section
+        const selectedSection = document.getElementById('tab-' + yearLevelId);
+        if (selectedSection) {
+            selectedSection.style.display = 'block';
+        }
+        
+        // Update active tab styling
+        const allTabs = document.querySelectorAll('.year-level-tab');
+        allTabs.forEach(tab => {
+            tab.style.background = '#252525';
+            tab.style.color = '#999';
+            tab.style.borderBottom = '3px solid transparent';
+            tab.id = '';
+        });
+        
+        // Highlight active tab
+        event.target.style.background = '#800000';
+        event.target.style.color = '#FFD700';
+        event.target.style.borderBottom = '3px solid #FFD700';
+        event.target.id = 'active-tab';
     }
 
     function openDeleteModal(studentId, studentName, eventName) {
@@ -1080,20 +1481,149 @@
 
     function filterTable() {
         const input = document.getElementById('searchInput').value.toUpperCase();
-        const table = document.getElementById('attendanceTable');
-        const rows = table.getElementsByClassName('attendance-row');
-
-        for (let i = 0; i < rows.length; i++) {
-            const studentId = rows[i].getAttribute('data-student-id').toUpperCase();
-            const studentName = rows[i].getAttribute('data-student-name').toUpperCase();
+        const allRows = document.querySelectorAll('.attendance-row');
+        const allSections = document.querySelectorAll('.year-level-section');
+        
+        // Filter individual rows
+        allRows.forEach(row => {
+            const studentId = row.getAttribute('data-student-id').toUpperCase();
+            const studentName = row.getAttribute('data-student-name').toUpperCase();
             
-            if (studentId.includes(input) || studentName.includes(input)) {
-                rows[i].style.display = '';
+            if (studentId.includes(input) || studentName.includes(input) || input === '') {
+                row.style.display = '';
             } else {
-                rows[i].style.display = 'none';
+                row.style.display = 'none';
             }
-        }
+        });
+        
+        // Show/hide sections based on whether they have visible rows
+        allSections.forEach(section => {
+            const visibleRows = section.querySelectorAll('.attendance-row:not([style*="display: none"])');
+            if (visibleRows.length > 0) {
+                section.style.display = '';
+            } else {
+                section.style.display = 'none';
+            }
+        });
     }
+
+    // Excused Modal Functions
+    let currentExcusedData = null;
+
+    function openExcusedModal(recordId, studentId, studentName, sessionType, eventName) {
+        currentExcusedData = { recordId, studentId, studentName, sessionType, eventName };
+        const modal = document.getElementById('excusedModal');
+        document.getElementById('excusedStudentInfo').innerHTML = `<strong>${studentName}</strong> (${studentId}) - ${sessionType}`;
+        modal.classList.add('show');
+    }
+
+    function closeExcusedModal() {
+        const modal = document.getElementById('excusedModal');
+        modal.classList.remove('show');
+        currentExcusedData = null;
+    }
+
+    function confirmExcused() {
+        if (!currentExcusedData) return;
+
+        const { recordId, studentId, studentName, sessionType, eventName } = currentExcusedData;
+
+        fetch('/api/update-attendance-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                attendanceId: recordId,
+                studentId: studentId,
+                status: 'Excused',
+                eventName: eventName,
+                sessionType: sessionType
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                const msgDiv = document.getElementById('message');
+                msgDiv.innerHTML = `<div class="success-msg">✅ ${studentName} marked as Excused for ${sessionType}. Fine set to ₱0.</div>`;
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                alert('Error: ' + result.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+
+        closeExcusedModal();
+    }
+
+    function undoExcused(recordId, eventName) {
+        if (!confirm('Are you sure you want to undo the Excused status? The fine will be recalculated.')) {
+            return;
+        }
+
+        fetch('/api/update-attendance-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                attendanceId: recordId,
+                status: 'Absent',
+                eventName: eventName,
+                sessionType: '' // Will be determined from record
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                const msgDiv = document.getElementById('message');
+                msgDiv.innerHTML = `<div class="success-msg">✅ Excused status undone. Attendance record updated.</div>`;
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                alert('Error: ' + result.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    // Close modal when clicking outside it
+    window.addEventListener('click', (event) => {
+        const modal = document.getElementById('excusedModal');
+        if (modal && event.target === modal) {
+            closeExcusedModal();
+        }
+    });
+</script>
+
+<!-- Excused Confirmation Modal -->
+<div id="excusedModal" class="excused-modal">
+    <div class="excused-modal-content">
+        <div class="excused-modal-header">📋 Excuse Attendance</div>
+        <div class="excused-modal-body">
+            <p>Mark <span id="excusedStudentInfo"></span> as <strong>Excused</strong>?</p>
+            <p style="color: #ffcc00; font-weight: 700;">The fine for this session will be set to ₱0.</p>
+            <p style="color: #aaa; font-size: 0.9em;">This action can be undone later if needed.</p>
+        </div>
+        <div class="excused-modal-buttons">
+            <button type="button" class="btn-cancel-excused" onclick="closeExcusedModal()">Cancel</button>
+            <button type="button" class="btn-confirm-excused" onclick="confirmExcused()">Yes, Mark Excused</button>
+        </div>
+    </div>
+</div>
+
+<script src="/document-notifications.js"></script>
+<script>
+    document.documentElement.setAttribute('data-user-role', '<%= user.role %>');
 </script>
 
 </body>

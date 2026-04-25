@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documents Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 140px;
+            display: flex;
+        }
+
+        .container {
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #111;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .header h1 {
+            color: #FFD700;
+            font-size: 2em;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #FFD700;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #FFC107;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        }
+
+
+        .btn-danger {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c62828;
+        }
+
+        .btn-edit {
+            background: #2196F3;
+            color: white;
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+
+        .btn-edit:hover {
+            background: #1976D2;
+        }
+
+        /* Tab Navigation */
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #FFD700;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: #222;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s ease;
+        }
+
+        .tab:hover {
+            background: #333;
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: #FFD700;
+            color: #000;
+            border-color: #FFD700;
+        }
+
+        /* Year Level Tables - Hidden by default */
+        .year-level-section {
+            display: none;
+        }
+
+        .year-level-section.active {
+            display: block;
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Management Section */
+        .management-section {
+            background: #111;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .management-section h2 {
+            color: #FFD700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-group.full {
+            grid-template-columns: 1fr;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #FFD700;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+        }
+
+        textarea {
+            grid-column: 1 / -1;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Document Types List */
+        .document-types-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .document-types-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .document-types-table th {
+            background: #222;
+            color: #FFD700;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #FFD700;
+        }
+
+        .document-types-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .document-types-table tr:hover {
+            background: #1a1a1a;
+        }
+
+        .doc-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Students View */
+        .students-view {
+            background: #111;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        @media (max-width: 768px) {
+            .document-types-table,
+            table {
+                font-size: 0.85rem;
+            }
+
+            .document-types-table th,
+            .document-types-table td,
+            table th,
+            table td {
+                padding: 8px 10px;
+            }
+
+            .document-types-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .download-btn {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+
+            .doc-actions {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .doc-actions button {
+                width: 100%;
+                padding: 6px 8px;
+                font-size: 0.75rem;
+            }
+
+            .btn-edit,
+            .btn-danger {
+                padding: 6px 8px;
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .document-types-table,
+            table {
+                font-size: 0.75rem;
+            }
+
+            .document-types-table th,
+            .document-types-table td,
+            table th,
+            table td {
+                padding: 6px 8px;
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #222;
+            color: #FFD700;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #FFD700;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #1a1a1a;
+        }
+
+        .student-name {
+            color: #FFD700;
+            font-weight: 600;
+        }
+
+        .download-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #45a049;
+        }
+
+        .empty-cell {
+            color: #666;
+            font-style: italic;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 215, 0, 0.2) !important;
+            color: #FFD700 !important;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #111;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .modal-content h2 {
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #e0e0e0;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #FFD700;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-confirm {
+            background: #FFD700;
+            color: #000;
+        }
+
+        .btn-confirm:hover {
+            background: #FFC107;
+        }
+
+        .btn-cancel {
+            background: #666;
+            color: #fff;
+        }
+
+        .btn-cancel:hover {
+            background: #777;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .alert-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .alert-error {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .alert-info {
+            background: #2196F3;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="header">
+            <h1>📄 Documents Management</h1>
+            <button class="btn" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> New Document Type
+            </button>
+        </div>
+
+        <!-- Back Button -->
+        <button class="back-btn" onclick="window.location.href='/dashboard'" style="margin-bottom: 20px; background: transparent; color: #FFD700; border: 2px solid #FFD700; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </button>
+
+        <!-- Alerts -->
+        <div id="alertContainer"></div>
+
+        <!-- Management Section -->
+        <div class="management-section">
+            <h2><i class="fas fa-cog"></i> Manage Document Requirements</h2>
+            
+            <div class="document-types-list" id="docTypesList">
+                <!-- Loaded via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Year Level Tabs -->
+        <div class="tabs-container" id="yearLevelTabs">
+            <!-- Tabs will be generated here -->
+        </div>
+
+        <!-- Students View by Year Level -->
+        <div id="yearLevelContainer">
+            <!-- Year level sections will be generated here -->
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCreateModal()">&times;</span>
+            <h2>Create New Document Type</h2>
+            <form action="/create-document-type" method="POST">
+                <div class="form-group">
+                    <div>
+                        <label for="docTitle">Document Title *</label>
+                        <input type="text" name="title" id="docTitle" required>
+                    </div>
+                    <div>
+                        <label for="fileType">File Type *</label>
+                        <select name="fileType" id="fileType" required>
+                            <option value="">Select file type</option>
+                            <option value="image">Image Only</option>
+                            <option value="file">File Only</option>
+                            <option value="both">Image or File</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div>
+                        <label for="maxUploads">Max Uploads Allowed *</label>
+                        <input type="number" name="maxUploads" id="maxUploads" min="1" value="1" required>
+                    </div>
+                </div>
+                <div class="form-group full">
+                    <label for="docDescription">Description</label>
+                    <textarea name="description" id="docDescription" placeholder="Optional description..."></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-confirm">Create</button>
+                    <button type="button" class="btn-cancel" onclick="closeCreateModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Document Type</h2>
+            <form id="editDocTypeForm">
+                <input type="hidden" id="editDocId">
+                <div class="form-group">
+                    <div>
+                        <label for="editDocTitle">Document Title *</label>
+                        <input type="text" id="editDocTitle" required>
+                    </div>
+                    <div>
+                        <label for="editFileType">File Type *</label>
+                        <select id="editFileType" required>
+                            <option value="">Select file type</option>
+                            <option value="image">Image Only</option>
+                            <option value="file">File Only</option>
+                            <option value="both">Image or File</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div>
+                        <label for="editMaxUploads">Max Uploads Allowed *</label>
+                        <input type="number" id="editMaxUploads" min="1" required>
+                    </div>
+                </div>
+                <div class="form-group full">
+                    <label for="editDocDescription">Description</label>
+                    <textarea id="editDocDescription"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-confirm">Update</button>
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" onclick="closeConfirmModal()" style="float: right;">&times;</span>
+            <h2 style="color: #4CAF50; margin-bottom: 20px;">
+                <i class="fas fa-check-circle"></i> Document Type Created Successfully!
+            </h2>
+            <div style="background: #1a1a1a; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: left;">
+                <p><strong>Title:</strong> <span id="confirmDocTitle" style="color: #FFD700;"></span></p>
+                <p><strong>File Type:</strong> <span id="confirmDocFileType"></span></p>
+                <p><strong>Max Uploads:</strong> <span id="confirmDocMaxUploads"></span></p>
+                <p id="confirmDocDescWrapper" style="display: none;"><strong>Description:</strong> <span id="confirmDocDescription"></span></p>
+            </div>
+            <button class="btn-confirm" onclick="closeConfirmModal()" style="width: 100%; padding: 12px;">OK</button>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" onclick="closeDeleteConfirmModal()" style="float: right;">&times;</span>
+            <h2 style="color: #d32f2f; margin-bottom: 20px;">
+                <i class="fas fa-exclamation-triangle"></i> Confirm Deletion
+            </h2>
+            <p style="margin-bottom: 10px; font-size: 1.1em;">Are you sure you want to delete this document type?</p>
+            <p style="color: #FFD700; font-weight: bold; margin-bottom: 20px;">
+                <span id="deleteDocTitle"></span>
+            </p>
+            <div style="background: #1a1a1a; padding: 15px; border-radius: 6px; margin-bottom: 20px; color: #999; font-size: 0.9em;">
+                <i class="fas fa-info-circle"></i> All associated student uploads for this document type will also be permanently deleted.
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-danger" onclick="confirmDeleteDocType()" style="flex: 1; padding: 12px;">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                <button class="btn-cancel" onclick="closeDeleteConfirmModal()" style="flex: 1; padding: 12px;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let documentTypes = [];
+        let students = [];
+        let studentDocs = [];
+        let currentYearLevel = null;
+
+        // Initialize page
+        async function init() {
+            try {
+                // Fetch document types
+                const docTypesRes = await fetch('/api/get-document-types');
+                documentTypes = await docTypesRes.json();
+
+                // Fetch students (all students with their year levels)
+                const studentsRes = await fetch('/api/get-all-students');
+                students = await studentsRes.json();
+
+                // Fetch student documents
+                const studentDocsRes = await fetch('/api/get-all-student-documents');
+                studentDocs = await studentDocsRes.json();
+
+                renderDocumentTypesList();
+                renderYearLevelTabs();
+                setupEventListeners();
+            } catch (err) {
+                console.error('Error initializing page:', err);
+                showAlert('Error loading page data', 'error');
+            }
+        }
+
+        function renderDocumentTypesList() {
+            const container = document.getElementById('docTypesList');
+            if (!documentTypes || documentTypes.length === 0) {
+                container.innerHTML = '<p style="color: #666; padding: 20px;">No document types created yet. Create one to get started.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="document-types-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>File Type</th>
+                            <th>Max Uploads</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${documentTypes.map(doc => `
+                            <tr>
+                                <td>${doc.title}</td>
+                                <td>${doc.fileType === 'both' ? 'Image or File' : doc.fileType.charAt(0).toUpperCase() + doc.fileType.slice(1)}</td>
+                                <td>${doc.maxUploads}</td>
+                                <td>${doc.description || '—'}</td>
+                                <td>
+                                    <div class="doc-actions">
+                                        <button class="btn btn-edit" onclick="openEditModal('${doc._id}')">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button class="btn btn-danger" onclick="deleteDocType('${doc._id}')">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function getOrdinalSuffix(num) {
+            num = parseInt(num);
+            const j = num % 10, k = num % 100;
+            if (j === 1 && k !== 11) return "st";
+            if (j === 2 && k !== 12) return "nd";
+            if (j === 3 && k !== 13) return "rd";
+            return "th";
+        }
+
+        function renderYearLevelTabs() {
+            // Get unique year levels and convert to numbers, then sort in ascending order
+            const yearLevels = [...new Set(students.map(s => parseInt(s.yearLevel)))].sort((a, b) => a - b);
+            const container = document.getElementById('yearLevelTabs');
+            
+            if (yearLevels.length === 0) {
+                container.innerHTML = '<p style="color: #666;">No students found.</p>';
+                return;
+            }
+            
+            container.innerHTML = yearLevels.map((year, index) => {
+                return `
+                <button class="tab ${index === 0 ? 'active' : ''}" data-year="${year}" onclick="switchYearTab(${year})">
+                    ${year}${getOrdinalSuffix(year)} Year
+                </button>
+            `;
+            }).join('');
+
+            if (yearLevels.length > 0) {
+                currentYearLevel = yearLevels[0];
+                renderTablesForAllYears();
+            }
+        }
+
+        function switchYearTab(year) {
+            year = parseInt(year);
+            
+            // Hide all year level sections
+            document.querySelectorAll('.year-level-section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show selected year level section by data-year attribute
+            const selectedSection = document.querySelector(`.year-level-section[data-year="${year}"]`);
+            if (selectedSection) {
+                selectedSection.classList.add('active');
+            } else {
+                console.warn(`Section with data-year="${year}" not found`);
+            }
+
+            // Update tab button styles using data-year attribute
+            document.querySelectorAll('.tab').forEach(btn => {
+                const btnYear = parseInt(btn.getAttribute('data-year'));
+                if (btnYear === year) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            currentYearLevel = year;
+        }
+
+        function renderTablesForAllYears() {
+            // Get unique year levels and convert to numbers, then sort in ascending order
+            const yearLevels = [...new Set(students.map(s => parseInt(s.yearLevel)))].sort((a, b) => a - b);
+            const container = document.getElementById('yearLevelContainer');
+            
+            if (yearLevels.length === 0) {
+                container.innerHTML = '<p style="color: #666; padding: 20px;">No students available.</p>';
+                return;
+            }
+            
+            let html = '';
+            
+            yearLevels.forEach((year, index) => {
+                // Convert year to number for filtering
+                const numYear = parseInt(year);
+                
+                // Sort students by year level, then by last name, then by first name
+                const yearStudents = students
+                    .filter(s => parseInt(s.yearLevel) === numYear)
+                    .sort((a, b) => {
+                        const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '');
+                        if (lastNameCompare !== 0) return lastNameCompare;
+                        return (a.firstName || '').localeCompare(b.firstName || '');
+                    });
+
+                html += `
+                    <div class="year-level-section ${index === 0 ? 'active' : ''}" data-year="${numYear}">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="min-width: 200px;">Student Name</th>
+                                        ${documentTypes.map(doc => `<th style="min-width: 150px;">${doc.title}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${yearStudents.length === 0 ? '<tr><td colspan="' + (documentTypes.length + 1) + '" style="text-align: center; color: #666;">No students in this year level</td></tr>' : 
+                                    yearStudents.map(student => {
+                                        const studentName = `${student.lastName || ''}, ${student.firstName || ''}`.trim();
+                                        let rowHTML = `<td style="min-width: 200px;">${studentName}</td>`;
+                                        
+                                        documentTypes.forEach(doc => {
+                                            const studentDoc = studentDocs.find(sd => 
+                                                sd.student._id === student._id && sd.documentType._id === doc._id
+                                            );
+                                            
+                                            if (studentDoc) {
+                                                rowHTML += `
+                                                    <td style="min-width: 150px;">
+                                                        <button class="download-btn" onclick="downloadDocument('${studentDoc._id}', '${student._id}')">
+                                                            <i class="fas fa-download"></i> Download
+                                                        </button>
+                                                    </td>
+                                                `;
+                                            } else {
+                                                rowHTML += '<td class="empty-cell" style="min-width: 150px;">—</td>';
+                                            }
+                                        });
+
+                                        return `<tr>${rowHTML}</tr>`;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function downloadDocument(studentDocId, studentId) {
+            try {
+                window.location.href = `/api/download-document/${studentDocId}/${studentId}`;
+            } catch (err) {
+                console.error('Error downloading document:', err);
+                showAlert('Error downloading document', 'error');
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('editDocTypeForm').addEventListener('submit', updateDocType);
+        }
+
+        function openEditModal(docId) {
+            const doc = documentTypes.find(d => d._id === docId);
+            if (!doc) return;
+
+            document.getElementById('editDocId').value = docId;
+            document.getElementById('editDocTitle').value = doc.title;
+            document.getElementById('editFileType').value = doc.fileType;
+            document.getElementById('editMaxUploads').value = doc.maxUploads;
+            document.getElementById('editDocDescription').value = doc.description || '';
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
+        }
+
+        async function updateDocType(e) {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+
+            const docId = document.getElementById('editDocId').value;
+            const data = {
+                title: document.getElementById('editDocTitle').value,
+                fileType: document.getElementById('editFileType').value,
+                maxUploads: document.getElementById('editMaxUploads').value,
+                description: document.getElementById('editDocDescription').value
+            };
+
+            try {
+                const res = await fetch(`/api/update-document-type/${docId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                if (res.ok) {
+                    showAlert('Document type updated successfully', 'success');
+                    const index = documentTypes.findIndex(d => d._id === docId);
+                    if (index > -1) {
+                        documentTypes[index] = result.documentType;
+                    }
+                    renderDocumentTypesList();
+                    renderTablesForAllYears();
+                    closeEditModal();
+                } else {
+                    showAlert(result.error, 'error');
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                console.error('Error updating document type:', err);
+                showAlert('Error updating document type', 'error');
+                submitBtn.disabled = false;
+            }
+        }
+
+        let pendingDeleteDocId = null;
+
+        async function deleteDocType(docId) {
+            // Find the document type to get its name
+            const docType = documentTypes.find(d => d._id === docId);
+            if (!docType) return;
+
+            pendingDeleteDocId = docId;
+            document.getElementById('deleteDocTitle').textContent = docType.title;
+            document.getElementById('deleteConfirmModal').classList.add('show');
+        }
+
+        async function confirmDeleteDocType() {
+            if (!pendingDeleteDocId) return;
+
+            try {
+                const res = await fetch(`/api/delete-document-type/${pendingDeleteDocId}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    showAlert('Document type deleted successfully', 'success');
+                    documentTypes = documentTypes.filter(d => d._id !== pendingDeleteDocId);
+                    studentDocs = studentDocs.filter(sd => sd.documentType._id !== pendingDeleteDocId);
+                    renderDocumentTypesList();
+                    renderTablesForAllYears();
+                    closeDeleteConfirmModal();
+                } else {
+                    const result = await res.json();
+                    showAlert(result.error, 'error');
+                }
+            } catch (err) {
+                console.error('Error deleting document type:', err);
+                showAlert('Error deleting document type', 'error');
+            }
+            pendingDeleteDocId = null;
+        }
+
+        function closeDeleteConfirmModal() {
+            document.getElementById('deleteConfirmModal').classList.remove('show');
+            pendingDeleteDocId = null;
+        }
+
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('show');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('show');
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+            container.appendChild(alert);
+
+            setTimeout(() => alert.remove(), 3000);
+        }
+
+        // Close modals when clicking outside
+        window.onclick = (event) => {
+            const createModal = document.getElementById('createModal');
+            const editModal = document.getElementById('editModal');
+            
+            if (event.target === createModal) {
+                closeCreateModal();
+            }
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+
+    <script src="/document-notifications.js"></script>
+    <script>
+        document.documentElement.setAttribute('data-user-role', '<%= user.role %>');
+    </script>
+<%- include('./_footer.ejs') %>
+</body>
+</html>

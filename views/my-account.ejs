@@ -22,35 +22,42 @@
 
         /* Sidebar */
         .sidebar { width: 250px; background: #000; color: #ffcc00; height: 100vh; position: fixed; padding: 20px; border-right: 4px solid #ffcc00; overflow-y: auto; }
-        .sidebar h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; text-align: center; }
         .sidebar a { color: white; padding: 12px; display: block; text-decoration: none; transition: all 0.2s; }
         .sidebar a:hover { color: #ffcc00; background: rgba(255, 204, 0, 0.1); }
-        .sidebar p { color: #e0e0e0; margin-bottom: 8px; }
+        
+        /* Sidebar Menu Item Hover Styles */
+        .sidebar a:hover,
+        .sidebar div[onclick]:hover {
+            color: #FFD700 !important;
+            background: rgba(255, 204, 0, 0.15) !important;
+            padding-left: 16px !important;
+            transition: all 0.2s ease !important;
+        }
 
         /* Main Content */
         .content {
             flex: 1;
             margin-left: 290px;
-            padding: 30px;
+            padding: 20px;
         }
         
         .card { 
-            max-width: 600px;
-            margin: 20px auto;
+            max-width: 100%;
+            margin: 15px 0;
             background: #1e1e1e;
-            padding: 30px;
+            padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            border: 1px solid #ffcc00;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid #FFD700;
         }
         
         .info-group { 
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         label { 
             font-weight: 700;
-            color: #ffcc00;
+            color: #FFD700;
             display: block;
             margin-bottom: 8px;
             font-size: 0.95em;
@@ -61,38 +68,37 @@
         input[type="file"] { 
             width: 100%;
             padding: 12px;
-            border: 2px solid #2d2d2d;
-            border-radius: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
             box-sizing: border-box;
             font-family: inherit;
             font-size: 1em;
             transition: all 0.3s ease;
-            background-color: #252525;
-            color: #E0E0E0;
+            background-color: #fff;
+            color: #000;
         }
         
         input[type="text"]:focus,
         input[type="password"]:focus,
         input[type="file"]:focus {
             outline: none;
-            border-color: #ffcc00;
-            box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.2);
-            background-color: #2a2a2a;
+            border-color: #FFD700;
+            border: 2px solid #FFD700;
         }
         
         input[type="text"]:disabled {
-            background: #1a1a1a;
+            background: #f0f0f0;
             cursor: not-allowed;
-            color: #E0E0E0;
+            color: #666;
         }
         
         .btn-update { 
-            background: #ffcc00;
+            background: #FFD700;
             color: #000;
             border: none;
-            padding: 14px;
+            padding: 12px;
             width: 100%;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
             font-weight: 700;
             margin-top: 10px;
@@ -101,7 +107,7 @@
         }
         
         .btn-update:hover {
-            background: #ffcc00;
+            background: #FFC700;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
         }
@@ -119,49 +125,44 @@
             box-shadow: none;
         }
         
-        .btn-cor-upload {
-            width: auto;
-            padding: 12px 25px;
-        }
-        
         .btn-back { 
             display: inline-block;
             margin-bottom: 20px;
-            color: #ffcc00;
+            color: #FFD700;
             text-decoration: none;
             font-weight: 700;
             font-size: 1em;
             transition: all 0.3s ease;
             background: #000;
-            border: 2px solid #ffcc00;
+            border: 2px solid #FFD700;
             padding: 12px 20px;
             border-radius: 8px;
         }
         
         .btn-back:hover {
-            background: #ffcc00;
+            background: #FFD700;
             color: #000;
         }
         
         h2 {
-            color: #E0E0E0;
-            margin-bottom: 15px;
-            margin-top: 15px;
+            color: #FFD700;
+            margin-bottom: 20px;
+            margin-top: 0;
             font-size: 1.8em;
         }
         
         h3 {
-            color: #E0E0E0;
+            color: #FFD700;
             font-size: 1.1em;
-            margin-top: 25px;
+            margin-top: 15px;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #ffcc00;
+            border-bottom: 2px solid #FFD700;
         }
         
         .role-badge {
             display: inline-block;
-            background: #ffcc00;
+            background: #FFD700;
             color: #000;
             padding: 8px 16px;
             border-radius: 25px;
@@ -192,7 +193,7 @@
         .file-input-label {
             display: inline-block;
             padding: 12px 20px;
-            background: #ffcc00;
+            background: #FFD700;
             color: #000;
             border-radius: 8px;
             cursor: pointer;
@@ -202,7 +203,7 @@
         }
         
         .file-input-label:hover {
-            background: #ffcc00;
+            background: #FFC700;
             transform: translateY(-2px);
         }
         
@@ -217,104 +218,48 @@
             font-size: 0.9em;
         }
         
-        .cor-info {
-            background: rgba(255, 204, 0, 0.1);
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #ffcc00;
-            margin-bottom: 15px;
-            font-size: 0.95em;
-            color: #E0E0E0;
-        }
-
-        .cor-uploaded {
-            background: rgba(76, 175, 80, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid #4CAF50;
-            color: #E0E0E0;
-        }
-
-        .cor-uploaded a {
-            color: #ffcc00;
-            font-weight: 600;
-        }
-
-        .cor-uploaded a:hover {
-            text-decoration: underline;
-        }
-
-        .cor-action-buttons {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 10px;
-        }
-
-        .btn-delete-cor {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-        }
-
-        .btn-delete-cor:hover {
-            background: #ff5252;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-        }
-
         @media (max-width: 768px) {
             body { 
                 display: block; 
             }
 
             .sidebar {
-                width: 66.67%;
+                width: 66.67% !important;
+                height: 100vh !important;
                 position: fixed;
                 left: 0;
                 top: 0;
-                height: 100vh;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
                 z-index: 2000;
-                padding: 15px;
-                border-right: 2px solid #ffcc00;
+                padding: 20px;
+                border-right: 4px solid #FFD700;
                 border-bottom: none;
                 overflow-y: auto;
             }
 
             .sidebar.active {
                 transform: translateX(0);
+                overflow-y: auto;
             }
             
             .sidebar-close-btn {
-                position: fixed;
-                top: 15px;
-                left: 15px;
-                background-color: transparent;
-                border: none;
-                color: #ffcc00;
-                font-size: 1.8rem;
-                cursor: pointer;
-                padding: 8px;
-                z-index: 2001;
-                display: none;
-            }
-            
-            .sidebar.active .sidebar-close-btn {
                 display: block;
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                background: transparent;
+                border: none;
+                color: #FFD700;
+                font-size: 1.5rem;
+                cursor: pointer;
+                padding: 0;
+                z-index: 2001;
             }
 
             .content {
                 margin-left: 0;
-                padding: 0;
+                padding: 15px;
             }
 
             .card {
@@ -329,6 +274,16 @@
             .btn-back {
                 max-width: 100%;
             }
+
+            header {
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+            }
+
+            header button {
+                display: block !important;
+            }
         }
 
         /* On Desktop: Show sidebar normally */
@@ -336,7 +291,19 @@
             .sidebar {
                 transform: translateX(0) !important;
                 position: fixed !important;
+                left: 0;
+                top: 0;
+                width: 250px !important;
             }
+            
+            .sidebar-close-btn {
+                display: none !important;
+            }
+
+            .content {
+                margin-left: 290px;
+            }
+
             header button {
                 display: none !important;
             }
@@ -347,7 +314,7 @@
         }
 
         .password-toggle-btn {
-            background: #ffcc00;
+            background: #FFD700;
             color: #000;
             border: none;
             padding: 12px 20px;
@@ -363,15 +330,15 @@
         }
 
         .password-toggle-btn:hover {
-            background: #ffdd33;
+            background: #FFC700;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
         }
 
         .small-toggle-btn {
             background: transparent;
-            color: #ffcc00;
-            border: 1px solid #ffcc00;
+            color: #FFD700;
+            border: 1px solid #FFD700;
             padding: 6px 12px;
             border-radius: 6px;
             cursor: pointer;
@@ -385,62 +352,60 @@
         }
 
         .small-toggle-btn:hover {
-            background: rgba(255, 204, 0, 0.1);
-            border-color: #ffdd33;
-            color: #ffdd33;
+            background: rgba(255, 215, 0, 0.1);
+            border-color: #FFC700;
+            color: #FFC700;
         }
 
-        /* Notification Badge Styles */
-        .sidebar-notification-badge {
-            display: inline-block;
-            background: #ff4444;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            line-height: 20px;
-            text-align: center;
-            font-size: 0.7em;
-            font-weight: bold;
-            margin-left: 8px;
-            animation: pulse 2s infinite;
-        }
 
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
-            50% { box-shadow: 0 0 0 8px rgba(255, 68, 68, 0); }
-        }
     </style>
 </head>
 <body>
     <div class="sidebar" id="sidebar">
-        <button class="sidebar-close-btn" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
-        <h2 style="color: #ffcc00;">BSBA-MM</h2>
-        <p style="color: #e0e0e0;">User: <strong><%= user.name %></strong></p>
-        <p style="color: #e0e0e0;">Role: <strong><%= user.role %></strong></p>
-        
-        <% if (user.role === 'adviser' || user.role === 'officer') { %>
-        <div style="padding: 10px 0px; border-bottom: 1px solid #ffcc00; margin-bottom: 10px;">
-            <a href="/admin/reset-requests" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px;">
-                <i class="fas fa-key"></i> <span style="font-weight: bold;">Password Reset Requests</span>
-                <% if (pendingResetRequestsCount > 0) { %>
-                    <span class="sidebar-notification-badge"><%= pendingResetRequestsCount %></span>
-                <% } %>
-            </a>
-        </div>
-        <% } %>
-        
-        <hr style="border: 1px solid #ffcc00;">
-        
-        <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
-            <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #ffcc00; color: #121212; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: block;">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
-        </form>
-    </div>
+    <button class="sidebar-close-btn" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+    
+    <hr style="border: 1px solid #FFD700; margin: 50px 0 15px 0;">
+    
+    <!-- Sidebar Menu Items -->
+    <a href="/my-account" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-user"></i> <span style="font-weight: bold;">Account Profile</span>
+    </a>
+    
+    <a href="/attendance" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-camera"></i> <span style="font-weight: bold;">Attendance</span>
+    </a>
+    
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+    <a href="/admin/students" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-users"></i> <span style="font-weight: bold;">Master Student List</span>
+    </a>
+    <% } %>
+    
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+    <a href="/fines-management" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-file-invoice-dollar"></i> <span style="font-weight: bold;">Fines Management</span>
+    </a>
+    <% } %>
+    
+    <a href="/my-documents" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-file-contract"></i> <span style="font-weight: bold;">My Documents</span>
+    </a>
+    
+
+    
+
+    
+    <hr style="border: 1px solid #FFD700; margin: 15px 0;">
+    
+    <form action="/logout" method="POST" style="margin-top: 15px; display: block !important;">
+        <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #FFD700; color: #121212; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: block;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+    </form>
+</div>
 
     <div class="content">
-        <header style="background: #ffcc00; color: #121212; padding: 12px 15px; display: flex; align-items: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; margin: -30px -30px 0 -30px; padding: 12px 45px;">
+        <header style="background: #FFD700; color: #121212; padding: 12px 15px; display: flex; align-items: center; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; margin: -20px -20px 0 -20px; padding: 12px 15px;">
             <button onclick="toggleSidebar()" style="background: rgba(18,18,18,0.15); border: 1px solid rgba(18,18,18,0.3); color: #121212; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-right: 15px; font-size: 1.2rem;">
                 <i class="fas fa-bars"></i>
             </button>
@@ -448,130 +413,299 @@
         </header>
         <div class="card">
             <a href="/dashboard" class="btn-back">← Back to Menu</a>
-            <h2>My Account Details</h2>
-        
-        <div class="role-badge">
-            <%= user.role %>
-        </div>
+            
+            <!-- My Account Header with Edit Icon -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <h2 style="margin: 0;">My Account</h2>
+                <button type="button" onclick="toggleEditMode()" style="background: #FFD700; border: none; color: #121212; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s;" onmouseover="this.style.background='#FFC700'" onmouseout="this.style.background='#FFD700'">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+            </div>
 
-        <div class="info-group">
-            <label>Account Name:</label>
-            <input type="text" value="<%= user.name %>" disabled>
-            <button type="button" class="small-toggle-btn" onclick="toggleNameSection()" title="Edit your name">
-                <i class="fas fa-pencil"></i> Edit
-            </button>
-        </div>
-
-        <!-- Name Update Section -->
-        <div id="nameSection" class="password-section-hidden" style="display: none; margin-top: 20px; padding: 15px; background: #252525; border-left: 3px solid #ffcc00; border-radius: 4px;">
-            <form action="/update-name" method="POST">
-                <div class="info-group">
-                    <label>First Name:</label>
-                    <input type="text" name="firstName" id="firstName" value="<%= user.firstName || '' %>" placeholder="Enter your first name" required>
+            <!-- Display View -->
+            <div id="displayView">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <% if (user.profilePhoto) { %>
+                        <img src="<%= user.profilePhoto %>" alt="Profile Photo" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700;">
+                    <% } else { %>
+                        <div style="width: 120px; height: 120px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 3px solid #FFD700;">
+                            <i class="fas fa-user" style="font-size: 3rem; color: #999;"></i>
+                        </div>
+                    <% } %>
                 </div>
 
-                <div class="info-group">
-                    <label>Last Name:</label>
-                    <input type="text" name="lastName" id="lastName" value="<%= user.lastName || '' %>" placeholder="Enter your last name" required>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="info-group">
+                        <label>First Name:</label>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.firstName || '-' %></div>
+                    </div>
+                    
+                    <div class="info-group">
+                        <label>Last Name:</label>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.lastName || '-' %></div>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Middle Name:</label>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.middleName || '-' %></div>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Role:</label>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000; text-transform: capitalize;"><%= user.role %></div>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Email Address:</label>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.username %></div>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Student ID (MM-ID):</label>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.mmId || '-' %></div>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Mobile Number:</label>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.mobileNumber || '-' %></div>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Date of Birth:</label>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : '-' %></div>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Gender:</label>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.gender || '-' %></div>
+                    </div>
+
+                    <div class="info-group">
+                        <label>Year Level:</label>
+                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.yearLevel || (user.role === 'adviser' ? 'N/A' : '1st Year') %></div>
+                    </div>
                 </div>
+            </div>
 
-                <div class="info-group">
-                    <label>Middle Name (Optional):</label>
-                    <input type="text" name="middleName" id="middleName" value="<%= user.middleName || '' %>" placeholder="Enter your middle name">
-                </div>
+            <!-- Edit View -->
+            <div id="editView" style="display: none;">
+                <form action="/update-profile" method="POST" enctype="multipart/form-data" onsubmit="return validateEditForm(event)">
+                    <!-- Profile Photo Upload -->
+                    <div class="info-group" style="text-align: center; margin-bottom: 20px;">
+                        <label>Profile Photo:</label>
+                        <div style="margin-bottom: 10px;">
+                            <% if (user.profilePhoto) { %>
+                                <img id="profilePhotoPreview" src="<%= user.profilePhoto %>" alt="Profile Photo" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700;">
+                            <% } else { %>
+                                <div id="profilePhotoPreview" style="width: 120px; height: 120px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 3px solid #FFD700;">
+                                    <i class="fas fa-user" style="font-size: 3rem; color: #999;"></i>
+                                </div>
+                            <% } %>
+                        </div>
+                        <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*" style="display: none;">
+                        <label for="profilePhoto" class="file-input-label">Choose Photo</label>
+                    </div>
 
-                <button type="submit" class="btn-update">Update Name</button>
-            </form>
-        </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="info-group">
+                            <label>First Name:</label>
+                            <input type="text" name="firstName" value="<%= user.firstName || '' %>" required>
+                        </div>
+                        
+                        <div class="info-group">
+                            <label>Last Name:</label>
+                            <input type="text" name="lastName" value="<%= user.lastName || '' %>" required>
+                        </div>
 
-        <div class="info-group">
-            <label>Email Address:</label>
-            <input type="text" value="<%= user.username %>" disabled>
-        </div>
+                        <div class="info-group">
+                            <label>Middle Name:</label>
+                            <input type="text" name="middleName" value="<%= user.middleName || '' %>">
+                        </div>
 
-        <div class="info-group">
-            <label>Student ID (MM-ID):</label>
-            <input type="text" value="<%= user.mmId || 'N/A' %>" disabled>
-        </div>
+                        <div class="info-group">
+                            <label>Mobile Number:</label>
+                            <input type="tel" name="mobileNumber" value="<%= user.mobileNumber || '' %>" placeholder="e.g., +63 912 345 6789">
+                        </div>
 
-        <div class="info-group">
-            <label>Year Level:</label>
-            <input type="text" value="<%= user.yearLevel || (user.role === 'adviser' ? 'N/A' : '1st Year') %>" disabled>
-        </div>
+                        <div class="info-group">
+                            <label>Date of Birth:</label>
+                            <input type="date" name="dateOfBirth" value="<%= user.dateOfBirth ? user.dateOfBirth.toISOString().split('T')[0] : '' %>">
+                        </div>
+
+                        <div class="info-group">
+                            <label>Gender:</label>
+                            <select name="gender" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; color: #000;">
+                                <option value="">Select Gender</option>
+                                <option value="Male" <%= user.gender === 'Male' ? 'selected' : '' %>>Male</option>
+                                <option value="Female" <%= user.gender === 'Female' ? 'selected' : '' %>>Female</option>
+                                <option value="Other" <%= user.gender === 'Other' ? 'selected' : '' %>>Other</option>
+                            </select>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Email Address (Read-only):</label>
+                            <input type="text" value="<%= user.username %>" disabled>
+                        </div>
+
+                        <div class="info-group">
+                            <label>Student ID - MM-ID (Read-only):</label>
+                            <input type="text" value="<%= user.mmId || 'N/A' %>" disabled>
+                        </div>
+                    </div>
+
+                    <hr style="border: 1px solid #ccc; margin: 30px 0;">
+
+                    <!-- Change Password Section inside Edit View -->
+                    <h3 style="margin-top: 0; margin-bottom: 15px;">Security - Change Password</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="info-group">
+                            <label>Password:</label>
+                            <input type="password" id="newPass" name="newPassword" placeholder="Enter new password">
+                        </div>
+
+                        <div class="info-group">
+                            <label>Confirm:</label>
+                            <input type="password" id="confirmPass" placeholder="Re-type password">
+                        </div>
+                    </div>
+                    <p style="color: #999; font-size: 0.9em; margin-top: 10px;">Leave blank if you don't want to change your password</p>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" class="btn-update">Save Changes</button>
+                        <button type="button" onclick="toggleEditMode()" style="flex: 1; background: #999; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">Cancel</button>
+                    </div>
+                </form>
+            </div>
 
         <% if (showSuccess) { %>
             <div class="success-message">
-                ✓ Password updated successfully!
+                ✓ Profile updated successfully!
             </div>
         <% } %>
 
-        <% if (cor_success) { %>
-            <div class="success-message">
-                ✓ Certificate of Registration (COR) uploaded successfully!
-            </div>
-        <% } %>
-
-        <% if (showSuccess && showSuccess.includes('name')) { %>
-            <div class="success-message">
-                ✓ Name updated successfully!
-            </div>
-        <% } %>
-
-        <hr class="section-divider">
-        
-        <!-- Change Password Section -->
-        <div style="margin-top: 30px;">
-            <h3 style="margin-top: 0;">Security</h3>
-            <button type="button" class="small-toggle-btn" onclick="togglePasswordSection()" title="Change your password">
-                <i class="fas fa-key"></i> Change Password
-            </button>
-        </div>
-        
-        <div id="passwordSection" class="password-section-hidden" style="display: none; margin-top: 15px;">
-            <form action="/update-password" method="POST" onsubmit="return validatePasswords()">
-                <div class="info-group">
-                    <label>New Password:</label>
-                    <input type="password" id="newPass" name="newPassword" placeholder="Enter new password" required>
+        <!-- Adviser Override Password Section -->
+        <% if (user.role === 'adviser' && overridePassword) { %>
+            <div class="card" style="background: #1e1e1e; border: 2px solid #FFD700; margin-top: 30px;">
+                <h2 style="color: #FFD700; margin-bottom: 20px;"><i class="fas fa-lock"></i> Fines Override Password</h2>
+                <p style="color: #e0e0e0; margin-bottom: 15px;">This password is used to override and reset student fines to zero. It automatically changes on January 1st and July 1st.</p>
+                
+                <div class="info-group" style="background: rgba(255, 215, 0, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #FFD700;">
+                    <label style="color: #FFD700; margin-bottom: 10px;">Current Override Password:</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="password" id="passwordDisplay" value="<%= overridePassword %>" style="flex: 1; padding: 12px; background: #252525; color: #FFD700; border: 1px solid #FFD700; border-radius: 5px; font-size: 1.2em; letter-spacing: 2px; font-weight: bold;" readonly>
+                        <button type="button" onclick="togglePasswordVisibility()" style="background: #FFD700; color: #000; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; white-space: nowrap;"><i class="fas fa-eye" id="eyeIcon"></i> Show</button>
+                    </div>
                 </div>
 
-                <div class="info-group">
-                    <label>Confirm New Password:</label>
-                    <input type="password" id="confirmPass" placeholder="Re-type password" required>
-                </div>
-
-                <button type="submit" class="btn-update">Update Password</button>
-            </form>
-        </div>
-
-        <hr class="section-divider">
-
-        <!-- COR Upload Section -->
-        <h3>Certificate of Registration (COR)</h3>
-        <div class="cor-info">
-            Please upload a PDF or image of your Certificate of Registration. This will be visible to Officers and Advisers for verification purposes.
-        </div>
-
-        <% if (user.corPath) { %>
-            <div class="cor-uploaded">
-                ✓ COR already uploaded: 
-                <div class="cor-action-buttons">
-                    <a href="/view-cor/<%= user._id %>" target="_blank">View File</a>
-                    <button type="button" class="btn-delete-cor" onclick="deleteCOR()">Delete</button>
-                </div>
+                <p style="color: #999; font-size: 0.85em; margin-top: 15px; text-align: center;">⚠️ <strong>Keep this password confidential</strong> and share it only with officers who need it to override fines.</p>
             </div>
         <% } %>
 
-        <form action="/upload-cor" method="POST" enctype="multipart/form-data">
-            <div class="info-group">
-                <label for="cor-file">Upload COR (PDF or Image):</label>
-                <input type="file" id="cor-file" name="cor" accept=".pdf,.jpg,.jpeg,.png,.gif" required>
-                <label for="cor-file" class="file-input-label">Choose File</label>
-                <span class="file-name" id="file-name">No file selected</span>
-            </div>
-
-            <button type="submit" id="cor-submit-btn" class="btn-update btn-update-disabled btn-cor-upload">Upload COR</button>
-        </form>
     </div>
+    </div>
+
+    <!-- Data Access Modal (Download Data) -->
+    <div id="dataAccessModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: #1a1a1a; border: 2px solid #4CAF50; padding: 30px; border-radius: 8px; max-width: 400px; width: 90%; color: #e0e0e0;">
+            <h3 style="color: #4CAF50; margin-bottom: 15px;"><i class="fas fa-download"></i> Download My Data</h3>
+            <p style="margin-bottom: 20px;">Your personal data will be compiled and sent to your registered email address within 30 days.</p>
+            <p style="color: #999; font-size: 0.9em; margin-bottom: 20px;">This includes: Name, Contact Info, Student ID, Attendance Records, Payment History, Documents, and Account Settings.</p>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeDataAccessModal()" style="flex: 1; background: #444; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                <button onclick="submitDataAccessRequest()" style="flex: 1; background: #4CAF50; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Request Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Deletion Modal -->
+    <div id="deletionModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: #1a1a1a; border: 2px solid #f44336; padding: 30px; border-radius: 8px; max-width: 450px; width: 90%; color: #e0e0e0; max-height: 90vh; overflow-y: auto;">
+            <h3 style="color: #f44336; margin-bottom: 15px;"><i class="fas fa-trash-alt"></i> Delete My Account</h3>
+            <div style="background: #3a1a1a; padding: 15px; border-radius: 4px; border-left: 4px solid #f44336; margin-bottom: 15px;">
+                <p style="margin: 0; color: #ffae9e; font-size: 0.9em;">⚠️ <strong>WARNING:</strong> This action is <strong>PERMANENT</strong> and cannot be undone. All your data will be permanently deleted including:</p>
+                <ul style="margin: 10px 0 0 20px; color: #ffae9e; font-size: 0.85em;">
+                    <li>Personal information and profile</li>
+                    <li>Attendance records</li>
+                    <li>Payment history</li>
+                    <li>Documents and files</li>
+                </ul>
+            </div>
+            
+            <p style="margin-bottom: 10px; font-weight: bold; color: #FFD700;">Step 1: Enter your email address</p>
+            <input type="email" id="deleteConfirmEmail" placeholder="Enter your email" oninput="validateDeletionForm()" style="width: 100%; padding: 10px; background: #222; color: #e0e0e0; border: 2px solid #555; border-radius: 4px; margin-bottom: 15px; transition: border-color 0.3s;">
+            
+            <p style="margin-bottom: 10px; font-weight: bold; color: #FFD700;">Step 2: Type the confirmation phrase</p>
+            <p style="color: #999; font-size: 0.85em; margin-bottom: 8px;">Type exactly: <span style="background: #222; padding: 2px 6px; border-radius: 3px; color: #f44336; font-family: monospace; font-weight: bold;">DELETE MY ACCOUNT</span></p>
+            <input type="text" id="deleteConfirmPhrase" placeholder="Type the confirmation phrase" oninput="validateDeletionForm()" style="width: 100%; padding: 10px; background: #222; color: #e0e0e0; border: 2px solid #555; border-radius: 4px; margin-bottom: 15px; transition: border-color 0.3s; text-transform: uppercase;">
+            
+            <div id="deleteValidationMessage" style="margin-bottom: 15px; font-size: 0.85em; min-height: 20px;"></div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeDeletionModal()" style="flex: 1; background: #444; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                <button id="deletionConfirmBtn" onclick="submitDeletionRequest()" disabled style="flex: 1; background: #999; color: white; padding: 10px; border: none; border-radius: 4px; cursor: not-allowed; font-weight: bold; opacity: 0.5;">Delete Account</button>
+            </div>
+            <p style="color: #999; font-size: 0.8em; margin-top: 10px; text-align: center;">Both fields must be filled correctly to proceed</p>
+        </div>
+    </div>
+
+    <!-- Final Deletion Confirmation Modal -->
+    <div id="finalDeletionConfirmModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1001; justify-content: center; align-items: center;">
+        <div style="background: #1a1a1a; border: 3px solid #f44336; padding: 35px; border-radius: 10px; max-width: 500px; width: 90%; color: #e0e0e0; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3em; color: #f44336;"></i>
+            </div>
+            
+            <h3 style="color: #f44336; margin-bottom: 20px; font-size: 1.3em;"><strong>FINAL CONFIRMATION</strong></h3>
+            
+            <div style="background: #3a1a1a; padding: 20px; border-radius: 8px; border-left: 5px solid #f44336; margin-bottom: 20px; text-align: left;">
+                <p style="margin: 0 0 12px 0; color: #ffae9e; font-weight: bold;">This will PERMANENTLY delete:</p>
+                <ul style="margin: 0; padding-left: 20px; color: #ffae9e; font-size: 0.95em;">
+                    <li style="margin-bottom: 6px;">✘ Your entire profile and personal information</li>
+                    <li style="margin-bottom: 6px;">✘ All attendance records and history</li>
+                    <li style="margin-bottom: 6px;">✘ Payment history and transaction records</li>
+                    <li style="margin-bottom: 6px;">✘ All uploaded documents and files</li>
+                    <li style="margin-bottom: 6px;">✘ Account settings and preferences</li>
+                </ul>
+            </div>
+            
+            <div style="background: #2a2a2a; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                <p style="margin: 0; color: #FFD700; font-weight: bold; font-size: 0.95em;">⚠️ THIS ACTION CANNOT BE UNDONE</p>
+                <p style="margin: 8px 0 0 0; color: #999; font-size: 0.9em;">Once deleted, all data will be permanently removed from our systems.</p>
+            </div>
+            
+            <p style="margin-bottom: 20px; color: #e0e0e0; font-size: 0.95em;">Are you absolutely certain you want to proceed with account deletion?</p>
+            
+            <div style="display: flex; gap: 12px; flex-direction: column;">
+                <button onclick="cancelFinalDeletion()" style="width: 100%; background: #444; color: white; padding: 12px; border: 2px solid #555; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.3s; font-size: 1em;">← No, Cancel Deletion</button>
+                <button id="finalDeleteBtn" onclick="confirmDeletion()" style="width: 100%; background: #f44336; color: white; padding: 12px; border: 2px solid #f44336; border-radius: 4px; cursor: pointer; font-weight: bold; transition: all 0.3s; font-size: 1em;" onmouseover="this.style.background='#DA190B'" onmouseout="this.style.background='#f44336'">Delete My Account Permanently</button>
+            </div>
+            
+            <p style="margin-top: 15px; color: #999; font-size: 0.8em;">Your account will be deleted within 30 days</p>
+        </div>
+    </div>
+
+    <!-- Consent Management Modal -->
+    <div id="consentModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: #1a1a1a; border: 2px solid #FF9800; padding: 30px; border-radius: 8px; max-width: 400px; width: 90%; color: #e0e0e0;">
+            <h3 style="color: #FF9800; margin-bottom: 15px;"><i class="fas fa-handshake"></i> Manage Your Consent</h3>
+            <div id="consentStatusContainer" style="background: #222; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px 0; color: #999;">Status: <span id="consentStatus" style="color: #FF9800; font-weight: bold;">Loading...</span></p>
+                <p id="consentDateInfo" style="margin: 0; color: #999; font-size: 0.9em;"></p>
+            </div>
+            <p style="margin-bottom: 15px; font-size: 0.95em;">
+                Your data processing consent under the Data Privacy Act allows us to:
+            </p>
+            <ul style="margin: 0 0 15px 20px; padding: 0; color: #999; font-size: 0.9em;">
+                <li style="margin-bottom: 5px;">Store and manage your personal information</li>
+                <li style="margin-bottom: 5px;">Track attendance and event participation</li>
+                <li style="margin-bottom: 5px;">Process payments and manage fines</li>
+                <li style="margin-bottom: 5px;">Send communications and notifications</li>
+            </ul>
+            <div id="consentActionContainer" style="display: flex; gap: 10px;">
+                <button onclick="closeConsentModal()" style="flex: 1; background: #444; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+                <button id="consentActionBtn" onclick="toggleConsent()" style="flex: 1; background: #FF9800; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Withdraw Consent</button>
+            </div>
+        </div>
     </div>
 
 <script>
@@ -591,20 +725,6 @@
             !sidebar.contains(event.target) && 
             !headerBtn.contains(event.target)) {
             sidebar.classList.remove('active');
-        }
-    });
-
-    // Show file name when selected and toggle button state
-    document.getElementById('cor-file').addEventListener('change', function(e) {
-        const fileName = e.target.files[0]?.name || 'No file selected';
-        document.getElementById('file-name').textContent = fileName;
-        
-        // Toggle button state based on file selection
-        const submitBtn = document.getElementById('cor-submit-btn');
-        if (e.target.files.length > 0) {
-            submitBtn.classList.remove('btn-update-disabled');
-        } else {
-            submitBtn.classList.add('btn-update-disabled');
         }
     });
 
@@ -650,6 +770,70 @@
         }
     }
 
+    function toggleEditMode() {
+        const displayView = document.getElementById('displayView');
+        const editView = document.getElementById('editView');
+        
+        if (editView.style.display === 'none' || editView.style.display === '') {
+            displayView.style.display = 'none';
+            editView.style.display = 'block';
+        } else {
+            displayView.style.display = 'block';
+            editView.style.display = 'none';
+        }
+    }
+
+    // Profile photo preview
+    document.addEventListener('DOMContentLoaded', function() {
+        const profilePhotoInput = document.getElementById('profilePhoto');
+        if (profilePhotoInput) {
+            profilePhotoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const preview = document.getElementById('profilePhotoPreview');
+                        preview.innerHTML = '<img src="' + event.target.result + '" alt="Profile Photo" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700;">';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
+
+    function validateEditForm(event) {
+        const newPass = document.getElementById('newPass');
+        const confirmPass = document.getElementById('confirmPass');
+        
+        if (newPass && confirmPass) {
+            const newPassValue = newPass.value.trim();
+            const confirmPassValue = confirmPass.value.trim();
+            
+            // If one password field is filled, both must be filled
+            if ((newPassValue || confirmPassValue) && (!newPassValue || !confirmPassValue)) {
+                alert('Please fill in both password fields or leave both blank.');
+                event.preventDefault();
+                return false;
+            }
+            
+            // If both are filled, they must match
+            if (newPassValue && confirmPassValue && newPassValue !== confirmPassValue) {
+                alert('Passwords do not match.');
+                event.preventDefault();
+                return false;
+            }
+            
+            // If both are filled, check minimum length
+            if (newPassValue && newPassValue.length < 6) {
+                alert('Password must be at least 6 characters long.');
+                event.preventDefault();
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
     function validatePasswords() {
         const newPass = document.getElementById('newPass').value;
         const confirmPass = document.getElementById('confirmPass').value;
@@ -667,24 +851,388 @@
         return true;
     }
 
-    function deleteCOR() {
-        if (confirm('Are you sure you want to delete this COR? You can upload a new one.')) {
-            fetch('/delete-cor', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('COR deleted successfully!');
-                        location.reload();
-                    } else {
-                        alert('Error deleting COR: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('Error deleting COR: ' + error);
-                });
+    // Toggle password visibility for adviser override password
+    let passwordVisible = false;
+    function togglePasswordVisibility() {
+        const passwordInput = document.getElementById('passwordDisplay');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const button = event.target.closest('button');
+        
+        passwordVisible = !passwordVisible;
+        
+        if (passwordVisible) {
+            passwordInput.type = 'text';
+            eyeIcon.classList.remove('fa-eye');
+            eyeIcon.classList.add('fa-eye-slash');
+            button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide';
+        } else {
+            passwordInput.type = 'password';
+            eyeIcon.classList.remove('fa-eye-slash');
+            eyeIcon.classList.add('fa-eye');
+            button.innerHTML = '<i class="fas fa-eye"></i> Show';
         }
     }
 
+</script>
+
+<!-- Privacy & Data Rights Section -->
+<div style="background: linear-gradient(135deg, #1a1a1a 0%, #222 100%); padding: 25px; border-radius: 8px; border-left: 5px solid #FFD700; margin-top: 30px; margin-bottom: 30px;">
+    <h2 style="color: #FFD700; margin-bottom: 20px;"><i class="fas fa-shield-alt"></i> Privacy & Data Rights</h2>
+    <p style="color: #e0e0e0; margin-bottom: 20px;">
+        Under the Data Privacy Act of the Philippines, you have the right to access, correct, delete, and control your personal data. Use the options below to manage your privacy.
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <!-- Access Data -->
+        <button onclick="openDataAccessModal()" style="background: #1e1e1e; border: 2px solid #4CAF50; color: #4CAF50; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 100px;">
+            <i class="fas fa-download" style="font-size: 1.5em;"></i>
+            <span>Download My Data</span>
+            <small style="color: #999; font-size: 0.8em;">Get a copy of your info</small>
+        </button>
+
+        <!-- Consent Management -->
+        <button onclick="openConsentModal()" style="background: #1e1e1e; border: 2px solid #FF9800; color: #FF9800; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 100px;">
+            <i class="fas fa-handshake" style="font-size: 1.5em;"></i>
+            <span>Manage Consent</span>
+            <small style="color: #999; font-size: 0.8em;">Control data processing</small>
+        </button>
+
+        <!-- Delete Account -->
+        <button onclick="openDeletionModal()" style="background: #1e1e1e; border: 2px solid #f44336; color: #f44336; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 100px;">
+            <i class="fas fa-trash-alt" style="font-size: 1.5em;"></i>
+            <span>Delete Account</span>
+            <small style="color: #999; font-size: 0.8em;">Permanent account removal</small>
+        </button>
+
+        <!-- Privacy Policy -->
+        <button onclick="window.open('/privacy-policy', '_blank')" style="background: #1e1e1e; border: 2px solid #FFD700; color: #FFD700; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 100px;">
+            <i class="fas fa-file-alt" style="font-size: 1.5em;"></i>
+            <span>Privacy Policy</span>
+            <small style="color: #999; font-size: 0.8em;">View our data practices</small>
+        </button>
+    </div>
+
+    <p style="color: #999; font-size: 0.85em; margin-top: 20px; text-align: center;">For questions about your data, contact: <strong>psunarrabsbamm@psu.palawan.edu.ph</strong></p>
+</div>
+
+<script src="/document-notifications.js"></script>
+<script>
+    document.documentElement.setAttribute('data-user-role', '<%= user.role %>');
+
+    // Privacy & Data Rights Modal Functions
+    function openDataAccessModal() {
+        document.getElementById('dataAccessModal').style.display = 'flex';
+    }
+
+    function closeDataAccessModal() {
+        document.getElementById('dataAccessModal').style.display = 'none';
+    }
+
+    function openDeletionModal() {
+        // Reset form fields
+        document.getElementById('deleteConfirmEmail').value = '';
+        document.getElementById('deleteConfirmPhrase').value = '';
+        document.getElementById('deleteValidationMessage').innerHTML = '';
+        
+        // Reset button state
+        const submitBtn = document.getElementById('deletionConfirmBtn');
+        submitBtn.disabled = true;
+        submitBtn.style.background = '#999';
+        submitBtn.style.cursor = 'not-allowed';
+        submitBtn.style.opacity = '0.5';
+        
+        // Show modal
+        document.getElementById('deletionModal').style.display = 'flex';
+    }
+
+    function closeDeletionModal() {
+        // Clear form fields
+        document.getElementById('deleteConfirmEmail').value = '';
+        document.getElementById('deleteConfirmPhrase').value = '';
+        document.getElementById('deleteValidationMessage').innerHTML = '';
+        document.getElementById('deletionModal').style.display = 'none';
+    }
+
+    function openConsentModal() {
+        document.getElementById('consentModal').style.display = 'flex';
+        loadConsentStatus();
+    }
+
+    function closeConsentModal() {
+        document.getElementById('consentModal').style.display = 'none';
+    }
+
+    function submitDataAccessRequest() {
+        fetch('/api/submit-data-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requestType: 'data_access' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccessNotification('Data Access Request Submitted', 'Your request has been submitted. You will receive your personal data at your registered email within 30 days.');
+                closeDataAccessModal();
+                loadDataRequests();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            alert('Error submitting request');
+        });
+    }
+
+    function validateDeletionForm() {
+        const email = document.getElementById('deleteConfirmEmail').value.trim();
+        const phrase = document.getElementById('deleteConfirmPhrase').value.trim().toUpperCase();
+        const userEmail = '<%= user.email %>';
+        const messageEl = document.getElementById('deleteValidationMessage');
+        const submitBtn = document.getElementById('deletionConfirmBtn');
+        
+        let isValid = false;
+        let validationMessages = [];
+        
+        // Validate email
+        if (!email) {
+            validationMessages.push('❌ Enter your email address');
+        } else if (email !== userEmail) {
+            validationMessages.push('❌ Email does not match');
+        } else {
+            validationMessages.push('✓ Email verified');
+        }
+        
+        // Validate confirmation phrase
+        if (!phrase) {
+            validationMessages.push('❌ Type the confirmation phrase');
+        } else if (phrase !== 'DELETE MY ACCOUNT') {
+            validationMessages.push('❌ Confirmation phrase is incorrect');
+        } else {
+            validationMessages.push('✓ Confirmation phrase verified');
+        }
+        
+        // Check if all validations pass
+        isValid = email === userEmail && phrase === 'DELETE MY ACCOUNT';
+        
+        // Update message display
+        messageEl.innerHTML = validationMessages.map(msg => 
+            `<div style="color: ${msg.includes('✓') ? '#4CAF50' : '#f44336'}; margin-bottom: 3px;">${msg}</div>`
+        ).join('');
+        
+        // Update button state
+        if (isValid) {
+            submitBtn.disabled = false;
+            submitBtn.style.background = '#f44336';
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.style.opacity = '1';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.style.background = '#999';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.style.opacity = '0.5';
+        }
+    }
+
+    function submitDeletionRequest() {
+        const email = document.getElementById('deleteConfirmEmail').value.trim();
+        const phrase = document.getElementById('deleteConfirmPhrase').value.trim().toUpperCase();
+        const userEmail = '<%= user.email %>';
+        
+        // Final validation
+        if (!email || email !== userEmail) {
+            alert('❌ Email verification failed. Please check your email address.');
+            return;
+        }
+
+        if (!phrase || phrase !== 'DELETE MY ACCOUNT') {
+            alert('❌ Confirmation phrase is incorrect. Please type exactly: DELETE MY ACCOUNT');
+            return;
+        }
+
+        // Show final confirmation modal instead of browser confirm
+        document.getElementById('finalDeletionConfirmModal').style.display = 'flex';
+    }
+
+    function cancelFinalDeletion() {
+        // Close the final confirmation modal
+        document.getElementById('finalDeletionConfirmModal').style.display = 'none';
+    }
+
+    function confirmDeletion() {
+        const submitBtn = document.getElementById('finalDeleteBtn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+        fetch('/api/submit-data-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requestType: 'data_deletion' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close both modals
+                document.getElementById('finalDeletionConfirmModal').style.display = 'none';
+                document.getElementById('deletionModal').style.display = 'none';
+                
+                // Clear form
+                document.getElementById('deleteConfirmEmail').value = '';
+                document.getElementById('deleteConfirmPhrase').value = '';
+                
+                showSuccessNotification('Deletion Request Submitted', 'Your account deletion request has been submitted. Your account will be deleted within 30 days. Until then, you can log in with your credentials.');
+                loadDataRequests();
+            } else {
+                alert('Error: ' + data.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            alert('Error submitting request');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    }
+
+    function showSuccessNotification(title, message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 20px;
+            color: #e0e0e0;
+            z-index: 5000;
+            max-width: 300px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        `;
+        notification.innerHTML = `
+            <p style="margin: 0 0 10px 0; color: #4CAF50; font-weight: bold;">✓ ${title}</p>
+            <p style="margin: 0; font-size: 0.9em; color: #999;">${message}</p>
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 4000);
+    }
+
+    function loadConsentStatus() {
+        fetch('/api/consent-status')
+            .then(response => response.json())
+            .then(data => {
+                const statusSpan = document.getElementById('consentStatus');
+                const dateInfo = document.getElementById('consentDateInfo');
+                const actionBtn = document.getElementById('consentActionBtn');
+
+                if (data.consentRevoked) {
+                    statusSpan.textContent = 'WITHDRAWN';
+                    statusSpan.style.color = '#f44336';
+                    dateInfo.textContent = `Withdrawn: ${new Date(data.revokedDate).toLocaleDateString()}`;
+                    actionBtn.textContent = '✓ Re-Accept Consent';
+                    actionBtn.style.background = '#4CAF50';
+                } else if (data.hasConsent) {
+                    statusSpan.textContent = 'ACTIVE';
+                    statusSpan.style.color = '#4CAF50';
+                    dateInfo.textContent = `Accepted: ${new Date(data.consentDate).toLocaleDateString()}`;
+                    actionBtn.textContent = '✗ Withdraw Consent';
+                    actionBtn.style.background = '#f44336';
+                } else {
+                    statusSpan.textContent = 'NO CONSENT';
+                    statusSpan.style.color = '#FF9800';
+                    dateInfo.textContent = 'You have not provided consent yet';
+                    actionBtn.textContent = '✓ Accept Consent';
+                    actionBtn.style.background = '#4CAF50';
+                }
+            })
+            .catch(err => {
+                console.error('Error loading consent status:', err);
+                document.getElementById('consentStatus').textContent = 'ERROR';
+            });
+    }
+
+    function toggleConsent() {
+        const statusSpan = document.getElementById('consentStatus');
+        const isWithdrawn = statusSpan.textContent === 'WITHDRAWN';
+
+        if (isWithdrawn) {
+            // Re-accept consent
+            fetch('/api/accept-consent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessNotification('Consent Accepted', data.message);
+                    setTimeout(() => loadConsentStatus(), 500);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Error accepting consent');
+            });
+        } else {
+            // Withdraw consent
+            const reason = prompt('Why are you withdrawing your consent? (optional)', '');
+            if (reason === null) return; // User cancelled
+
+            fetch('/api/withdraw-consent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: reason })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessNotification('Consent Withdrawn', data.message);
+                    setTimeout(() => loadConsentStatus(), 500);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Error withdrawing consent');
+            });
+        }
+    }
+
+    function loadDataRequests() {
+        fetch('/api/my-data-requests')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Optionally refresh the page or update a requests list
+                    console.log('Data requests loaded:', data.requests);
+                }
+            })
+            .catch(err => console.error('Error loading requests:', err));
+    }
+
+    // Close modals when clicking outside
+    window.addEventListener('click', function(event) {
+        const dataAccessModal = document.getElementById('dataAccessModal');
+        const deletionModal = document.getElementById('deletionModal');
+        const consentModal = document.getElementById('consentModal');
+
+        if (event.target === dataAccessModal) {
+            closeDataAccessModal();
+        }
+        if (event.target === deletionModal) {
+            closeDeletionModal();
+        }
+        if (event.target === consentModal) {
+            closeConsentModal();
+        }
+    });
 </script>
 
 </body>

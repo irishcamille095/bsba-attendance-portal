@@ -26,6 +26,15 @@
         .sidebar h2 { border-bottom: 2px solid #ffcc00; padding-bottom: 10px; text-align: center; }
         .sidebar a { color: white; padding: 12px; display: block; text-decoration: none; transition: all 0.2s; }
         .sidebar a:hover { color: #ffcc00; background: rgba(255, 204, 0, 0.1); }
+        
+        /* Sidebar Menu Item Hover Styles */
+        .sidebar a:hover,
+        .sidebar div[onclick]:hover {
+            color: #FFD700 !important;
+            background: rgba(255, 204, 0, 0.15) !important;
+            padding-left: 16px !important;
+            transition: all 0.2s ease !important;
+        }
 
         /* Main Content */
         .content { flex: 1; margin-left: 290px; padding: 20px; }
@@ -130,7 +139,7 @@
         }
 
         th {
-            padding: 15px;
+            padding: 10px 12px;
             text-align: left;
             font-weight: 600;
             border-bottom: 2px solid #FFD700;
@@ -138,9 +147,10 @@
         }
 
         td {
-            padding: 12px 15px;
+            padding: 8px 12px;
             border-bottom: 1px solid #2d2d2d;
             color: #e0e0e0;
+            vertical-align: middle;
         }
 
         tbody tr:hover {
@@ -227,10 +237,10 @@
         }
 
         select, .btn-sm {
-            padding: 6px 10px;
+            padding: 4px 8px;
             border: 1px solid #2d2d2d;
             border-radius: 5px;
-            font-size: 0.9em;
+            font-size: 0.85em;
             cursor: pointer;
         }
 
@@ -242,21 +252,79 @@
         select option {
             background: #252525;
             color: #e0e0e0;
-            padding: 8px;
+            padding: 6px;
         }
 
         .btn-sm {
             background: none;
-            border: none;
+            border: 1px solid transparent;
             color: #ff6464;
             font-weight: 600;
-            padding: 5px 10px;
+            padding: 4px 8px;
             transition: all 0.3s ease;
         }
 
         .btn-sm:hover {
             background: rgba(255, 100, 100, 0.1);
             border-color: #ff6464;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .action-buttons select {
+            min-width: 115px;
+            flex: 0 1 130px;
+        }
+
+        .icon-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 0 1 auto;
+        }
+
+        .action-buttons .btn-sm,
+        .action-buttons select {
+            margin: 0;
+        }
+
+        .action-buttons .btn-sm {
+            min-width: 36px;
+            min-height: 34px;
+            padding: 6px;
+            border-radius: 6px;
+        }
+
+        .action-buttons .btn-sm i {
+            font-size: 0.95em;
+            line-height: 1;
+        }
+
+        @media (max-width: 640px) {
+            .action-buttons {
+                justify-content: flex-start;
+            }
+
+            .action-buttons select {
+                width: 100%;
+                flex: 1 1 100%;
+            }
+
+            .icon-actions {
+                order: 1;
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .action-buttons .btn-sm {
+                min-width: 32px;
+                padding: 6px 7px;
+            }
         }
 
         .back-btn {
@@ -1022,24 +1090,41 @@
 
     <div class="sidebar" id="sidebar">
     <button class="sidebar-close-btn" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
-    <h2 style="color: #FFD700;">BSBA-MM</h2>
-    <p style="color: #e0e0e0;">User: <strong><%= user.name %></strong></p>
-    <p style="color: #e0e0e0;">Role: <strong><%= user.role %></strong></p>
     
-    <% if (user.role === 'adviser' || user.role === 'officer') { %>
-    <div style="padding: 10px 0px; border-bottom: 1px solid #ffcc00; margin-bottom: 10px;">
-        <a href="/admin/reset-requests" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px;">
-            <i class="fas fa-key"></i> <span style="font-weight: bold;">Password Reset Requests</span>
-            <% if (pendingResetRequestsCount > 0) { %>
-                <span class="sidebar-notification-badge"><%= pendingResetRequestsCount %></span>
-            <% } %>
-        </a>
-    </div>
+    <hr style="border: 1px solid #FFD700; margin: 50px 0 15px 0;">
+    
+    <!-- Sidebar Menu Items -->
+    <a href="/my-account" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-user"></i> <span style="font-weight: bold;">Account Profile</span>
+    </a>
+    
+    <a href="/dashboard" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-camera"></i> <span style="font-weight: bold;">Attendance</span>
+    </a>
+    
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+    <a href="/admin/students" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-users"></i> <span style="font-weight: bold;">Master Student List</span>
+    </a>
     <% } %>
     
-    <hr style="border: 1px solid #FFD700;">
+    <% if (user.role === 'officer' || user.role === 'adviser') { %>
+    <a href="/fines-management" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-file-invoice-dollar"></i> <span style="font-weight: bold;">Fines Management</span>
+    </a>
+    <% } %>
     
-    <form action="/logout" method="POST" style="margin-top: 30px; display: block !important;">
+    <a href="/my-documents" style="text-decoration: none; color: #e0e0e0; display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 8px; border-radius: 8px; transition: all 0.2s;">
+        <i class="fas fa-file-contract"></i> <span style="font-weight: bold;">My Documents</span>
+    </a>
+    
+
+    
+
+    
+    <hr style="border: 1px solid #FFD700; margin: 15px 0;">
+    
+    <form action="/logout" method="POST" style="margin-top: 15px; display: block !important;">
         <button type="submit" class="back-btn" style="width: 100%; padding: 12px; background: #FFD700; color: #121212; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; display: block;">
             <i class="fas fa-sign-out-alt"></i> Logout
         </button>
@@ -1109,8 +1194,7 @@
                         <th style="width: 12%;">Year Level</th>
                         <th style="width: 15%;">Role</th>
                         <th style="width: 12%;">QR Code</th>
-                        <th style="width: 12%;">COR</th>
-                        <th style="width: 27%;">Actions</th>
+                        <th style="width: 39%;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1172,24 +1256,20 @@
                                 </div>
                             </td>
                             <td>
-                                <% if (student.isAssigned && student.corPath) { %>
-                                    <a href="/download-cor/<%= student._id %>" class="btn-sm" style="color: #28a745; text-decoration: none; font-weight: 600;" title="Download COR">
-                                        <i class="fas fa-file"></i> Download
-                                    </a>
-                                <% } else { %>
-                                    <span class="empty-slot">—</span>
-                                <% } %>
-                            </td>
-                            <td>
                                 <% if (student.isAssigned) { %>
-                                    <select onchange="changeRole('<%= student.mmId %>', this.value)" style="margin-right: 5px;">
-                                        <option value="">Change Role</option>
-                                        <option value="student" <%= student.role === 'student' ? 'selected' : '' %>>Student</option>
-                                        <option value="officer" <%= student.role === 'officer' ? 'selected' : '' %>>Officer</option>
-                                        <option value="adviser" <%= student.role === 'adviser' ? 'selected' : '' %>>Adviser</option>
-                                    </select>
-                                    <button class="btn-sm" onclick="openEditNameModal('<%= student._id %>', '<%= student.firstName || '' %>', '<%= student.lastName || '' %>', '<%= student.middleName || '' %>')" style="color: #17a2b8; margin-right: 5px;"><i class="fas fa-edit"></i> Edit Name</button>
-                                    <button class="btn-sm" onclick="removeStudent('<%= student.mmId %>', '<%= student.name %>')" ><i class="fas fa-trash"></i> Remove</button>
+                                    <div class="action-buttons">
+                                        <select onchange="changeRole('<%= student.mmId %>', this.value)">
+                                            <option value="">Change Role</option>
+                                            <option value="student" <%= student.role === 'student' ? 'selected' : '' %>>Student</option>
+                                            <option value="officer" <%= student.role === 'officer' ? 'selected' : '' %>>Officer</option>
+                                            <option value="adviser" <%= student.role === 'adviser' ? 'selected' : '' %>>Adviser</option>
+                                        </select>
+                                        <div class="icon-actions">
+                                            <button class="btn-sm" onclick="window.location.href='/admin/student-details/<%= student.mmId %>'" style="color: #4CAF50;"><i class="fas fa-eye"></i></button>
+                                            <button class="btn-sm" onclick="openEditNameModal('<%= student._id %>', '<%= student.firstName || '' %>', '<%= student.lastName || '' %>', '<%= student.middleName || '' %>')" style="color: #17a2b8;"><i class="fas fa-edit"></i></button>
+                                            <button class="btn-sm" onclick="removeStudent('<%= student.mmId %>', '<%= student.name %>')" style="color: #ff6464;"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
                                 <% } else { %>
                                     <span class="empty-slot">No actions</span>
                                 <% } %>
@@ -1804,8 +1884,7 @@
                        '<th style="width: 12%;">Year Level</th>' +
                        '<th style="width: 15%;">Role</th>' +
                        '<th style="width: 12%;">QR Code</th>' +
-                       '<th style="width: 12%;">COR</th>' +
-                       '<th style="width: 27%;">Actions</th>' +
+                       '<th style="width: 39%;">Actions</th>' +
                        '</tr>' +
                        '</thead>' +
                        '<tbody>';
@@ -1854,16 +1933,6 @@
                 html += '<td><div class="qr-placeholder" data-mmid="' + student.mmId + '" onclick="loadAndShowQR(\'' + student.mmId + '\')">' +
                         '<span style="cursor: pointer; color: #FFD700;">Click to load</span></div></td>';
 
-                // COR
-                html += '<td>';
-                if (student.corPath) {
-                    html += '<a href="/download-cor/' + student._id + '" class="btn-sm" style="color: #28a745; text-decoration: none; font-weight: 600;">' +
-                            '<i class="fas fa-file"></i> Download</a>';
-                } else {
-                    html += '<span class="empty-slot">—</span>';
-                }
-                html += '</td>';
-
                 // Actions
                 html += '<td>';
                 html += '<select onchange="changeRole(\'' + student.mmId + '\', this.value)" style="margin-right: 5px;">' +
@@ -1890,5 +1959,11 @@
             });
         }
     </script>
+    
+    <script src="/document-notifications.js"></script>
+    <script>
+        document.documentElement.setAttribute('data-user-role', '<%= user.role %>');
+    </script>
+<%- include('./_footer.ejs') %>
 </body>
 </html>

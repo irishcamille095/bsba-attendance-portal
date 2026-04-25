@@ -1085,3 +1085,83 @@ i {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
+/* ===== NOTIFICATION BADGE STYLES ===== */
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #FF5252;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    font-weight: bold;
+    border: 2px solid #121212;
+    animation: pulse 2s infinite;
+}
+
+.notification-badge-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 12px;
+    height: 12px;
+    background: #FF5252;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    border: 2px solid #121212;
+}
+
+.hamburger-menu {
+    position: relative;
+    display: inline-block;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(255, 82, 82, 0.3);
+    }
+}
+
+/* Sidebar menu item badge */
+.sidebar-menu-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-menu-item .small-badge {
+    display: inline-flex;
+    background: #FF5252;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.75em;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.small-badge {
+    display: inline-flex;
+    background: #FF5252;
+    color: white;
+    border-radius: 50%;
+    min-width: 22px;
+    height: 22px;
+    font-size: 0.8em;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-left: 8px;
+    padding: 0 6px;
+}

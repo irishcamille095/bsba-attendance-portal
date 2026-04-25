@@ -15,23 +15,47 @@
     <style>
         /* Signup-specific overrides */
         body { 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start; 
-            min-height: 100vh; 
-            padding: 10px; 
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 10px;
             overflow-x: hidden;
         }
         .login-box { 
             border-top: 6px solid #800000;
             width: 100%;
             max-width: 500px;
+            margin: auto;
             overflow-y: auto;
         }
         h2 { color: #800000; }
         input:focus, select:focus { border-color: #800000; }
         button { background: #800000; color: gold; }
         button:hover { background: #600000; }
+        .password-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-container input {
+            flex: 1;
+            padding-right: 40px;
+        }
+        .password-toggle-btn {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #FFD700;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 0;
+            margin: 0;
+        }
+        .password-toggle-btn:hover {
+            background: none;
+            color: #FFF;
+        }
         .info-box { background: #e3f2fd; border-left: 4px solid #2196F3; color: #1976d2; }
         .info-box div { font-family: 'Courier New', monospace; font-size: 1.3em; font-weight: 700; color: #000; }
         .input-group { margin-bottom: 15px; }
@@ -40,7 +64,6 @@
         /* Mobile responsive */
         @media (max-width: 480px) {
             body {
-                align-items: flex-start;
                 padding: 5px;
             }
             .login-box {
@@ -57,111 +80,102 @@
                 padding: 12px;
                 margin-bottom: 15px;
             }
+            .privacy-box {
+                max-width: 300px;
+                margin: 0 auto 15px auto;
+            }
+            .privacy-box label {
+                gap: 5px !important;
+            }
+            .privacy-box input[type="checkbox"] {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                flex-shrink: 0;
+            }
         }
     </style>
 </head>
 <body>
     <div class="login-box">
-        <h2>Create Account</h2>
-        <form action="/signup" method="POST">
-    
-            <div class="info-box">
-                <label>Your Assigned Student ID:</label>
-                <div><%= mmId %></div>
-                <small>This ID has been automatically assigned to you</small>
+        <% if (error) { %>
+            <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-size: 0.95em;">
+                <%= error %>
             </div>
-            
-            <input type="hidden" name="mmId" value="<%= mmId %>">
-            
-            <div class="input-group">
-                <label for="firstName">First Name</label>
-                <input type="text" id="firstName" name="firstName" placeholder="Enter your first name" required>
-            </div>
-            
-            <div class="input-group">
-                <label for="lastName">Last Name</label>
-                <input type="text" id="lastName" name="lastName" placeholder="Enter your last name" required>
-            </div>
-            
-            <div class="input-group">
-                <label for="middleName">Middle Name (Optional)</label>
-                <input type="text" id="middleName" name="middleName" placeholder="Enter your middle name (optional)">
-            </div>
-            
-            <div class="input-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="Enter your email" required>
-            </div>
-            
-            <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter password" required>
-            </div>
-            
-            <div class="input-group">
-                <label for="role">Select Your Role</label>
-                <select id="role" name="role" required onchange="updateYearLevelRequirement()">
-                    <option value="">-- Select a Role --</option>
-                    <option value="student">Student</option>
-                    <option value="officer">Officer</option>
-                    <option value="adviser">Adviser</option>
-                </select>
-            </div>
-            
-            <div class="input-group">
-                <label for="yearLevel">Year Level <span id="yearLevelRequired" style="color: red;">*</span></label>
-                <select id="yearLevel" name="yearLevel" required>
-                    <option value="">-- Select Year Level --</option>
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                </select>
-                <small id="yearLevelHint" style="color: #666;">Select your academic year level</small>
-            </div>
-            
-            <button type="submit">Register</button>
-        </form>
+        <% } %>
         
-        <div class="signup-link">
-            <p>Already have an account? <a href="/login">Back to Login</a></p>
+        <!-- MM-ID Display Box -->
+        <div style="background: #e3f2fd; border-left: 4px solid #FFD700; color: #1976d2; padding: 12px; margin-bottom: 20px; border-radius: 4px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Your Assigned Student ID:</label>
+            <div style="font-family: 'Courier New', monospace; font-size: 1.3em; font-weight: 700; color: #000; margin-bottom: 5px;"><%= mmId %></div>
+            <small style="color: #666;">This ID has been automatically assigned to you. Keep it safe!</small>
+        </div>
+        
+        <form action="/signup" method="POST">
+            <input type="hidden" name="mmId" value="<%= mmId %>">
+            <input type="text" name="firstName" placeholder="First Name" required>
+            <input type="text" name="lastName" placeholder="Last Name" required>
+            <input type="email" name="email" placeholder="Email Address" required>
+
+            <select name="yearLevel" required style="background: #222; color: #FFD700;">
+                <option value="" disabled selected>Select your year level</option>
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+            </select>
+
+            <div class="password-container">
+                <input type="password" id="passwordInput" name="password" placeholder="Create a password" required>
+                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility()" title="Show/Hide password">
+                    <i class="fas fa-eye" id="passwordIcon"></i>
+                </button>
+            </div>
+            <select name="role" required style="background: #222; color: #FFD700;">
+                <option value="" disabled selected>Select your role</option>
+                <option value="student">Student</option>
+                <option value="officer">Officer</option>
+                <option value="adviser">Adviser</option>
+            </select>
+
+            <!-- Privacy & Consent -->
+            <h3 style="color: #FFD700; margin-top: 20px; margin-bottom: 15px;">Privacy & Terms</h3>
+            <div class="privacy-box" style="background: #222; padding: 12px; border-radius: 4px; margin-bottom: 15px; border-left: 3px solid #FFD700;">
+                <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; color: #e0e0e0; font-size: 0.95em;">
+                    <input type="checkbox" name="privacyConsent" value="true" required style="margin-top: 3px; accent-color: #FFD700;">
+                    <span>I have read and agree to the <a href="/privacy-policy" target="_blank" style="color: #FFD700; text-decoration: none;">Privacy Policy</a>. I consent to the collection and processing of my personal data as described.</span>
+                </label>
+            </div>
+
+            <button type="submit" style="display: block; margin: 25px auto 0; padding: 12px 40px; background: #FFD700; color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1em; text-align: center;">Create Account</button>
+        </form>
+
+        <div class="signup-link" style="margin-top: 20px; text-align: center;">
+            <span style="color: #666;">Already have an account?</span>
+            <a href="/login" style="color: #FFD700; text-decoration: none; font-weight: bold;">Login here</a>
         </div>
     </div>
+
     <script src="/pwa-install.js"></script>
     <script>
-        function updateYearLevelRequirement() {
-            const role = document.getElementById('role').value;
-            const yearLevelSelect = document.getElementById('yearLevel');
-            const yearLevelRequired = document.getElementById('yearLevelRequired');
-            const yearLevelHint = document.getElementById('yearLevelHint');
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordIcon = document.getElementById('passwordIcon');
 
-            if (role === 'adviser') {
-                // Advisers don't need to select a year level
-                yearLevelSelect.disabled = true;
-                yearLevelSelect.value = '';
-                yearLevelSelect.required = false;
-                yearLevelRequired.style.display = 'none';
-                yearLevelHint.textContent = 'Not applicable for advisers';
-                yearLevelHint.style.color = '#999';
-            } else if (role === 'student' || role === 'officer') {
-                // Students and Officers must select a year level
-                yearLevelSelect.disabled = false;
-                yearLevelSelect.required = true;
-                yearLevelRequired.style.display = 'inline';
-                yearLevelHint.textContent = 'Select your academic year level';
-                yearLevelHint.style.color = '#666';
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordIcon.classList.remove('fa-eye');
+                passwordIcon.classList.add('fa-eye-slash');
             } else {
-                // No role selected yet
-                yearLevelSelect.disabled = true;
-                yearLevelSelect.required = false;
-                yearLevelRequired.style.display = 'inline';
-                yearLevelHint.textContent = 'Select your role first';
-                yearLevelHint.style.color = '#999';
+                passwordInput.type = 'password';
+                passwordIcon.classList.remove('fa-eye-slash');
+                passwordIcon.classList.add('fa-eye');
             }
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', updateYearLevelRequirement);
+        document.addEventListener('DOMContentLoaded', function() {
+            // Any additional initialization can go here
+        });
     </script>
-
+<%- include('./_footer.ejs') %>
+</body>
 </html>

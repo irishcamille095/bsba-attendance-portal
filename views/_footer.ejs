@@ -1,0 +1,18 @@
+<!-- Footer - Reusable Partial -->
+<footer style="background: #222; border-top: 1px solid #FFD700; padding: 20px; text-align: center; font-size: 0.9em; margin-top: auto; width: 100%; box-sizing: border-box;">
+    <p style="margin: 0; color: #999;">
+        <a href="/privacy-policy" style="color: #FFD700; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#FFC700'" onmouseout="this.style.color='#FFD700'">Privacy Policy</a>
+        <span style="color: #666; margin: 0 10px;">|</span>
+        <% if (typeof user !== 'undefined' && user && user.role === 'student') { %>
+        <a href="/data-rights" style="color: #FFD700; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#FFC700'" onmouseout="this.style.color='#FFD700'">My Data Rights</a>
+        <span style="color: #666; margin: 0 10px;">|</span>
+        <% } %>
+        <% if (typeof user !== 'undefined' && user && (user.role === 'officer' || user.role === 'adviser')) { %>
+        <a href="/compliance-dashboard" style="color: #FFD700; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#FFC700'" onmouseout="this.style.color='#FFD700'">Data Compliance</a>
+        <span style="color: #666; margin: 0 10px;">|</span>
+        <% } %>
+        <a href="mailto:psunarrabsbamm@psu.palawan.edu.ph" style="color: #FFD700; text-decoration: none; transition: color 0.3s;" onmouseover="this.style.color='#FFC700'" onmouseout="this.style.color='#FFD700'">Contact Us</a>
+        <span style="color: #666; margin: 0 10px;">|</span>
+        <span style="color: #999;">© 2026 BSBA Office</span>
+    </p>
+</footer>

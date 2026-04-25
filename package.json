@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "migrate-names": "node migrate-names.js",
+    "migrate-attendance-format": "node migrate-attendance-format.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

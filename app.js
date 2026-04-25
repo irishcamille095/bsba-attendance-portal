@@ -17,6 +17,17 @@ const StudentIDPool = require('./models/StudentIDPool');
 const Event = require('./models/Event');
 const User = require('./models/User');
 const ResetRequest = require('./models/ResetRequest');
+const Payment = require('./models/Payment');
+const MMIDReservation = require('./models/MMIDReservation');
+const DocumentType = require('./models/DocumentType');
+const StudentDocument = require('./models/StudentDocument');
+const Settings = require('./models/Settings');
+const AuditLog = require('./models/AuditLog');
+const DataRequest = require('./models/DataRequest');
+const Consent = require('./models/Consent');
+
+// Import utility functions
+const { verifyOverridePassword, getOverridePassword } = require('./utils/passwordUtils');
 
 // Utility function to format UTC date to Philippines time string
 function formatToPhilippinesTime(utcDate) {
@@ -78,6 +89,10 @@ mongoose.connect(mongoURI)
         gridFSBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'cors' });
         console.log('[SUCCESS] GridFS bucket initialized for COR storage!');
         
+        // Initialize GridFS bucket for document file storage
+        gridFSDocumentBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'documents' });
+        console.log('[SUCCESS] GridFS bucket initialized for document storage!');
+        
         async function initializeStudentIDPool() {
             try {
                 const existingCount = await StudentIDPool.countDocuments();
@@ -113,6 +128,184 @@ mongoose.connect(mongoURI)
         }
         
         await initializeStudentIDPool();
+        
+        // POST /create-document-type - Officer/Adviser create new document type (with redirect)
+        app.post('/api/create-document-type', isAuthenticated, async (req, res) => {
+            console.log('[ROUTE] POST /api/create-document-type called');
+            try {
+                console.log('[CREATE-DOC] User role:', req.session.user.role);
+                if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+                    console.log('[CREATE-DOC] Unauthorized - role is:', req.session.user.role);
+                    return res.status(403).json({ error: "Unauthorized" });
+                }
+
+                const { title, description, fileType, maxUploads } = req.body;
+                console.log('[CREATE-DOC] Received data:', { title, fileType, maxUploads });
+
+                if (!title || !fileType || !maxUploads) {
+                    console.log('[CREATE-DOC] Missing fields');
+                    return res.status(400).json({ error: "Missing required fields" });
+                }
+
+                const newDocType = new DocumentType({
+                    title: title.trim(),
+                    description: description ? description.trim() : '',
+                    fileType,
+                    maxUploads: parseInt(maxUploads),
+                    createdBy: req.session.user._id
+                });
+
+                console.log('[CREATE-DOC] Created DocumentType object:', newDocType);
+                await newDocType.save();
+                console.log('[CREATE-DOC] SAVED to database successfully:', newDocType._id);
+
+                // Return success immediately
+                console.log('[CREATE-DOC] Sending success response');
+                res.json({ success: true, documentType: newDocType });
+
+                // Send notifications in background without blocking
+                setImmediate(async () => {
+                    try {
+                        const students = await User.find({ role: 'student' });
+                        for (const student of students) {
+                            try {
+                                const subscriptions = await PushSubscription.find({ userId: student._id });
+                                if (subscriptions && subscriptions.length > 0) {
+                                    const payload = JSON.stringify({
+                                        title: 'New Document Required',
+                                        body: `Please upload: ${title}`,
+                                        icon: '/assets/img/logo.png'
+                                    });
+                                    subscriptions.forEach(sub => {
+                                        webpush.sendNotification(
+                                            {
+                                                endpoint: sub.endpoint,
+                                                keys: { auth: sub.auth, p256dh: sub.p256dh }
+                                            },
+                                            payload
+                                        ).catch(err => console.error('Push notification error:', err));
+                                    });
+                                }
+                            } catch (err) {
+                                // Silently fail for individual student notifications
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Background notification job failed:', err);
+                    }
+                });
+            } catch (err) {
+                console.error('[CREATE-DOC] ERROR:', err);
+                console.error('[CREATE-DOC] Error stack:', err.stack);
+                res.status(500).send("Error creating document type: " + err.message);
+            }
+        });
+
+        // GET /manage-documents - Officer/Adviser view to manage documents
+        app.get('/manage-documents', isAuthenticated, async (req, res) => {
+            try {
+                if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+                    return res.status(403).send("Access denied");
+                }
+
+                res.render('manage-documents', {
+                    user: req.session.user
+                });
+            } catch (err) {
+                console.error('Error loading manage documents page:', err);
+                res.status(500).send('Error loading manage documents page: ' + err.message);
+            }
+        });
+
+        // GET /api/get-all-users - Get all students and officers (for manage-documents table)
+        app.get('/api/get-all-users', isAuthenticated, async (req, res) => {
+            try {
+                if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+                    return res.status(403).json({ error: "Access denied" });
+                }
+
+                // Get all students and officers
+                const students = await User.find({ role: 'student' }).select('_id firstName lastName yearLevel role');
+                const officers = await User.find({ $or: [{ role: 'officer' }, { role: 'adviser' }] }).select('_id firstName lastName yearLevel role');
+
+                // Get all uploaded documents with document type info
+                const uploadedDocuments = await StudentDocument.find()
+                    .populate('student', '_id')
+                    .populate('documentType', '_id title');
+
+                const allUsers = [...students, ...officers];
+
+                // Attach uploaded documents to each user
+                const usersWithDocs = allUsers.map(user => {
+                    const userDocs = uploadedDocuments
+                        .filter(doc => doc.student && doc.student._id.toString() === user._id.toString())
+                        .map(doc => ({
+                            documentTypeId: doc.documentType._id,
+                            documentTitle: doc.documentType.title,
+                            studentDocumentId: doc._id
+                        }));
+
+                    return {
+                        ...user.toObject(),
+                        uploadedDocuments: userDocs
+                    };
+                });
+
+                res.json(usersWithDocs);
+            } catch (err) {
+                console.error('Error fetching all users:', err);
+                res.status(500).json({ error: err.message });
+            }
+        });
+
+        // GET /download-document - Download document by documentTypeId and userId (for manage-documents)
+        app.get('/download-document', isAuthenticated, async (req, res) => {
+            try {
+                if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+                    return res.status(403).json({ error: "Unauthorized" });
+                }
+
+                const { documentTypeId, userId } = req.query;
+
+                if (!documentTypeId || !userId) {
+                    return res.status(400).json({ error: "Missing required parameters" });
+                }
+
+                // Find the latest uploaded document for this student and document type
+                const studentDoc = await StudentDocument.findOne({
+                    student: userId,
+                    documentType: documentTypeId
+                })
+                    .sort({ uploadedAt: -1 })
+                    .populate('student', 'name lastName firstName');
+
+                if (!studentDoc) {
+                    return res.status(404).json({ error: "Document not found" });
+                }
+
+                // Get the file from GridFS
+                const fileId = new mongoose.Types.ObjectId(studentDoc.gridFSFileId);
+
+                // Set download filename as: "originalFilename-lastName,firstName"
+                const student = studentDoc.student;
+                const downloadFilename = `${studentDoc.fileName}-${student.lastName},${student.firstName}`;
+
+                res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+                res.setHeader('Content-Type', 'application/octet-stream');
+
+                const downloadStream = gridFSDocumentBucket.openDownloadStream(fileId);
+
+                downloadStream.on('error', (err) => {
+                    console.error('Error downloading document:', err);
+                    res.status(500).json({ error: 'Error downloading document' });
+                });
+
+                downloadStream.pipe(res);
+            } catch (err) {
+                console.error('Error downloading document:', err);
+                res.status(500).json({ error: err.message });
+            }
+        });
         
         // START THE SERVER AFTER MONGODB CONNECTS
         const PORT = process.env.PORT || 3000;
@@ -167,12 +360,26 @@ async function getAvailableIDs() {
 
 const AttendanceSchema = new mongoose.Schema({
     studentId: String,   // The student's MM-ID
-    studentName: String, // Their name
+    studentName: String, // Their name (stored as 'Last Name, First Name')
+    firstName: String,   // First name
+    lastName: String,    // Last name
+    yearLevel: String,   // Year level (1st Year, 2nd Year, 3rd Year, 4th Year)
     eventName: String,   // Event name (e.g., "Monthly Meeting")
     sessionType: String, // AM_IN, AM_OUT, PM_IN, PM_OUT
     sessionId: String,   // The session ID
-    timestamp: { type: Date, default: Date.now }
+    folderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder', default: null }, // Link to semester/folder for per-semester fine tracking
+    timestamp: { type: Date, default: Date.now },
+    scannedAt: { type: Date, default: null }, // When student actually scanned in (null = not scanned)
+    status: { type: String, default: 'Present', enum: ['Present', 'Absent', 'Excused'] }, // Attendance status
+    fine: { type: Number, default: 0 }, // Fine amount in Philippine Pesos
+    createdAt: { type: Date, default: Date.now } // Record creation timestamp for auditing
 });
+
+// ⚠️ PREVENT DUPLICATES: Each student can only have ONE record per event+session
+AttendanceSchema.index({ studentId: 1, eventName: 1, sessionType: 1 }, { unique: true });
+// ⚠️ PREVENT DATA LOSS: Track creation time to detect bulk operations
+AttendanceSchema.index({ eventName: 1, createdAt: 1 });
+
 const Attendance = mongoose.model('Attendance', AttendanceSchema);
 
 // --- SETTINGS ---
@@ -270,7 +477,8 @@ const AttendanceSessionSchema = new mongoose.Schema({
     folderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder' }, // The link to the folder
     type: String,
     date: Date,
-    token: String
+    token: String,
+    eventType: { type: String, enum: ['Half Day', 'Whole Day'], required: true } // Half Day or Whole Day
 });
 
 // Ensure unique event name per folder combination
@@ -314,6 +522,28 @@ const uploadCor = multer({
             return cb(null, true);
         } else {
             cb(new Error('Only PDF and image files are allowed'));
+        }
+    }
+});
+
+// Multer configuration for Document uploads (flexible file types)
+let gridFSDocumentBucket; // GridFS bucket for storing documents
+const documentStorage = multer.memoryStorage(); // Store uploaded files in memory before piping to GridFS
+
+const uploadDocument = multer({ 
+    storage: documentStorage,
+    limits: {
+        fileSize: 50 * 1024 * 1024 // 50MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        // Allow all common file types for documents
+        const allowedExtensions = /pdf|doc|docx|xls|xlsx|ppt|pptx|txt|zip|rar|jpg|jpeg|png|gif|mp4|avi|mov/i;
+        const extname = allowedExtensions.test(path.extname(file.originalname));
+        
+        if (extname) {
+            return cb(null, true);
+        } else {
+            cb(new Error('File type not allowed'));
         }
     }
 });
@@ -394,6 +624,476 @@ app.post('/login', async (req, res) => {
     }
 });
 
+// Privacy Policy Route (Public - No Auth Required)
+app.get('/privacy-policy', (req, res) => {
+    res.render('privacy-policy');
+});
+
+// Data Request Endpoints (for DPA compliance)
+app.post('/api/submit-data-request', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        const { requestType, description } = req.body;
+
+        // Validate request type
+        if (!['data_access', 'data_correction', 'data_deletion'].includes(requestType)) {
+            return res.status(400).json({ success: false, message: 'Invalid request type' });
+        }
+
+        // Create data request
+        const dataRequest = await DataRequest.create({
+            requesterId: user.mmId,
+            requesterName: `${user.firstName} ${user.lastName}`,
+            requesterEmail: user.email,
+            requestType: requestType,
+            description: description,
+            status: 'pending'
+        });
+
+        res.json({
+            success: true,
+            message: 'Your request has been submitted. We will process it within 30 days.',
+            requestId: dataRequest._id
+        });
+    } catch (err) {
+        console.error('Error submitting data request:', err);
+        res.status(500).json({ success: false, message: 'Error submitting request' });
+    }
+});
+
+// Get user's own data requests
+app.get('/api/my-data-requests', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        const requests = await DataRequest.find({ requesterId: user.mmId })
+            .sort({ submissionDate: -1 });
+
+        res.json({
+            success: true,
+            requests: requests
+        });
+    } catch (err) {
+        console.error('Error fetching data requests:', err);
+        res.status(500).json({ success: false, message: 'Error fetching requests' });
+    }
+});
+
+// Compliance Dashboard - View all data requests (Officers/Advisers only)
+app.get('/compliance-dashboard', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+
+        // Only officers and advisers can access
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.redirect('/dashboard');
+        }
+
+        const requests = await DataRequest.find()
+            .sort({ submissionDate: -1 });
+
+        res.render('compliance-dashboard', {
+            user: user,
+            requests: requests
+        });
+    } catch (err) {
+        console.error('Error loading compliance dashboard:', err);
+        res.redirect('/dashboard');
+    }
+});
+
+// Data Rights Management Page (Students only)
+app.get('/data-rights', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+
+        // Only students can access their own data rights page
+        if (user.role !== 'student') {
+            return res.redirect('/dashboard');
+        }
+
+        res.render('data-rights', { user: user });
+    } catch (err) {
+        console.error('Error loading data rights page:', err);
+        res.redirect('/dashboard');
+    }
+});
+
+// Cancel a pending data request
+app.post('/api/cancel-data-request/:requestId', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        const { requestId } = req.params;
+
+        const dataRequest = await DataRequest.findById(requestId);
+        
+        if (!dataRequest) {
+            return res.status(404).json({ success: false, message: 'Request not found' });
+        }
+
+        // Only the requester can cancel their own pending requests
+        if (dataRequest.requesterId !== user.mmId) {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        // Only pending requests can be cancelled
+        if (dataRequest.status !== 'pending') {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Cannot cancel a ${dataRequest.status} request` 
+            });
+        }
+
+        // Delete the request
+        await DataRequest.findByIdAndDelete(requestId);
+
+        res.json({
+            success: true,
+            message: 'Request has been cancelled'
+        });
+    } catch (err) {
+        console.error('Error cancelling data request:', err);
+        res.status(500).json({ success: false, message: 'Error cancelling request' });
+    }
+});
+
+// Process data request (Officers/Advisers only)
+app.post('/api/process-data-request/:requestId', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+
+        // Only officers and advisers can process
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { requestId } = req.params;
+        const { status, notes } = req.body;
+
+        // Validate status
+        if (!['in_progress', 'completed', 'rejected'].includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid status' });
+        }
+
+        const dataRequest = await DataRequest.findByIdAndUpdate(
+            requestId,
+            {
+                status: status,
+                notes: notes,
+                processedBy: user.mmId,
+                processedByName: `${user.firstName} ${user.lastName}`,
+                completionDate: status === 'completed' ? new Date() : null
+            },
+            { new: true }
+        );
+
+        if (!dataRequest) {
+            return res.status(404).json({ success: false, message: 'Request not found' });
+        }
+
+        res.json({
+            success: true,
+            message: 'Request has been updated',
+            request: dataRequest
+        });
+    } catch (err) {
+        console.error('Error processing data request:', err);
+        res.status(500).json({ success: false, message: 'Error processing request' });
+    }
+});
+
+// Get all data requests (Officers/Advisers only) - for compliance dashboard
+app.get('/api/all-data-requests', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+
+        // Only officers and advisers can access
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const requests = await DataRequest.find()
+            .sort({ submissionDate: -1 });
+
+        res.json({
+            success: true,
+            requests: requests
+        });
+    } catch (err) {
+        console.error('Error fetching all data requests:', err);
+        res.status(500).json({ success: false, message: 'Error fetching requests' });
+    }
+});
+
+// Export user data as JSON (generates downloadable file for data_access requests)
+app.get('/api/export-user-data', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+
+        // Fetch all user data
+        const userData = {
+            profile: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                middleName: user.middleName,
+                email: user.email,
+                mmId: user.mmId,
+                role: user.role,
+                yearLevel: user.yearLevel,
+                mobileNumber: user.mobileNumber,
+                dateOfBirth: user.dateOfBirth,
+                gender: user.gender,
+                address: user.address,
+                username: user.username
+            },
+            attendance: [],
+            payments: [],
+            documents: [],
+            dataRequests: [],
+            exportDate: new Date().toISOString()
+        };
+
+        // Fetch attendance records
+        if (user.role === 'student') {
+            const attendance = await Attendance.find({ studentId: user.mmId });
+            userData.attendance = attendance;
+
+            // Fetch payment records
+            const payments = await Payment.find({ studentId: user.mmId });
+            userData.payments = payments;
+
+            // Fetch documents
+            const documents = await StudentDocument.find({ studentId: user.mmId });
+            userData.documents = documents;
+
+            // Fetch data requests
+            const dataRequests = await DataRequest.find({ requesterId: user.mmId });
+            userData.dataRequests = dataRequests;
+        }
+
+        // Create filename with timestamp
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `data-export-${user.mmId}-${timestamp}.json`;
+
+        // Send file as JSON
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(JSON.stringify(userData, null, 2));
+
+    } catch (err) {
+        console.error('Error exporting user data:', err);
+        res.status(500).json({ success: false, message: 'Error exporting data' });
+    }
+});
+
+// Handle account deletion request (requires confirmation)
+app.post('/api/handle-deletion-request/:requestId', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        const { requestId } = req.params;
+        const { action } = req.body; // 'approve' or 'reject'
+
+        // Only officers and advisers can handle
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        // Validate action
+        if (!['approve', 'reject'].includes(action)) {
+            return res.status(400).json({ success: false, message: 'Invalid action' });
+        }
+
+        const dataRequest = await DataRequest.findById(requestId);
+        if (!dataRequest) {
+            return res.status(404).json({ success: false, message: 'Request not found' });
+        }
+
+        if (dataRequest.requestType !== 'data_deletion') {
+            return res.status(400).json({ success: false, message: 'This is not a deletion request' });
+        }
+
+        if (action === 'approve') {
+            // Delete the user account and all associated data
+            const userToDelete = await User.findOneAndDelete({ mmId: dataRequest.requesterId });
+            
+            if (userToDelete) {
+                // Delete associated records (data deletion per RA 10173)
+                await Attendance.deleteMany({ studentId: dataRequest.requesterId });
+                await Payment.deleteMany({ studentId: dataRequest.requesterId });
+                await StudentDocument.deleteMany({ studentId: dataRequest.requesterId });
+                await MMIDReservation.deleteMany({ mmId: dataRequest.requesterId });
+                await PushSubscription.deleteMany({ studentId: dataRequest.requesterId });
+                
+                // NOTE: Consent record is RETAINED for audit purposes per RA 10173
+                // The ConsentHistory and AuditLog are also retained as required by law
+            }
+
+            // Update request status
+            await DataRequest.findByIdAndUpdate(requestId, {
+                status: 'completed',
+                processedBy: user.mmId,
+                processedByName: `${user.firstName} ${user.lastName}`,
+                completionDate: new Date(),
+                notes: 'Account deleted as requested'
+            });
+
+            return res.json({
+                success: true,
+                message: 'Student account has been permanently deleted'
+            });
+        } else {
+            // Reject the deletion request
+            await DataRequest.findByIdAndUpdate(requestId, {
+                status: 'rejected',
+                processedBy: user.mmId,
+                processedByName: `${user.firstName} ${user.lastName}`,
+                completionDate: new Date()
+            });
+
+            return res.json({
+                success: true,
+                message: 'Deletion request has been rejected'
+            });
+        }
+
+    } catch (err) {
+        console.error('Error handling deletion request:', err);
+        res.status(500).json({ success: false, message: 'Error processing request' });
+    }
+});
+
+// ============ CONSENT MANAGEMENT (Data Privacy Act) ============
+
+// Get user's consent status
+app.get('/api/consent-status', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        const consent = await Consent.findOne({ studentId: user.mmId });
+        
+        if (!consent) {
+            return res.json({ success: true, hasConsent: user.hasConsent || false, consentRevoked: false });
+        }
+
+        res.json({ 
+            success: true, 
+            hasConsent: consent.hasConsent, 
+            consentDate: consent.consentDate,
+            consentRevoked: consent.consentRevoked,
+            revokedDate: consent.revokedDate
+        });
+    } catch (err) {
+        console.error('Error fetching consent status:', err);
+        res.status(500).json({ success: false, message: 'Error fetching consent status' });
+    }
+});
+
+// Withdraw consent
+app.post('/api/withdraw-consent', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        const { reason } = req.body;
+
+        // Update User model
+        await User.findByIdAndUpdate(user._id, {
+            consentRevoked: true,
+            revokedDate: new Date()
+        });
+
+        // Update Consent record
+        let consent = await Consent.findOne({ studentId: user.mmId });
+        
+        if (!consent) {
+            consent = new Consent({
+                studentId: user.mmId,
+                studentName: `${user.firstName} ${user.lastName}`
+            });
+        }
+
+        consent.consentRevoked = true;
+        consent.revokedDate = new Date();
+        consent.revokedReason = reason || 'No reason provided';
+        consent.history.push({
+            action: 'withdrawn',
+            date: new Date(),
+            ipAddress: req.ip || req.connection.remoteAddress,
+            reason: reason || ''
+        });
+
+        await consent.save();
+
+        res.json({ 
+            success: true, 
+            message: 'Your consent has been withdrawn. Your data will no longer be processed.' 
+        });
+    } catch (err) {
+        console.error('Error withdrawing consent:', err);
+        res.status(500).json({ success: false, message: 'Error withdrawing consent' });
+    }
+});
+
+// Re-accept consent (if previously withdrawn)
+app.post('/api/accept-consent', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+
+        // Update User model
+        await User.findByIdAndUpdate(user._id, {
+            hasConsent: true,
+            consentDate: new Date(),
+            consentRevoked: false,
+            revokedDate: null
+        });
+
+        // Update Consent record
+        let consent = await Consent.findOne({ studentId: user.mmId });
+        
+        if (!consent) {
+            consent = new Consent({
+                studentId: user.mmId,
+                studentName: `${user.firstName} ${user.lastName}`
+            });
+        }
+
+        consent.hasConsent = true;
+        consent.consentDate = new Date();
+        consent.consentRevoked = false;
+        consent.history.push({
+            action: 'given',
+            date: new Date(),
+            ipAddress: req.ip || req.connection.remoteAddress,
+            reason: 'Re-acceptance after withdrawal'
+        });
+
+        await consent.save();
+
+        res.json({ 
+            success: true, 
+            message: 'Your consent has been re-accepted. Data processing is now enabled.' 
+        });
+    } catch (err) {
+        console.error('Error accepting consent:', err);
+        res.status(500).json({ success: false, message: 'Error accepting consent' });
+    }
+});
+
+// ============ HELPER FUNCTION: Check if user has active consent ============
+// Returns: { hasConsent: boolean, consentRevoked: boolean }
+async function checkUserConsent(mmId) {
+    try {
+        const user = await User.findOne({ mmId });
+        if (!user) {
+            return { hasConsent: false, consentRevoked: false };
+        }
+        
+        return {
+            hasConsent: user.hasConsent || false,
+            consentRevoked: user.consentRevoked || false
+        };
+    } catch (err) {
+        console.error('Error checking consent:', err);
+        return { hasConsent: false, consentRevoked: false };
+    }
+}
+
 app.get('/', (req, res) => {
     res.redirect('/login'); 
 });
@@ -415,7 +1115,54 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
         const allAttendance = await Attendance.find().sort({ timestamp: -1 });
         const myAttendance = await Attendance.find({ studentId: user.mmId }).sort({ timestamp: -1 });
 
-        // 3. Count notification items
+        // 3. Calculate student's fines
+        let studentTotalFine = 0;
+        if (user.role === 'student') {
+            const fineRecords = await Attendance.find({ 
+                studentId: user.mmId,
+                eventName: { $ne: null, $ne: 'undefined', $ne: '' } // Skip undefined/null/empty
+            });
+            
+            // Get all events to map eventName to eventType
+            const allEventsForFineCalc = await AttendanceSession.find();
+            const eventTypeMapForFine = {};
+            allEventsForFineCalc.forEach(event => {
+                eventTypeMapForFine[event.eventName] = event.eventType;
+            });
+            
+            // Calculate fines including old records without fine field
+            // Only include records for events that still exist AND have an eventType defined
+            const totalFinesBalance = fineRecords
+                .filter(record => eventTypeMapForFine.hasOwnProperty(record.eventName) && eventTypeMapForFine[record.eventName])
+                .reduce((sum, record) => {
+                    let fine = record.fine || 0;
+                    
+                    // If no fine was set, calculate it based on status and event type
+                    if (!fine || fine === 0) {
+                        const eventType = eventTypeMapForFine[record.eventName] || 'Whole Day';
+                        if (record.status === 'Absent') {
+                            if (eventType === 'Half Day') {
+                                fine = 50;
+                            } else if (eventType === 'Whole Day') {
+                                fine = 30;
+                            }
+                        }
+                    }
+                    
+                    return sum + fine;
+                }, 0);
+            
+            // Get verified payments and calculate remaining balance
+            const paymentHistory = await Payment.find({ studentId: user.mmId });
+            const verifiedPayments = paymentHistory
+                .filter(p => p.status === 'verified')
+                .reduce((sum, p) => sum + p.amount, 0);
+            
+            // Sidebar should show remaining balance due (not already paid)
+            studentTotalFine = Math.max(0, totalFinesBalance - verifiedPayments);
+        }
+
+        // 4. Count notification items
         let pendingResetRequestsCount = 0;
         if (user.role === 'adviser' || user.role === 'officer') {
             pendingResetRequestsCount = await User.countDocuments({ resetRequest: true });
@@ -425,7 +1172,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
             !ann.viewedBy || !ann.viewedBy.includes(user._id.toString())
         ).length;
 
-        // 4. Render the page once with ALL variables
+        // 5. Render the page once with ALL variables
         res.render('dashboard', { 
             user, 
             announcements, 
@@ -439,11 +1186,562 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
             folders: folders,
             events: events,
             pendingResetRequestsCount: pendingResetRequestsCount,
-            newAnnouncementsCount: newAnnouncementsCount
+            newAnnouncementsCount: newAnnouncementsCount,
+            studentTotalFine: studentTotalFine
         });
     } catch (err) {
         console.error("Dashboard Loading Error:", err);
         res.status(500).send("Error loading dashboard data.");
+    }
+});
+
+// Wallet & Fines page route
+app.get('/wallet', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        const { folderId } = req.query; // Get selected folder from query param
+        
+        // Officers and advisers are exempt from fines
+        if (user.role === 'officer' || user.role === 'adviser') {
+            return res.render('wallet', {
+                user: user,
+                folders: [],
+                selectedFolder: null,
+                totalFinesBalance: 0,
+                totalAllEventsFines: 0,
+                verifiedPayments: 0,
+                remainingBalance: 0,
+                paymentHistory: [],
+                finesBreakdown: []
+            });
+        }
+        
+        // Get all folders for the selector
+        const allFolders = await Folder.find({}).sort({ name: 1 });
+        
+        // Get student's attendance records
+        const fineRecords = await Attendance.find({ 
+            studentId: user.mmId,
+            eventName: { $ne: null, $ne: 'undefined', $ne: '' }
+        }).sort({ timestamp: -1 });
+        
+        // Get all EXISTING events to map eventName to eventType and folderId
+        const allEvents = await AttendanceSession.find();
+        const existingEventNames = new Set(allEvents.map(e => e.eventName));
+        const eventMap = {}; // Maps eventName to { eventType, folderId }
+        allEvents.forEach(event => {
+            eventMap[event.eventName] = {
+                eventType: event.eventType,
+                folderId: event.folderId
+            };
+        });
+        
+        // Calculate total fines for ALL events (not filtered by folder)
+        let totalAllEventsFines = 0;
+        const allEnhancedRecords = fineRecords
+            .filter(record => existingEventNames.has(record.eventName) && eventMap[record.eventName])
+            .map(record => {
+                let fine = record.fine || 0;
+                
+                if (!fine || fine === 0) {
+                    const eventType = eventMap[record.eventName].eventType || 'Whole Day';
+                    if (record.status === 'Absent') {
+                        fine = eventType === 'Half Day' ? 50 : 30;
+                    }
+                }
+                
+                totalAllEventsFines += fine;
+                
+                return {
+                    eventName: record.eventName || 'Unknown Event',
+                    sessionType: record.sessionType || 'Unknown',
+                    status: record.status || 'Unknown',
+                    fine: fine,
+                    folderId: record.folderId || eventMap[record.eventName].folderId
+                };
+            });
+        
+        // If a folder is selected, filter records for that folder
+        let selectedFolder = null;
+        let finesBreakdown = [];
+        let totalFinesBalance = 0;
+        
+        if (folderId) {
+            selectedFolder = await Folder.findById(folderId);
+            finesBreakdown = allEnhancedRecords.filter(record => {
+                return record.folderId && record.folderId.toString() === folderId;
+            });
+            totalFinesBalance = finesBreakdown.reduce((sum, record) => sum + record.fine, 0);
+        } else {
+            totalFinesBalance = totalAllEventsFines;
+        }
+        
+        // Get payment history
+        const paymentHistory = await Payment.find({ studentId: user.mmId }).sort({ submittedAt: -1 });
+        
+        // Calculate verified payment amount
+        const verifiedPayments = paymentHistory
+            .filter(p => p.status === 'verified')
+            .reduce((sum, p) => sum + p.amount, 0);
+        
+        const remainingBalance = Math.max(0, totalAllEventsFines - verifiedPayments);
+        
+        res.render('wallet', {
+            user: user,
+            folders: allFolders,
+            selectedFolder: selectedFolder,
+            totalFinesBalance: folderId ? totalFinesBalance : totalAllEventsFines,
+            totalAllEventsFines: totalAllEventsFines,
+            verifiedPayments: verifiedPayments,
+            remainingBalance: remainingBalance,
+            paymentHistory: paymentHistory,
+            finesBreakdown: finesBreakdown
+        });
+    } catch (err) {
+        console.error("Wallet Loading Error:", err);
+        res.status(500).send("Error loading wallet data.");
+    }
+});
+
+// Submit payment route
+app.post('/api/submit-payment', isAuthenticated, async (req, res) => {
+    try {
+        const { amount, paymentMethod, description } = req.body;
+        const user = req.session.user;
+        
+        // CHECK CONSENT: Block payments if consent has been withdrawn
+        const consentStatus = await checkUserConsent(user.mmId);
+        if (consentStatus.consentRevoked) {
+            return res.status(403).json({ 
+                message: 'Payment submission blocked: Your consent has been withdrawn. Data processing is suspended. Please contact an administrator if you wish to reactivate.',
+                blockReason: 'consent_withdrawn'
+            });
+        }
+        
+        // Validate input
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ message: 'Invalid amount' });
+        }
+        
+        if (!['cash', 'service'].includes(paymentMethod)) {
+            return res.status(400).json({ message: 'Invalid payment method' });
+        }
+        
+        // Create payment record
+        const payment = new Payment({
+            studentId: user.mmId,
+            studentName: user.firstName + ' ' + user.lastName,
+            amount: amount,
+            paymentMethod: paymentMethod,
+            description: description || '',
+            status: 'pending'
+        });
+        
+        await payment.save();
+        
+        res.json({ 
+            success: true, 
+            message: 'Payment submitted successfully. It will be verified by an officer.' 
+        });
+    } catch (err) {
+        console.error("Payment Submission Error:", err);
+        res.status(500).json({ message: 'Error submitting payment' });
+    }
+});
+
+// ===== FINES MANAGEMENT SECTION =====
+
+// Fines Management - List all students with pending payments (Officers/Advisers only)
+app.get('/fines-management', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        
+        // Only officers and advisers can access
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).redirect('/dashboard');
+        }
+
+        const { search } = req.query;
+        let query = {};
+
+        // If search is provided, filter by name or MM-ID
+        if (search && search.trim()) {
+            query = {
+                $or: [
+                    { mmId: { $regex: search, $options: 'i' } },
+                    { firstName: { $regex: search, $options: 'i' } },
+                    { lastName: { $regex: search, $options: 'i' } }
+                ]
+            };
+        }
+
+        // Get all students with their attendance records for fine calculation
+        const students = await User.find({ role: 'student', ...query })
+            .sort({ yearLevel: 1, lastName: 1, firstName: 1 });
+
+        // Build event type map once before processing students
+        const sessions = await AttendanceSession.find();
+        const eventTypeMap = {};
+        sessions.forEach(s => {
+            eventTypeMap[s.eventName] = s.eventType;
+        });
+
+        // Prepare student list with fines and payment status
+        const studentsWithFines = await Promise.all(students.map(async (student) => {
+            // Calculate total fines from attendance
+            const fineRecords = await Attendance.find({ 
+                studentId: student.mmId,
+                eventName: { $ne: null, $ne: 'undefined', $ne: '' }
+            });
+
+            const validRecords = fineRecords.filter(
+                r => eventTypeMap[r.eventName]
+            );
+
+            const attendanceFines = validRecords.reduce((sum, r) => sum + (r.fine || 0), 0);
+            
+            // Add initial fines (pre-portal fines)
+            const initialFine = student.initialFine || 0;
+            const totalFines = attendanceFines + initialFine;
+
+            // Get verified payments
+            const verifiedPayments = await Payment.find({ 
+                studentId: student.mmId, 
+                status: 'verified' 
+            });
+            const totalVerified = verifiedPayments.reduce((sum, p) => sum + p.amount, 0);
+
+            const remainingBalance = Math.max(0, totalFines - totalVerified);
+
+            // Get pending payments
+            const pendingPayments = await Payment.find({ 
+                studentId: student.mmId, 
+                status: 'pending' 
+            });
+
+            return {
+                mmId: student.mmId,
+                name: `${student.lastName}, ${student.firstName}`,
+                yearLevel: student.yearLevel || '1st Year',
+                attendanceFines: attendanceFines,
+                initialFine: initialFine,
+                totalFines: totalFines,
+                remainingBalance: remainingBalance,
+                pendingPayments: pendingPayments,
+                pendingAmount: pendingPayments.reduce((sum, p) => sum + p.amount, 0),
+                verifiedAmount: totalVerified,
+                hasPendingPayment: pendingPayments.length > 0,
+                initialFineNotes: student.initialFineNotes,
+                initialFineSetBy: student.initialFineSetBy,
+                initialFineSetAt: student.initialFineSetAt
+            };
+        }));
+
+        res.render('fines-management', {
+            user: user,
+            students: studentsWithFines,
+            search: search || ''
+        });
+    } catch (err) {
+        console.error("Fines Management Error:", err);
+        res.status(500).send("Error loading fines management page.");
+    }
+});
+
+// Payment Records - View payment history for a specific student
+// Update initial fines for a student
+app.post('/api/update-initial-fine', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        
+        // Only officers and advisers can update fines
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, error: 'Unauthorized' });
+        }
+        
+        const { studentId, amount, notes } = req.body;
+        
+        // Validate amount
+        if (typeof amount !== 'number' || amount < 0) {
+            return res.status(400).json({ success: false, error: 'Invalid amount' });
+        }
+        
+        const student = await User.findOne({ mmId: studentId });
+        if (!student) {
+            return res.status(404).json({ success: false, error: 'Student not found' });
+        }
+        
+        // Store old value for audit log
+        const oldAmount = student.initialFine || 0;
+
+        // Update initial fine
+        student.initialFine = amount;
+        student.initialFineNotes = notes || '';
+        student.initialFineSetBy = `${user.firstName} ${user.lastName} (${user.role})`;
+        student.initialFineSetAt = new Date();
+        await student.save();
+
+        // Create audit log entry
+        await AuditLog.create({
+            actionType: 'initial_fine',
+            performedBy: user.mmId || user.id,
+            performedByName: `${user.lastName}, ${user.firstName}`,
+            performedByRole: user.role,
+            studentId: studentId,
+            studentName: `${student.lastName}, ${student.firstName}`,
+            details: {
+                oldAmount: oldAmount,
+                newAmount: amount,
+                notes: notes
+            },
+            description: `Initial fine changed from ₱${oldAmount.toFixed(2)} to ₱${amount.toFixed(2)} for student ${studentId}`,
+            timestamp: new Date()
+        });
+        
+        console.log(`✅ [${user.mmId}] Updated initial fine for ${studentId}: PHP ${amount}`);
+        
+        res.json({ success: true, message: 'Initial fine updated successfully' });
+    } catch (err) {
+        console.error('Error updating initial fine:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.get('/payment-records/:studentId', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        
+        // Only officers and advisers can access
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).redirect('/dashboard');
+        }
+
+        const { studentId } = req.params;
+
+        // Get student info
+        const student = await User.findOne({ mmId: studentId });
+        if (!student) {
+            return res.status(404).send("Student not found.");
+        }
+
+        // Get all payment records for this student, sorted by most recent
+        const paymentRecords = await Payment.find({ studentId: studentId })
+            .sort({ submittedAt: -1 });
+
+        res.render('payment-records', {
+            user: user,
+            student: student,
+            paymentRecords: paymentRecords
+        });
+    } catch (err) {
+        console.error("Payment Records Error:", err);
+        res.status(500).send("Error loading payment records.");
+    }
+});
+
+// Verify Payment - Officer verifies a pending payment
+app.post('/verify-payment/:paymentId', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        
+        // Only officers and advisers can verify
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { paymentId } = req.params;
+        const payment = await Payment.findById(paymentId);
+
+        if (!payment) {
+            return res.status(404).json({ success: false, message: 'Payment not found' });
+        }
+
+        // Get student info for audit log
+        const student = await User.findOne({ mmId: payment.mmId });
+
+        // Update payment to verified
+        payment.status = 'verified';
+        payment.verifiedBy = `${user.lastName}, ${user.firstName}`;
+        payment.verifiedAt = new Date();
+        await payment.save();
+
+        // Create audit log entry
+        await AuditLog.create({
+            actionType: 'verify_payment',
+            performedBy: user.mmId || user.id,
+            performedByName: `${user.lastName}, ${user.firstName}`,
+            performedByRole: user.role,
+            studentId: payment.mmId,
+            studentName: student ? `${student.lastName}, ${student.firstName}` : 'Unknown Student',
+            details: {
+                paymentId: paymentId,
+                amount: payment.amount,
+                purpose: payment.purpose,
+                referenceNumber: payment.referenceNumber
+            },
+            description: `Payment verified for student ${payment.mmId}: ₱${payment.amount} for ${payment.purpose}`,
+            timestamp: new Date()
+        });
+
+        res.json({ success: true, message: 'Payment verified successfully' });
+    } catch (err) {
+        console.error("Payment Verification Error:", err);
+        res.status(500).json({ success: false, message: 'Error verifying payment' });
+    }
+});
+
+// Reject Payment - Officer rejects a pending payment
+app.post('/reject-payment/:paymentId', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        
+        // Only officers and advisers can reject
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { paymentId } = req.params;
+        const { reason } = req.body;
+        
+        const payment = await Payment.findById(paymentId);
+
+        if (!payment) {
+            return res.status(404).json({ success: false, message: 'Payment not found' });
+        }
+
+        // Update payment to rejected
+        payment.status = 'rejected';
+        payment.verifiedBy = `${user.lastName}, ${user.firstName}`;
+        payment.verifiedAt = new Date();
+        payment.rejectionReason = reason || '';
+        await payment.save();
+
+        res.json({ success: true, message: 'Payment rejected successfully' });
+    } catch (err) {
+        console.error("Payment Rejection Error:", err);
+        res.status(500).json({ success: false, message: 'Error rejecting payment' });
+    }
+});
+
+// Override fines endpoint
+app.post('/api/override-fines/:mmId', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        
+        // Only officers and advisers can override
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { mmId } = req.params;
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ success: false, message: 'Password is required' });
+        }
+
+        // Verify password
+        const isPasswordCorrect = await verifyOverridePassword(password);
+        if (!isPasswordCorrect) {
+            return res.status(401).json({ success: false, message: 'Incorrect password' });
+        }
+
+        // Find the student
+        const student = await User.findOne({ mmId: mmId, role: 'student' });
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student not found' });
+        }
+
+        // Store old values for audit log
+        const oldInitialFine = student.initialFine || 0;
+
+        // Reset fines to zero
+        student.initialFine = 0;
+        await student.save();
+
+        // Create audit log entry
+        await AuditLog.create({
+            actionType: 'override_fines',
+            performedBy: user.mmId || user.id,
+            performedByName: `${user.lastName}, ${user.firstName}`,
+            performedByRole: user.role,
+            studentId: mmId,
+            studentName: `${student.lastName}, ${student.firstName}`,
+            details: {
+                oldInitialFine: oldInitialFine,
+                newInitialFine: 0,
+                action: 'Fines reset to zero'
+            },
+            description: `Fines override: Reset fines to zero for student ${mmId}`,
+            timestamp: new Date()
+        });
+
+        res.json({ 
+            success: true, 
+            message: 'Fines overridden successfully. All fines have been reset to zero.',
+            studentName: `${student.lastName}, ${student.firstName}`
+        });
+    } catch (err) {
+        console.error("Override Fines Error:", err);
+        res.status(500).json({ success: false, message: 'Error overriding fines' });
+    }
+});
+
+// Get audit logs with pagination and filtering
+app.get('/api/audit-logs', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        
+        // Only officers and advisers can view audit logs
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { page = 1, type = 'all' } = req.query;
+        const pageSize = 20;
+        const skip = (parseInt(page) - 1) * pageSize;
+
+        // Build filter
+        let filter = {
+            $or: [
+                { actionType: 'override_fines' },
+                { actionType: 'verify_payment' },
+                { actionType: 'initial_fine' }
+            ]
+        };
+
+        if (type !== 'all') {
+            if (type === 'verify_payment') {
+                filter = { actionType: 'verify_payment' };
+            } else if (type === 'initial_fine') {
+                filter = { actionType: 'initial_fine' };
+            } else if (type === 'override_fines') {
+                filter = { actionType: 'override_fines' };
+            }
+        }
+
+        // Get total count
+        const totalCount = await AuditLog.countDocuments(filter);
+
+        // Get logs
+        const logs = await AuditLog.find(filter)
+            .sort({ timestamp: -1 })
+            .skip(skip)
+            .limit(pageSize)
+            .lean();
+
+        const hasMore = skip + pageSize < totalCount;
+
+        res.json({
+            success: true,
+            logs: logs,
+            hasMore: hasMore,
+            page: parseInt(page),
+            totalCount: totalCount
+        });
+    } catch (err) {
+        console.error("Audit Logs Error:", err);
+        res.status(500).json({ success: false, message: 'Error fetching audit logs' });
     }
 });
 
@@ -516,20 +1814,47 @@ app.post('/logout', (req, res) => {
 
 app.post('/signup', async (req, res) => {
     try {
-        const { mmId, name, firstName, lastName, middleName, email, password, role, yearLevel } = req.body;
+        const { mmId, name, firstName, lastName, middleName, email, password, role, yearLevel, privacyConsent } = req.body;
+        
+        // CHECK CONSENT FIRST (Data Privacy Act requirement) - STRICT CHECK
+        if (!privacyConsent || privacyConsent !== 'true') {
+            return res.status(400).send("❌ You must accept the Data Privacy Policy to create an account.");
+        }
         
         // 1. Validate MM-ID format
         if (!mmId || !/^MM-[0-9]{3}$/.test(mmId)) {
             return res.status(400).send("❌ Invalid Student ID format.");
         }
 
-        // 2. Check if the MM-ID is already claimed in the User collection
+        // 2. Check for duplicate email BEFORE any database writes
+        const existingEmail = await User.findOne({ email: { $regex: `^${email}$`, $options: 'i' } });
+        if (existingEmail) {
+            return res.status(400).send("❌ This email is already registered. Please use a different email or login if you already have an account.");
+        }
+
+        // 3. Verify the MM-ID matches the reservation in the session
+        if (req.session.mmIdReserved !== mmId || !req.session.mmIdSessionId) {
+            return res.status(400).send("❌ This MM-ID is not reserved for you. Please go back to the registration page to get a new MM-ID.");
+        }
+
+        // 4. Verify the reservation still exists and hasn't expired
+        const reservation = await MMIDReservation.findOne({
+            mmId: mmId,
+            sessionId: req.session.mmIdSessionId,
+            isUsed: false
+        });
+
+        if (!reservation) {
+            return res.status(400).send("❌ Your MM-ID reservation has expired. Please refresh the page to get a new MM-ID.");
+        }
+
+        // 5. Check if the MM-ID is already claimed in the User collection (extra safety check)
         const existingUser = await User.findOne({ mmId });
         if (existingUser) {
             return res.status(400).send("❌ This Student ID is already assigned. Please contact an admin.");
         }
 
-        // 3. Get QR code from StudentIDPool if available
+        // 6. Get QR code from StudentIDPool if available
         let qrCode = null;
         try {
             const studentID = await StudentIDPool.findOne({ mmId });
@@ -540,7 +1865,7 @@ app.post('/signup', async (req, res) => {
             console.error("Warning: Could not fetch QR code from StudentIDPool:", e);
         }
 
-        // 4. Process name fields (support both new separate fields and legacy single name field)
+        // 6. Process name fields (support both new separate fields and legacy single name field)
         let processedFirstName = firstName ? sanitizeName(firstName) : null;
         let processedLastName = lastName ? sanitizeName(lastName) : null;
         let processedMiddleName = middleName ? sanitizeName(middleName) : '';
@@ -561,7 +1886,7 @@ app.post('/signup', async (req, res) => {
             return res.status(400).send(`❌ ${nameErrors[0]}`);
         }
 
-        // 5. Create the new user with the specified MM-ID
+        // 7. Create the new user with the specified MM-ID and consent tracking
         const newUser = new User({ 
             firstName: processedFirstName,
             lastName: processedLastName,
@@ -573,13 +1898,36 @@ app.post('/signup', async (req, res) => {
             role: role || 'student',
             mmId: mmId,
             qrCode: qrCode,
-            yearLevel: role === 'adviser' ? '' : (yearLevel || '1st Year')
+            yearLevel: role === 'adviser' ? '' : (yearLevel || '1st Year'),
+            hasConsent: true,
+            consentDate: new Date(),
+            consentRevoked: false
         });
 
-        // 6. Save the user
+        // 8. Save the user
         await newUser.save();
 
-        // 7. Mark the MM-ID as assigned in the pool (for consistency)
+        // 9. Create consent record for audit trail
+        const consentRecord = new Consent({
+            studentId: mmId,
+            studentName: `${processedFirstName} ${processedLastName}`.trim(),
+            hasConsent: true,
+            consentDate: new Date(),
+            consentIp: req.ip || req.connection.remoteAddress,
+            consentText: 'I accept the Data Privacy Policy and consent to data processing as outlined in the policy',
+            history: [{
+                action: 'given',
+                date: new Date(),
+                ipAddress: req.ip || req.connection.remoteAddress,
+                reason: 'Initial account creation'
+            }]
+        });
+        await consentRecord.save();
+
+        // 10. Mark the reservation as used
+        await MMIDReservation.findByIdAndUpdate(reservation._id, { isUsed: true });
+
+        // 11. Update StudentIDPool
         try {
             await StudentIDPool.findOneAndUpdate(
                 { mmId },
@@ -592,6 +1940,10 @@ app.post('/signup', async (req, res) => {
             console.error("Warning: Could not update StudentIDPool:", e);
         }
 
+        // 12. Clear the session variables
+        delete req.session.mmIdSessionId;
+        delete req.session.mmIdReserved;
+
         res.redirect('/login');
     } catch (err) {
         console.error("Signup Error:", err);
@@ -601,21 +1953,51 @@ app.post('/signup', async (req, res) => {
 
 app.get('/signup', async (req, res) => {
     try {
-        // Generate the reference list: Create an array of strings representing MM-001 to MM-300
+        // 1. Clean up expired reservations
+        await MMIDReservation.deleteMany({
+            expiresAt: { $lt: new Date() }
+        });
+
+        // 2. Generate the reference list: MM-001 to MM-300
         const fullRange = Array.from({ length: 300 }, (_, i) => `MM-${String(i + 1).padStart(3, '0')}`);
 
-        // Scan the database: Query the User collection to get all currently assigned studentID values
+        // 3. Get all assigned MM-IDs from User collection
         const usersWithMM = await User.find({ mmId: { $exists: true } }).select('mmId');
-        const databaseIDs = usersWithMM.map(u => u.mmId);
+        const assignedIDs = usersWithMM.map(u => u.mmId);
 
-        // Find the first gap: Compare the reference list against the database IDs
-        // Pick the first one that is NOT present in the database
-        const mmId = fullRange.find(id => !databaseIDs.includes(id)) || 'UNAVAILABLE';
+        // 4. Get all currently reserved MM-IDs that haven't expired (they should already be cleaned up above)
+        const reservedRecords = await MMIDReservation.find({
+            expiresAt: { $gte: new Date() },
+            isUsed: false
+        }).select('mmId');
+        const reservedIDs = reservedRecords.map(r => r.mmId);
 
-        res.render('signup', { mmId });
+        // 5. Find the first available MM-ID (not assigned, not reserved, or reservation expired)
+        const availableIDs = fullRange.filter(id => !assignedIDs.includes(id) && !reservedIDs.includes(id));
+        const mmId = availableIDs[0] || 'UNAVAILABLE';
+
+        if (mmId !== 'UNAVAILABLE') {
+            // 6. Generate a unique session ID for this registration attempt
+            const sessionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+            // 7. Create a reservation for this MM-ID (30 minutes expiration)
+            const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
+            const reservation = new MMIDReservation({
+                mmId: mmId,
+                sessionId: sessionId,
+                expiresAt: expiresAt
+            });
+            await reservation.save();
+
+            // 8. Store the session ID in the session cookie so we can verify it later
+            req.session.mmIdSessionId = sessionId;
+            req.session.mmIdReserved = mmId;
+        }
+
+        res.render('signup', { mmId, error: undefined });
     } catch (err) {
         console.error('Error assigning MM-ID:', err);
-        res.render('signup', { mmId: 'ERROR' });
+        res.render('signup', { mmId: 'ERROR', error: undefined });
     }
 });
 
@@ -639,36 +2021,9 @@ app.get('/view-attendance', isAuthenticated, async (req, res) => {
 });
 
 // GET version for dashboard form submission
-app.get('/generate-qr', isAuthenticated, async (req, res) => {
-    const { eventName, sessionType, folderId } = req.query;
 
-    try {
-        const newSession = await AttendanceSession.create({
-            eventName: eventName,
-            folderId: folderId,
-            type: sessionType,
-            date: new Date(),
-            token: Math.random().toString(36).substring(7)
-        });
-        res.render('show-qr', { session: newSession, user: req.session.user });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Error generating QR session");
-    }
-});
 
-app.post('/generate-qr', isAuthenticated, async (req, res) => {
-    const { eventName, sessionType, folderId } = req.body; // Grab the folder selection
 
-    const newSession = await AttendanceSession.create({
-        eventName: eventName,
-        folderId: folderId, // File it into the chosen folder
-        type: sessionType,
-        date: new Date(),
-        token: Math.random().toString(36).substring(7)
-    });
-    res.render('show-qr', { session: newSession, user: req.session.user });
-});
 
 app.get('/close-qr', (req, res) => {
     currentEventQR = ''; // This clears the QR data
@@ -700,15 +2055,33 @@ app.get('/view-active-qr', isAuthenticated, async (req, res) => {
     }
 });
 
-// This is the page that actually opens the camera
-app.get('/attendance', isAuthenticated, (req, res) => {
+// Attendance page - Shows the section from dashboard
+app.get('/attendance', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        const folders = await Folder.find({});
+        const events = await Event.find({});
+
+        res.render('attendance', {
+            user: user,
+            folders: folders,
+            events: events
+        });
+    } catch (err) {
+        console.error("Attendance Page Error:", err);
+        res.status(500).send("Error loading attendance page.");
+    }
+});
+
+// Scanner route - when officer submits the form with query params
+app.get('/scanner', isAuthenticated, (req, res) => {
     // Only officers and advisers can scan
     if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
         return res.redirect('/dashboard');
     }
     
     const { folderId, eventName, sessionType } = req.query;
-    res.render('scanner', { folderId, eventName, sessionType, user: req.session.user }); // Ensure you have a file named 'scanner.ejs'
+    res.render('scanner', { folderId, eventName, sessionType, user: req.session.user });
 });
 
 // Record the attendance - Now scans student MM-ID instead of event QR
@@ -723,7 +2096,6 @@ app.get('/mark-attendance', isAuthenticated, async (req, res) => {
 
     try {
         // The 'code' from the QR contains the student's MM-ID
-        // Find the student with this MM-ID
         const student = await User.findOne({ mmId: code });
 
         if (!student) {
@@ -734,43 +2106,51 @@ app.get('/mark-attendance', isAuthenticated, async (req, res) => {
             });
         }
 
-        // Check if this student already scanned for THIS SPECIFIC event + session type
-        const alreadyScanned = await Attendance.findOne({
-            studentId: student.mmId,
-            eventName: eventName,
-            sessionType: sessionType
-        });
+        // Use updateOne with upsert: true to safely update or create record
+        // This prevents data loss from cleanup scripts and ensures records always exist
+        const result = await Attendance.updateOne(
+            {
+                studentId: student.mmId,
+                eventName: eventName,
+                sessionType: sessionType
+            },
+            {
+                $set: {
+                    status: 'Present',
+                    timestamp: new Date(),
+                    scannedAt: new Date(), // Track when student actually scanned in
+                    fine: 0,
+                    folderId: folderId,
+                    studentName: `${student.lastName}, ${student.firstName}`,
+                    firstName: student.firstName,
+                    lastName: student.lastName,
+                    yearLevel: student.yearLevel || '1st Year'
+                }
+            },
+            { upsert: true } // Create if missing - prevents data loss from cleanup scripts
+        );
 
-        if (alreadyScanned) {
-            return res.status(400).json({
+        if (result.matchedCount === 0 && result.upsertedId === undefined) {
+            // Failed to match or create - unexpected error
+            console.warn(`Warning: Failed to update/create attendance record for ${student.mmId} in ${eventName}/${sessionType}`);
+            return res.status(500).json({
                 success: false,
-                message: "Already Recorded",
-                detail: `${student.name} already checked in for ${sessionType.replace('_', ' ')}`
+                message: "Error Recording Attendance",
+                detail: "Failed to save attendance record"
             });
         }
-
-        // Create the attendance record with UTC timestamp
-        const newRecord = new Attendance({
-            studentId: student.mmId,
-            studentName: student.name,
-            eventName: eventName,
-            sessionType: sessionType,
-            timestamp: new Date()
-        });
-
-        await newRecord.save();
         
-        res.json({
+        return res.json({
             success: true,
-            message: "Attendance Marked",
+            message: "Attendance Updated",
             student: {
-                name: student.name,
+                name: `${student.lastName}, ${student.firstName}`,
                 mmId: student.mmId,
                 session: sessionType.replace('_', ' ')
             }
         });
     } catch (err) {
-        console.error(err);
+        console.error('mark-attendance error:', err);
         res.status(500).json({ success: false, message: "Error saving attendance." });
     }
 });
@@ -779,6 +2159,267 @@ app.get('/attendance-report', (req, res) => {
     if (req.session.user.role === 'student') return res.redirect('/dashboard');
     
     res.render('report', { logs: attendanceLogs, user: req.session.user });
+});
+
+// Utility function to calculate fine based on event type and status
+function calculateFine(eventType, status, sessionType) {
+    if (status === 'Present' || status === 'Excused') {
+        return 0; // No fine for present or excused
+    }
+    
+    if (status === 'Absent') {
+        if (eventType === 'Half Day') {
+            return 50; // ₱50 per absent session in half day
+        } else if (eventType === 'Whole Day') {
+            return 30; // ₱30 per absent session in whole day
+        }
+    }
+    
+    return 0;
+}
+
+// API Endpoint: Update attendance status and calculate fines
+app.post('/api/update-attendance-status', isAuthenticated, async (req, res) => {
+    try {
+        const { attendanceId, status, eventName, sessionType, studentId } = req.body;
+        const user = req.session.user;
+        
+        // Only officers and advisers can update status
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, error: 'Unauthorized' });
+        }
+
+        // Validate status
+        if (!['Present', 'Absent', 'Excused'].includes(status)) {
+            return res.status(400).json({ success: false, error: 'Invalid status' });
+        }
+
+        // Get the event to find event type
+        const session = await AttendanceSession.findOne({ eventName: eventName });
+        if (!session) {
+            return res.status(404).json({ success: false, error: 'Event not found' });
+        }
+
+        // Try to find existing record, or create one if it doesn't exist
+        let attendance = null;
+        
+        if (attendanceId && attendanceId !== 'null') {
+            // Record ID provided - try to find it
+            attendance = await Attendance.findById(attendanceId);
+        }
+        
+        if (!attendance && studentId) {
+            // No record found by ID, try to find by studentId, eventName, and sessionType
+            attendance = await Attendance.findOne({
+                studentId: studentId,
+                eventName: eventName,
+                sessionType: sessionType
+            });
+        }
+        
+        if (!attendance && studentId) {
+            // Still no record - this is an auto-absent student being excused
+            // CHECK CONSENT: Block new attendance record creation if consent withdrawn
+            const consentStatus = await checkUserConsent(studentId);
+            if (consentStatus.consentRevoked) {
+                return res.status(403).json({ 
+                    success: false, 
+                    error: 'Cannot create attendance record: Student has withdrawn consent. Data processing is suspended.',
+                    blockReason: 'consent_withdrawn'
+                });
+            }
+            
+            // Create the record first
+            const student = await User.findOne({ mmId: studentId });
+            if (student) {
+                attendance = new Attendance({
+                    studentId: studentId,
+                    studentName: `${student.lastName}, ${student.firstName}`,
+                    firstName: student.firstName,
+                    lastName: student.lastName,
+                    yearLevel: student.yearLevel || '1st Year',
+                    eventName: eventName,
+                    sessionType: sessionType,
+                    folderId: session.folderId,
+                    timestamp: null,
+                    status: status,
+                    fine: calculateFine(session.eventType, status, sessionType)
+                });
+                await attendance.save();
+            }
+        }
+        
+        if (!attendance) {
+            return res.status(404).json({ success: false, error: 'Attendance record not found' });
+        }
+
+        // Calculate fine based on new status and event type
+        const newFine = calculateFine(session.eventType, status, sessionType);
+
+        // Update the attendance record
+        attendance.status = status;
+        attendance.fine = newFine;
+        await attendance.save();
+
+        res.json({
+            success: true,
+            message: 'Attendance status updated',
+            fine: newFine,
+            status: status
+        });
+    } catch (err) {
+        console.error('[ERROR] update-attendance-status:', err.message, err.stack);
+        res.status(500).json({ success: false, error: err.message || 'Error updating attendance' });
+    }
+});
+
+// API Endpoint: Create or update absent records for students who didn't check in
+// API Endpoint: Get student fines for an event or all events
+app.get('/api/student-fines', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+        const eventName = req.query.eventName;
+
+        let query = { studentId: user.mmId };
+        if (eventName) {
+            query.eventName = eventName;
+        }
+
+        const records = await Attendance.find(query).sort({ timestamp: -1 });
+
+        // Function to calculate fine based on event type and status
+        const calculateFine = (eventType, status) => {
+            if (status === 'Present' || status === 'Excused') {
+                return 0;
+            }
+            if (status === 'Absent') {
+                const type = eventType || 'Whole Day';
+                return type === 'Half Day' ? 50 : 30;
+            }
+            return 0;
+        };
+
+        // Get event types for all unique events
+        const attendanceSessions = await AttendanceSession.find({});
+        const eventTypeMap = {};
+        attendanceSessions.forEach(session => {
+            eventTypeMap[session.eventName] = session.eventType;
+        });
+
+        // Calculate total fine for each event and by session
+        const eventMap = {};
+        let totalFine = 0;
+
+        records.forEach(record => {
+            if (!eventMap[record.eventName]) {
+                eventMap[record.eventName] = {
+                    eventName: record.eventName,
+                    totalFine: 0,
+                    sessions: {}
+                };
+            }
+
+            const calculatedFine = record.fine || calculateFine(eventTypeMap[record.eventName], record.status);
+            eventMap[record.eventName].sessions[record.sessionType] = {
+                status: record.status,
+                fine: calculatedFine
+            };
+
+            eventMap[record.eventName].totalFine += calculatedFine;
+            totalFine += calculatedFine;
+        });
+
+        res.json({
+            success: true,
+            studentId: user.mmId,
+            studentName: `${user.lastName}, ${user.firstName}`,
+            events: Object.values(eventMap),
+            totalFine: totalFine
+        });
+    } catch (err) {
+        console.error('[ERROR]', err);
+        res.status(500).json({ success: false, error: 'Error fetching fines' });
+    }
+});
+
+// API Endpoint: Get all fines for officer dashboard
+app.get('/api/all-student-fines', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+
+        // Only officers and advisers can view all fines
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, error: 'Unauthorized' });
+        }
+
+        // Function to calculate fine based on event type and status
+        const calculateFine = (eventType, status) => {
+            if (status === 'Present' || status === 'Excused') {
+                return 0;
+            }
+            if (status === 'Absent') {
+                const type = eventType || 'Whole Day';
+                return type === 'Half Day' ? 50 : 30;
+            }
+            return 0;
+        };
+
+        // Get event types for all unique events
+        const attendanceSessions = await AttendanceSession.find({});
+        const eventTypeMap = {};
+        attendanceSessions.forEach(session => {
+            eventTypeMap[session.eventName] = session.eventType;
+        });
+
+        // Get all attendance records
+        const allRecords = await Attendance.find({});
+
+        // Group by student
+        const studentMap = {};
+        allRecords.forEach(record => {
+            if (!studentMap[record.studentId]) {
+                studentMap[record.studentId] = {
+                    studentId: record.studentId,
+                    studentName: record.studentName,
+                    yearLevel: record.yearLevel,
+                    lastName: record.lastName || '',
+                    firstName: record.firstName || '',
+                    totalFine: 0,
+                    absences: 0,
+                    events: {}
+                };
+            }
+
+            if (!studentMap[record.studentId].events[record.eventName]) {
+                studentMap[record.studentId].events[record.eventName] = 0;
+            }
+
+            const calculatedFine = record.fine || calculateFine(eventTypeMap[record.eventName], record.status);
+            studentMap[record.studentId].events[record.eventName] += calculatedFine;
+            studentMap[record.studentId].totalFine += calculatedFine;
+
+            if (record.status === 'Absent') {
+                studentMap[record.studentId].absences++;
+            }
+        });
+
+        // Convert to array and sort by year level, then by name
+        const yearLevelOrder = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+        const students = Object.values(studentMap).sort((a, b) => {
+            const yearLevelComparison = yearLevelOrder.indexOf(a.yearLevel) - yearLevelOrder.indexOf(b.yearLevel);
+            if (yearLevelComparison !== 0) return yearLevelComparison;
+            return a.lastName.localeCompare(b.lastName);
+        });
+
+        res.json({
+            success: true,
+            students: students,
+            totalCollected: students.reduce((sum, s) => sum + s.totalFine, 0)
+        });
+    } catch (err) {
+        console.error('[ERROR]', err);
+        res.status(500).json({ success: false, error: 'Error fetching fines' });
+    }
 });
 
 // API Endpoint: Get events for a folder
@@ -982,47 +2623,218 @@ app.get('/print-student-cards', isAuthenticated, async (req, res) => {
 app.get('/folder-details/:folderId', isAuthenticated, async (req, res) => {
     try {
         const folder = await Folder.findById(req.params.folderId);
+        const user = req.session.user;
         
         // 1. Get all AttendanceSessions in this folder
-        const sessions = await AttendanceSession.find({ folderId: req.params.folderId });
+        const allSessions = await AttendanceSession.find({ folderId: req.params.folderId });
+        
+        // 2. Deduplicate sessions by eventName (show only unique events, not each sessionType)
+        const uniqueEventNames = new Map();
+        allSessions.forEach(session => {
+            if (!uniqueEventNames.has(session.eventName)) {
+                uniqueEventNames.set(session.eventName, session);
+            }
+        });
+        const sessions = Array.from(uniqueEventNames.values());
 
-        // 2. Check if the user clicked a specific event
+        // 3. Check if the user clicked a specific event
         const selectedEvent = req.query.event;
         let records = [];
         let attendanceData = [];
 
         if (selectedEvent) {
-            // 3. Get all attendance records for this event
-            records = await Attendance.find({ 
-                eventName: selectedEvent 
-            }).sort({ studentId: 1 });
+            // Get the event details to check event type
+            const eventSession = await AttendanceSession.findOne({ eventName: selectedEvent });
 
-            // 4. Group records by student and organize by session type
-            const studentMap = {};
-            records.forEach(record => {
-                if (!studentMap[record.studentId]) {
-                    studentMap[record.studentId] = {
-                        studentId: record.studentId,
-                        studentName: record.studentName,
+            // Utility function to calculate fine based on event type and status
+            const calculateFineForDisplay = (eventType, status, sessionType) => {
+                if (status === 'Present' || status === 'Excused') {
+                    return 0;
+                }
+                
+                if (status === 'Absent') {
+                    // Default to 'Whole Day' if eventType is missing/undefined
+                    const type = eventType || 'Whole Day';
+                    if (type === 'Half Day') {
+                        return 50;
+                    } else if (type === 'Whole Day') {
+                        return 30;
+                    }
+                }
+                
+                return 0;
+            };
+
+            // For officers/advisers: get all attendance records for this event
+            // For students: get only their own attendance
+            if (user.role === 'officer' || user.role === 'adviser') {
+                // Get all students in the system
+                const allStudents = await User.find({ role: 'student' }).lean();
+                
+                // Get all attendance records for THIS event
+                records = await Attendance.find({ 
+                    eventName: selectedEvent 
+                }).sort({ timestamp: -1 });
+
+                // Create a set of student IDs with records for quick lookup
+                const recordedStudentIds = new Set(records.map(r => r.studentId));
+
+                // Organize data by student, including status and fines
+                const studentMap = {};
+                
+                // First, initialize all students with absent status and fines
+                allStudents.forEach(student => {
+                    const key = student.mmId;
+                    const fineAM_IN = calculateFineForDisplay(eventSession?.eventType, 'Absent', 'AM_IN');
+                    const fineAM_OUT = calculateFineForDisplay(eventSession?.eventType, 'Absent', 'AM_OUT');
+                    const finePM_IN = calculateFineForDisplay(eventSession?.eventType, 'Absent', 'PM_IN');
+                    const finePM_OUT = calculateFineForDisplay(eventSession?.eventType, 'Absent', 'PM_OUT');
+                    
+                    studentMap[key] = {
+                        studentId: student.mmId,
+                        studentName: `${student.lastName}, ${student.firstName}` || student.name,
+                        firstName: student.firstName || '',
+                        lastName: student.lastName || '',
+                        yearLevel: student.yearLevel || '1st Year',
                         amIn: null,
                         amOut: null,
                         pmIn: null,
-                        pmOut: null
+                        pmOut: null,
+                        amInStatus: 'Absent',
+                        amOutStatus: 'Absent',
+                        pmInStatus: 'Absent',
+                        pmOutStatus: 'Absent',
+                        amInFine: fineAM_IN,
+                        amOutFine: fineAM_OUT,
+                        pmInFine: finePM_IN,
+                        pmOutFine: finePM_OUT,
+                        amInRecordId: null,
+                        amOutRecordId: null,
+                        pmInRecordId: null,
+                        pmOutRecordId: null
                     };
-                }
+                });
                 
-                if (record.sessionType === 'AM_IN') studentMap[record.studentId].amIn = record.timestamp;
-                if (record.sessionType === 'AM_OUT') studentMap[record.studentId].amOut = record.timestamp;
-                if (record.sessionType === 'PM_IN') studentMap[record.studentId].pmIn = record.timestamp;
-                if (record.sessionType === 'PM_OUT') studentMap[record.studentId].pmOut = record.timestamp;
-            });
+                // Now process actual attendance records to override defaults
+                records.forEach(record => {
+                    const key = record.studentId;
+                    if (!studentMap[key]) {
+                        studentMap[key] = {
+                            studentId: record.studentId,
+                            studentName: record.studentName,
+                            firstName: record.firstName || '',
+                            lastName: record.lastName || '',
+                            yearLevel: record.yearLevel || '1st Year',
+                            amIn: null,
+                            amOut: null,
+                            pmIn: null,
+                            pmOut: null,
+                            amInStatus: 'Absent',
+                            amOutStatus: 'Absent',
+                            pmInStatus: 'Absent',
+                            pmOutStatus: 'Absent',
+                            amInFine: calculateFineForDisplay(eventSession?.eventType, 'Absent', 'AM_IN'),
+                            amOutFine: calculateFineForDisplay(eventSession?.eventType, 'Absent', 'AM_OUT'),
+                            pmInFine: calculateFineForDisplay(eventSession?.eventType, 'Absent', 'PM_IN'),
+                            pmOutFine: calculateFineForDisplay(eventSession?.eventType, 'Absent', 'PM_OUT'),
+                            amInRecordId: null,
+                            amOutRecordId: null,
+                            pmInRecordId: null,
+                            pmOutRecordId: null
+                        };
+                    }
+                    
+                    if (record.sessionType === 'AM_IN') {
+                        studentMap[key].amIn = record.timestamp;
+                        studentMap[key].amInStatus = record.status;
+                        studentMap[key].amInFine = record.fine || calculateFineForDisplay(eventSession?.eventType, record.status, 'AM_IN');
+                        studentMap[key].amInRecordId = record._id;
+                    }
+                    if (record.sessionType === 'AM_OUT') {
+                        studentMap[key].amOut = record.timestamp;
+                        studentMap[key].amOutStatus = record.status;
+                        studentMap[key].amOutFine = record.fine || calculateFineForDisplay(eventSession?.eventType, record.status, 'AM_OUT');
+                        studentMap[key].amOutRecordId = record._id;
+                    }
+                    if (record.sessionType === 'PM_IN') {
+                        studentMap[key].pmIn = record.timestamp;
+                        studentMap[key].pmInStatus = record.status;
+                        studentMap[key].pmInFine = record.fine || calculateFineForDisplay(eventSession?.eventType, record.status, 'PM_IN');
+                        studentMap[key].pmInRecordId = record._id;
+                    }
+                    if (record.sessionType === 'PM_OUT') {
+                        studentMap[key].pmOut = record.timestamp;
+                        studentMap[key].pmOutStatus = record.status;
+                        studentMap[key].pmOutFine = record.fine || calculateFineForDisplay(eventSession?.eventType, record.status, 'PM_OUT');
+                        studentMap[key].pmOutRecordId = record._id;
+                    }
+                });
 
-            // Sort by studentId to maintain registration order
-            attendanceData = Object.values(studentMap).sort((a, b) => {
-                const aNum = parseInt(a.studentId.split('-')[1]) || 0;
-                const bNum = parseInt(b.studentId.split('-')[1]) || 0;
-                return aNum - bNum;
-            });
+                // Convert to array and sort by year level, then last name
+                const yearLevelOrder = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+                attendanceData = Object.values(studentMap).sort((a, b) => {
+                    const yearLevelComparison = yearLevelOrder.indexOf(a.yearLevel) - yearLevelOrder.indexOf(b.yearLevel);
+                    if (yearLevelComparison !== 0) return yearLevelComparison;
+                    
+                    // Secondary sort: alphabetical by last name
+                    return a.lastName.localeCompare(b.lastName);
+                });
+            } else {
+                // Students can only see their own attendance
+                records = await Attendance.find({ 
+                    eventName: selectedEvent,
+                    studentId: user.mmId
+                }).sort({ timestamp: -1 });
+
+                // Format the data for display
+                const studentMap = {};
+                records.forEach(record => {
+                    if (!studentMap[record.studentId]) {
+                        studentMap[record.studentId] = {
+                            studentId: record.studentId,
+                            studentName: record.studentName,
+                            firstName: record.firstName || '',
+                            lastName: record.lastName || '',
+                            yearLevel: user.yearLevel || '1st Year',
+                            amIn: null,
+                            amOut: null,
+                            pmIn: null,
+                            pmOut: null,
+                            amInStatus: 'Absent',
+                            amOutStatus: 'Absent',
+                            pmInStatus: 'Absent',
+                            pmOutStatus: 'Absent',
+                            amInFine: 0,
+                            amOutFine: 0,
+                            pmInFine: 0,
+                            pmOutFine: 0
+                        };
+                    }
+                    
+                    if (record.sessionType === 'AM_IN') {
+                        studentMap[record.studentId].amIn = record.timestamp;
+                        studentMap[record.studentId].amInStatus = record.status;
+                        studentMap[record.studentId].amInFine = record.fine || calculateFineForDisplay(eventSession?.eventType, record.status, 'AM_IN');
+                    }
+                    if (record.sessionType === 'AM_OUT') {
+                        studentMap[record.studentId].amOut = record.timestamp;
+                        studentMap[record.studentId].amOutStatus = record.status;
+                        studentMap[record.studentId].amOutFine = record.fine || calculateFineForDisplay(eventSession?.eventType, record.status, 'AM_OUT');
+                    }
+                    if (record.sessionType === 'PM_IN') {
+                        studentMap[record.studentId].pmIn = record.timestamp;
+                        studentMap[record.studentId].pmInStatus = record.status;
+                        studentMap[record.studentId].pmInFine = record.fine || calculateFineForDisplay(eventSession?.eventType, record.status, 'PM_IN');
+                    }
+                    if (record.sessionType === 'PM_OUT') {
+                        studentMap[record.studentId].pmOut = record.timestamp;
+                        studentMap[record.studentId].pmOutStatus = record.status;
+                        studentMap[record.studentId].pmOutFine = record.fine || calculateFineForDisplay(eventSession?.eventType, record.status, 'PM_OUT');
+                    }
+                });
+
+                attendanceData = Object.values(studentMap);
+            }
         }
 
         // 5. Create helper function for template to format times in Philippines timezone
@@ -1047,7 +2859,17 @@ app.get('/folder-details/:folderId', isAuthenticated, async (req, res) => {
 // Student View: Show ONLY my attendance in a folder
 app.get('/my-folder-attendance/:folderId', isAuthenticated, async (req, res) => {
     const user = req.session.user;
-    const sessions = await AttendanceSession.find({ folderId: req.params.folderId });
+    const allSessions = await AttendanceSession.find({ folderId: req.params.folderId });
+    
+    // Deduplicate sessions by eventName (show only unique events, not each sessionType)
+    const uniqueEventNames = new Map();
+    allSessions.forEach(session => {
+        if (!uniqueEventNames.has(session.eventName)) {
+            uniqueEventNames.set(session.eventName, session);
+        }
+    });
+    const sessions = Array.from(uniqueEventNames.values());
+    
     const myRecords = await Attendance.find({ 
         studentId: user.mmId,
         eventName: { $in: sessions.map(s => s.eventName) }
@@ -1057,6 +2879,7 @@ app.get('/my-folder-attendance/:folderId', isAuthenticated, async (req, res) => 
 
     res.render('folder-details', { 
         folder: { name: "My Records" }, 
+        sessions: sessions,
         records: myRecords, 
         user,
         formatPhilippinesTime
@@ -1209,6 +3032,25 @@ app.post('/post-announcement', upload.single('image'), async (req, res) => {
     } catch (err) {
         console.error(err);
         res.send("Error posting announcement.");
+    }
+});
+
+app.post('/edit-announcement', isAuthenticated, async (req, res) => {
+    // Check if the user is an officer or adviser
+    if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+        return res.status(403).send("Unauthorized");
+    }
+
+    try {
+        const { announcementId, title, message } = req.body;
+        await Announcement.findByIdAndUpdate(announcementId, {
+            title,
+            message
+        }, { new: true });
+        res.redirect('/dashboard');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error updating announcement.");
     }
 });
 
@@ -1395,7 +3237,7 @@ function escapeCSV(field) {
 app.get('/download-attendance/:folderId', isAuthenticated, async (req, res) => {
     try {
         const eventName = req.query.event;
-        const records = await Attendance.find({ eventName }).sort({ studentId: 1 });
+        const records = await Attendance.find({ eventName }).sort({ timestamp: -1 });
 
         // Group records by student (same logic as folder-details view)
         const studentMap = {};
@@ -1404,6 +3246,9 @@ app.get('/download-attendance/:folderId', isAuthenticated, async (req, res) => {
                 studentMap[record.studentId] = {
                     studentId: record.studentId,
                     studentName: record.studentName,
+                    firstName: record.firstName || '',
+                    lastName: record.lastName || '',
+                    yearLevel: record.yearLevel || '1st Year',
                     amIn: null,
                     amOut: null,
                     pmIn: null,
@@ -1417,15 +3262,18 @@ app.get('/download-attendance/:folderId', isAuthenticated, async (req, res) => {
             if (record.sessionType === 'PM_OUT') studentMap[record.studentId].pmOut = record.timestamp;
         });
 
-        // Convert to array and sort by studentId
+        // Convert to array and sort by year level, then last name
+        const yearLevelOrder = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
         const attendanceData = Object.values(studentMap).sort((a, b) => {
-            const aNum = parseInt(a.studentId.split('-')[1]) || 0;
-            const bNum = parseInt(b.studentId.split('-')[1]) || 0;
-            return aNum - bNum;
+            const yearLevelComparison = yearLevelOrder.indexOf(a.yearLevel) - yearLevelOrder.indexOf(b.yearLevel);
+            if (yearLevelComparison !== 0) return yearLevelComparison;
+            
+            // Secondary sort: alphabetical by last name
+            return a.lastName.localeCompare(b.lastName);
         });
 
-        // Create CSV Header
-        let csvContent = "Student ID,Student Name,AM IN,AM OUT,PM IN,PM OUT\n";
+        // Create CSV Header (including Year Level)
+        let csvContent = "Year Level,Student ID,Student Name,AM IN,AM OUT,PM IN,PM OUT\n";
 
         // Add records to CSV with Philippines timezone formatting (same as table display)
         attendanceData.forEach(record => {
@@ -1435,6 +3283,7 @@ app.get('/download-attendance/:folderId', isAuthenticated, async (req, res) => {
             const pmOut = formatToPhilippinesTime(record.pmOut);
             
             // Properly escape CSV fields
+            const yearLevel = escapeCSV(record.yearLevel);
             const studentId = escapeCSV(record.studentId);
             const studentName = escapeCSV(record.studentName);
             const amInCSV = escapeCSV(amIn);
@@ -1442,7 +3291,7 @@ app.get('/download-attendance/:folderId', isAuthenticated, async (req, res) => {
             const pmInCSV = escapeCSV(pmIn);
             const pmOutCSV = escapeCSV(pmOut);
             
-            csvContent += `${studentId},${studentName},${amInCSV},${amOutCSV},${pmInCSV},${pmOutCSV}\n`;
+            csvContent += `${yearLevel},${studentId},${studentName},${amInCSV},${amOutCSV},${pmInCSV},${pmOutCSV}\n`;
         });
 
         res.setHeader('Content-Type', 'text/csv');
@@ -1460,7 +3309,16 @@ app.get('/my-attendance/:folderId', isAuthenticated, async (req, res) => {
         const student = req.session.user;
         
         // 1. Get all sessions in this folder
-        const sessions = await AttendanceSession.find({ folderId: req.params.folderId });
+        const allSessions = await AttendanceSession.find({ folderId: req.params.folderId });
+        
+        // Deduplicate sessions by eventName (show only unique events, not each sessionType)
+        const uniqueEventNames = new Map();
+        allSessions.forEach(session => {
+            if (!uniqueEventNames.has(session.eventName)) {
+                uniqueEventNames.set(session.eventName, session);
+            }
+        });
+        const sessions = Array.from(uniqueEventNames.values());
 
         // 2. Check if the student clicked a specific event
         const selectedEvent = req.query.event;
@@ -1468,33 +3326,80 @@ app.get('/my-attendance/:folderId', isAuthenticated, async (req, res) => {
         let attendanceData = [];
 
         if (selectedEvent) {
-            // 3. Get all attendance records for THIS student for this event
-            records = await Attendance.find({ 
-                eventName: selectedEvent,
-                studentId: student.mmId // Use mmId for the logged-in student
-            }).sort({ timestamp: -1 });
+            // For officers/advisers: get all attendance records for this event
+            // For students: get only their own attendance
+            if (student.role === 'officer' || student.role === 'adviser') {
+                // Get all attendance records for THIS event
+                records = await Attendance.find({ 
+                    eventName: selectedEvent
+                }).sort({ timestamp: -1 });
 
-            // 4. Format the data for display (same as officer view)
-            const studentMap = {};
-            records.forEach(record => {
-                if (!studentMap[record.studentId]) {
-                    studentMap[record.studentId] = {
-                        studentId: record.studentId,
-                        studentName: record.studentName,
-                        amIn: null,
-                        amOut: null,
-                        pmIn: null,
-                        pmOut: null
-                    };
-                }
+                // Organize data by year level and student
+                const studentMap = {};
+                const yearLevelOrder = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
                 
-                if (record.sessionType === 'AM_IN') studentMap[record.studentId].amIn = record.timestamp;
-                if (record.sessionType === 'AM_OUT') studentMap[record.studentId].amOut = record.timestamp;
-                if (record.sessionType === 'PM_IN') studentMap[record.studentId].pmIn = record.timestamp;
-                if (record.sessionType === 'PM_OUT') studentMap[record.studentId].pmOut = record.timestamp;
-            });
+                records.forEach(record => {
+                    const key = record.studentId;
+                    if (!studentMap[key]) {
+                        studentMap[key] = {
+                            studentId: record.studentId,
+                            studentName: record.studentName,
+                            firstName: record.firstName || '',
+                            lastName: record.lastName || '',
+                            yearLevel: record.yearLevel || '1st Year',
+                            amIn: null,
+                            amOut: null,
+                            pmIn: null,
+                            pmOut: null
+                        };
+                    }
+                    
+                    if (record.sessionType === 'AM_IN') studentMap[key].amIn = record.timestamp;
+                    if (record.sessionType === 'AM_OUT') studentMap[key].amOut = record.timestamp;
+                    if (record.sessionType === 'PM_IN') studentMap[key].pmIn = record.timestamp;
+                    if (record.sessionType === 'PM_OUT') studentMap[key].pmOut = record.timestamp;
+                });
 
-            attendanceData = Object.values(studentMap);
+                // Convert to array and sort by year level, then last name
+                attendanceData = Object.values(studentMap).sort((a, b) => {
+                    const yearLevelComparison = yearLevelOrder.indexOf(a.yearLevel) - yearLevelOrder.indexOf(b.yearLevel);
+                    if (yearLevelComparison !== 0) return yearLevelComparison;
+                    
+                    // Secondary sort: alphabetical by last name
+                    return a.lastName.localeCompare(b.lastName);
+                });
+            } else {
+                // Students can only see their own attendance
+                records = await Attendance.find({ 
+                    eventName: selectedEvent,
+                    studentId: student.mmId
+                }).sort({ timestamp: -1 });
+
+                // Format the data for display
+                const studentMap = {};
+                records.forEach(record => {
+                    if (!studentMap[record.studentId]) {
+                        studentMap[record.studentId] = {
+                            studentId: record.studentId,
+                            studentName: record.studentName,
+                            firstName: record.firstName || '',
+                            lastName: record.lastName || '',
+                            yearLevel: student.yearLevel || '1st Year',
+                            amIn: null,
+                            amOut: null,
+                            pmIn: null,
+                            pmOut: null
+                        };
+                    }
+                    
+                    if (record.sessionType === 'AM_IN') studentMap[record.studentId].amIn = record.timestamp;
+                    if (record.sessionType === 'AM_OUT') studentMap[record.studentId].amOut = record.timestamp;
+                    if (record.sessionType === 'PM_IN') studentMap[record.studentId].pmIn = record.timestamp;
+                    if (record.sessionType === 'PM_OUT') studentMap[record.studentId].pmOut = record.timestamp;
+                });
+
+                attendanceData = Object.values(studentMap);
+            }
         }
 
         // 5. Create helper function for template to format times in Philippines timezone
@@ -1532,13 +3437,88 @@ app.get('/my-account', async (req, res) => {
         pendingResetRequestsCount = await User.countDocuments({ resetRequest: true });
     }
 
-    // 4. Render the page and PASS the variables
+    // 4. Get override password if adviser
+    let overridePassword = null;
+    if (req.session.user.role === 'adviser') {
+        try {
+            overridePassword = await getOverridePassword();
+        } catch (err) {
+            console.error('Error getting override password:', err);
+        }
+    }
+
+    // 5. Render the page and PASS the variables
     res.render('my-account', { 
         user: req.session.user, 
         showSuccess: successStatus,
         cor_success: corSuccessStatus,
-        pendingResetRequestsCount: pendingResetRequestsCount
+        pendingResetRequestsCount: pendingResetRequestsCount,
+        overridePassword: overridePassword
     });
+});
+
+app.post('/update-profile', upload.single('profilePhoto'), async (req, res) => {
+    try {
+        const { firstName, lastName, middleName, mobileNumber, dateOfBirth, gender, address, newPassword, confirmPass } = req.body;
+
+        // Check if the user is in the session
+        if (!req.session.user || !req.session.user._id) {
+            console.log("Update failed: No user ID in session.");
+            return res.status(401).send("Please log out and log back in to refresh your session.");
+        }
+
+        const userId = req.session.user._id;
+
+        // Build update object
+        const updateData = {
+            firstName: firstName || req.session.user.firstName,
+            lastName: lastName || req.session.user.lastName,
+            middleName: middleName || '',
+            mobileNumber: mobileNumber || '',
+            dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+            gender: gender || '',
+            address: address || '',
+            // Update legacy name field for compatibility
+            name: `${firstName} ${lastName}`
+        };
+
+        // Handle password update if provided
+        if (newPassword && newPassword.trim() !== '') {
+            if (newPassword !== confirmPass) {
+                return res.status(400).send("Passwords do not match.");
+            }
+            if (newPassword.length < 6) {
+                return res.status(400).send("Password must be at least 6 characters long.");
+            }
+            updateData.password = newPassword;
+        }
+
+        // Handle profile photo upload
+        if (req.file) {
+            // Save the file path (relative to public folder)
+            updateData.profilePhoto = `/uploads/${req.file.filename}`;
+        }
+
+        // Update user in database
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            updateData, 
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).send("User not found in the database.");
+        }
+
+        // Update session with new user data
+        req.session.user = updatedUser;
+
+        // Redirect back with success message
+        res.redirect('/my-account?success=profile');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error updating profile");
+    }
 });
 
 app.post('/update-password', async (req, res) => {
@@ -2034,6 +4014,34 @@ app.get('/delete-download/:id', isAuthenticated, async (req, res) => {
     } catch (err) {
         console.error("Error deleting file:", err);
         res.status(500).send("Server Error");
+    }
+});
+
+// Route: View student details
+app.get('/admin/student-details/:mmId', isAuthenticated, async (req, res) => {
+    try {
+        // Check if user is officer or adviser
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.redirect('/dashboard');
+        }
+
+        const { mmId } = req.params;
+
+        // Get student from database
+        const student = await User.findOne({ mmId: mmId })
+            .lean();
+
+        if (!student) {
+            return res.status(404).send('Student not found');
+        }
+
+        res.render('student-details', { 
+            student: student,
+            user: req.session.user
+        });
+    } catch (err) {
+        console.error('Error loading student details:', err);
+        res.status(500).send('Error loading student details');
     }
 });
 
@@ -2559,7 +4567,7 @@ app.post('/request-reset', async (req, res) => {
 
 app.post('/create-event/:folderId', isAuthenticated, async (req, res) => {
     try {
-        const { eventName } = req.body;
+        const { eventName, eventType } = req.body;
         const folderId = req.params.folderId;
         
         // Validate event name
@@ -2567,7 +4575,12 @@ app.post('/create-event/:folderId', isAuthenticated, async (req, res) => {
             return res.status(400).send("❌ Event name is required.");
         }
 
-        console.log("📝 Creating event:", { eventName, folderId });
+        // Validate event type
+        if (!eventType || !['Half Day', 'Whole Day'].includes(eventType)) {
+            return res.status(400).send("❌ Invalid event type. Please select 'Half Day' or 'Whole Day'.");
+        }
+
+        console.log("📝 Creating event:", { eventName, eventType, folderId });
         
         // Check if an event with the same name already exists in this folder
         const existingEvent = await AttendanceSession.findOne({ 
@@ -2617,16 +4630,48 @@ app.post('/create-event/:folderId', isAuthenticated, async (req, res) => {
             `);
         }
         
-        // Create an AttendanceSession with the unique event name
+        // Create an AttendanceSession with the unique event name and event type
         const newSession = await AttendanceSession.create({
             eventName: eventName.trim(),
             folderId: folderId,
             type: 'General',
             date: new Date(),
-            token: Math.random().toString(36).substring(7)
+            token: Math.random().toString(36).substring(7),
+            eventType: eventType
         });
 
-        console.log("[SUCCESS] Event created successfully:", newSession._id);
+        // Create absence records for all students with fines
+        const allStudents = await User.find({ role: 'student' });
+        const sessionFine = eventType === 'Half Day' ? 50 : 30;
+        
+        const bulkOps = allStudents.map(student => ({
+            updateOne: {
+                filter: {
+                    studentId: student.mmId,
+                    eventName: eventName.trim(),
+                    sessionType: 'General'
+                },
+                update: {
+                    $setOnInsert: {
+                        studentName: `${student.lastName}, ${student.firstName}`,
+                        firstName: student.firstName,
+                        lastName: student.lastName,
+                        yearLevel: student.yearLevel || '1st Year',
+                        folderId: folderId,
+                        timestamp: null,
+                        status: 'Absent',
+                        fine: sessionFine
+                    }
+                },
+                upsert: true // Create if not exists, leave unchanged if exists
+            }
+        }));
+        
+        if (bulkOps.length > 0) {
+            await Attendance.bulkWrite(bulkOps);
+        }
+
+        console.log(`[SUCCESS] Event created successfully: ${newSession._id} with ${allStudents.length} students marked absent`);
         res.redirect(`/folder-details/${folderId}`); 
     } catch (err) {
         console.error("[ERROR] Error creating event:", err.message);
@@ -2634,14 +4679,45 @@ app.post('/create-event/:folderId', isAuthenticated, async (req, res) => {
     }
 });
 
-app.get('/delete-event/:id/:folderId', async (req, res) => {
+app.get('/delete-event/:id/:folderId', isAuthenticated, async (req, res) => {
     try {
-        await AttendanceSession.findByIdAndDelete(req.params.id);
-        // We redirect back to the folder details so the page refreshes automatically
+        const user = req.session.user;
+        
+        // Only officers and advisers can delete events
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).send("❌ Unauthorized: Only officers and advisers can delete events.");
+        }
+        
+        // Verify the folder exists and user has access
+        const folder = await Folder.findById(req.params.folderId);
+        if (!folder) {
+            return res.status(404).send("❌ Folder not found");
+        }
+        
+        // Get the event details before deleting so we know what eventName to clean up
+        const session = await AttendanceSession.findById(req.params.id);
+        
+        if (session) {
+            // Verify the event belongs to this folder
+            if (session.folderId.toString() !== req.params.folderId) {
+                return res.status(403).send("❌ Unauthorized: Event does not belong to this folder");
+            }
+            
+            // Delete the AttendanceSession
+            await AttendanceSession.findByIdAndDelete(req.params.id);
+            
+            // IMPORTANT: Also delete ALL attendance records for this event
+            // This ensures deleted events don't leave orphaned records in the wallet
+            const deleteResult = await Attendance.deleteMany({ eventName: session.eventName });
+            
+            console.log(`✅ [${user.mmId}] Deleted event "${session.eventName}" and ${deleteResult.deletedCount} attendance records`);
+        }
+        
+        // Redirect back to the folder details so the page refreshes automatically
         res.redirect(`/folder-details/${req.params.folderId}`);
     } catch (err) {
-        console.log(err);
-        res.status(500).send("Error deleting event");
+        console.error(`❌ Error deleting event: ${err.message}`);
+        res.status(500).send("Error deleting event: " + err.message);
     }
 });
 
@@ -2682,7 +4758,7 @@ app.post('/remove-attendance', isAuthenticated, async (req, res) => {
     }
 });
 
-// === DELETE STUDENT ROUTE (Removes user from DB + clears attendance) ===
+// === DELETE STUDENT ROUTE (Removes user from DB + clears attendance + archives payments) ===
 app.post('/delete-student/:mmId', isAuthenticated, async (req, res) => {
     try {
         // Security check: only officers/advisers can delete
@@ -2710,15 +4786,30 @@ app.post('/delete-student/:mmId', isAuthenticated, async (req, res) => {
         await User.findByIdAndDelete(user._id);
 
         // 2. Clear all attendance records for this student
-        await Attendance.deleteMany({ studentId: mmId });
+        const attendanceDeleteResult = await Attendance.deleteMany({ studentId: mmId });
 
-        // 3. Mark the MM-ID as unassigned in the student pool
+        // 3. Archive payments (mark as archived but keep for audit trail)
+        const paymentUpdateResult = await Payment.updateMany(
+            { studentId: mmId },
+            { archivedAt: new Date(), archived: true }
+        );
+
+        // 4. Mark the MM-ID as unassigned in the student pool
         await StudentIDPool.updateOne(
             { mmId },
             { isAssigned: false, assignedToUsername: null }
         );
 
-        res.json({ success: true, message: 'Student deleted successfully. Attendance records cleared. ID slot is now available.' });
+        console.log(`✅ [${req.session.user.mmId}] Deleted student ${mmId}: ${attendanceDeleteResult.deletedCount} attendance records, ${paymentUpdateResult.modifiedCount} payments archived`);
+
+        res.json({ 
+            success: true, 
+            message: 'Student deleted successfully. Attendance records cleared. Payments archived. ID slot is now available.',
+            details: {
+                attendanceRecordsDeleted: attendanceDeleteResult.deletedCount,
+                paymentsArchived: paymentUpdateResult.modifiedCount
+            }
+        });
     } catch (err) {
         console.error('Error deleting student:', err);
         res.status(500).json({ error: 'Error deleting student: ' + err.message });
@@ -2945,3 +5036,439 @@ app.get('/admin/repair-emails', isAuthenticated, async (req, res) => {
         res.status(500).send('Error repairing emails: ' + err.message);
     }
 });
+
+// ============== DOCUMENT MANAGEMENT ROUTES ==============
+
+
+// GET /documents - Officer/Adviser view to manage student documents
+app.get('/documents', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).send("Access denied");
+        }
+
+        // Get all document types
+        const documentTypes = await DocumentType.find().populate('createdBy', 'name');
+        
+        // Get all folders for year level grouping
+        const Folder = mongoose.model('Folder');
+        const folders = await Folder.find().sort({ yearLevel: 1, name: 1 });
+
+        // Get students by year level
+        const students = await User.find({ role: 'student' }).sort({ yearLevel: 1, name: 1 });
+
+        // Get all student documents
+        const studentDocs = await StudentDocument.find()
+            .populate('student', 'name yearLevel mmId')
+            .populate('documentType', 'title fileType');
+
+        res.render('documents', {
+            user: req.session.user,
+            documentTypes,
+            folders,
+            students,
+            studentDocs
+        });
+    } catch (err) {
+        console.error('Error loading documents page:', err);
+        res.status(500).send('Error loading documents page: ' + err.message);
+    }
+});
+
+// GET /my-documents - View and upload documents (for all users)
+app.get('/my-documents', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.user._id;
+        console.log('[MY-DOCUMENTS] Page accessed by user:', userId);
+
+        // Get all document types that need to be submitted
+        const documentTypes = await DocumentType.find();
+        console.log('[MY-DOCUMENTS] Found documentTypes:', documentTypes.length, 'types');
+        console.log('[MY-DOCUMENTS] DocumentTypes:', JSON.stringify(documentTypes, null, 2));
+
+        // Get current user's uploaded documents
+        const studentDocuments = await StudentDocument.find({ student: userId })
+            .populate('documentType', 'title fileType maxUploads');
+
+        console.log('[MY-DOCUMENTS] Student uploaded:', studentDocuments.length, 'documents');
+
+        res.render('my-documents', {
+            user: req.session.user,
+            documentTypes,
+            studentDocuments,
+            uploadedCount: studentDocuments.length
+        });
+    } catch (err) {
+        console.error('Error loading my-documents page:', err);
+        res.status(500).send('Error loading my-documents page: ' + err.message);
+    }
+});
+
+// GET /api/get-document-types - Fetch all document type requirements
+app.get('/api/get-document-types', isAuthenticated, async (req, res) => {
+    try {
+        const documentTypes = await DocumentType.find().populate('createdBy', 'name');
+        res.json(documentTypes);
+    } catch (err) {
+        console.error('Error fetching document types:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT /api/update-document-type/:id - Officer/Adviser update document type
+app.put('/api/update-document-type/:id', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const { title, description, fileType, maxUploads } = req.body;
+        const docTypeId = req.params.id;
+
+        const updatedDocType = await DocumentType.findByIdAndUpdate(
+            docTypeId,
+            {
+                title: title ? title.trim() : undefined,
+                description: description ? description.trim() : undefined,
+                fileType: fileType || undefined,
+                maxUploads: maxUploads ? parseInt(maxUploads) : undefined,
+                updatedAt: new Date()
+            },
+            { new: true }
+        );
+
+        if (!updatedDocType) {
+            return res.status(404).json({ error: "Document type not found" });
+        }
+
+        res.json({ success: true, documentType: updatedDocType });
+    } catch (err) {
+        console.error('Error updating document type:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/delete-document-type/:id - Officer/Adviser delete document type
+app.delete('/api/delete-document-type/:id', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const docTypeId = req.params.id;
+
+        // Delete the document type
+        const deleted = await DocumentType.findByIdAndDelete(docTypeId);
+
+        if (!deleted) {
+            return res.status(404).json({ error: "Document type not found" });
+        }
+
+        // Optionally delete all student documents associated with this type
+        // (or keep them for historical records)
+        await StudentDocument.deleteMany({ documentType: docTypeId });
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error deleting document type:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/upload-document - Upload document (for all authenticated users)
+app.post('/api/upload-document', isAuthenticated, uploadDocument.single('document'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "No file selected" });
+        }
+
+        const documentTypeId = req.body.documentTypeId;
+        const userId = req.session.user._id;
+
+        if (!documentTypeId) {
+            return res.status(400).json({ error: "Document type not specified" });
+        }
+
+        // Check document type exists
+        const docType = await DocumentType.findById(documentTypeId);
+        if (!docType) {
+            return res.status(404).json({ error: "Document type not found" });
+        }
+
+        // Check if student already uploaded max number of files for this document type
+        const existingUploads = await StudentDocument.countDocuments({
+            student: userId,
+            documentType: documentTypeId
+        });
+
+        if (existingUploads >= docType.maxUploads) {
+            return res.status(400).json({ error: `Maximum ${docType.maxUploads} file(s) already uploaded for this document type` });
+        }
+
+        if (!gridFSDocumentBucket) {
+            return res.status(500).json({ error: "File storage service is not available" });
+        }
+
+        // Create readable stream from file buffer
+        const { Readable } = require('stream');
+        const readStream = Readable.from(req.file.buffer);
+
+        // Create GridFS upload stream
+        const uploadStream = gridFSDocumentBucket.openUploadStream(
+            `DOC_${userId}_${documentTypeId}_${Date.now()}_${req.file.originalname}`,
+            {
+                metadata: {
+                    userId: userId.toString(),
+                    documentTypeId: documentTypeId.toString(),
+                    uploadedAt: new Date(),
+                    originalFilename: req.file.originalname,
+                    mimeType: req.file.mimetype
+                }
+            }
+        );
+
+        readStream.pipe(uploadStream);
+
+        uploadStream.on('finish', async () => {
+            try {
+                const fileId = uploadStream.id.toString();
+
+                // Create StudentDocument record
+                const studentDoc = new StudentDocument({
+                    student: userId,
+                    documentType: documentTypeId,
+                    gridFSFileId: fileId,
+                    fileName: req.file.originalname,
+                    fileSize: req.file.size
+                });
+
+                await studentDoc.save();
+
+                res.json({
+                    success: true,
+                    message: 'Document uploaded successfully',
+                    studentDocument: studentDoc
+                });
+            } catch (err) {
+                console.error('Error saving document record:', err);
+                res.status(500).json({ error: 'Error saving document record: ' + err.message });
+            }
+        });
+
+        uploadStream.on('error', (err) => {
+            console.error('GridFS upload error:', err);
+            res.status(500).json({ error: 'Error uploading file: ' + err.message });
+        });
+    } catch (err) {
+        console.error('Error uploading document:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/download-document/:studentDocumentId/:studentId - Download student document
+app.get('/api/download-document/:studentDocumentId/:studentId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const studentDoc = await StudentDocument.findById(req.params.studentDocumentId)
+            .populate('student', 'name lastName firstName')
+            .populate('documentType', 'title');
+
+        if (!studentDoc) {
+            return res.status(404).json({ error: "Document not found" });
+        }
+
+        // Get the file from GridFS
+        const fileId = new mongoose.Types.ObjectId(studentDoc.gridFSFileId);
+
+        // Set download filename as: "documentTypeName.fileExtension-lastName,firstName"
+        const student = studentDoc.student;
+        const documentType = studentDoc.documentType;
+        const fileExt = studentDoc.fileName.split('.').pop();
+        const downloadFilename = `${documentType.title}.${fileExt}-${student.lastName},${student.firstName}`;
+
+        res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+
+        const downloadStream = gridFSDocumentBucket.openDownloadStream(fileId);
+
+        downloadStream.on('error', (err) => {
+            console.error('Error downloading document:', err);
+            res.status(500).json({ error: 'Error downloading document' });
+        });
+
+        downloadStream.pipe(res);
+    } catch (err) {
+        console.error('Error downloading document:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// DELETE /api/delete-student-document/:studentDocumentId - Student delete their uploaded document
+app.delete('/api/delete-student-document/:studentDocumentId', isAuthenticated, async (req, res) => {
+    try {
+        const studentDoc = await StudentDocument.findById(req.params.studentDocumentId);
+
+        if (!studentDoc) {
+            return res.status(404).json({ error: "Document not found" });
+        }
+
+        // Security: Can only delete own documents (except officers/advisers)
+        if (req.session.user.role === 'student' && studentDoc.student.toString() !== req.session.user._id.toString()) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        // Delete from GridFS
+        const fileId = new mongoose.Types.ObjectId(studentDoc.gridFSFileId);
+        await gridFSDocumentBucket.delete(fileId);
+
+        // Delete document record
+        await StudentDocument.findByIdAndDelete(req.params.studentDocumentId);
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error deleting document:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/download-student-document/:id - Download student's own document
+app.get('/api/download-student-document/:id', isAuthenticated, async (req, res) => {
+    try {
+        const studentDoc = await StudentDocument.findById(req.params.id).populate('student', 'name lastName firstName');
+
+        if (!studentDoc) {
+            return res.status(404).json({ error: "Document not found" });
+        }
+
+        // Security: Students can only download their own documents
+        if (req.session.user.role === 'student' && studentDoc.student._id.toString() !== req.session.user._id.toString()) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        // Get the file from GridFS
+        const fileId = new mongoose.Types.ObjectId(studentDoc.gridFSFileId);
+
+        // Set appropriate content type
+        let contentType = 'application/octet-stream';
+        if (studentDoc.fileName) {
+            const ext = studentDoc.fileName.split('.').pop().toLowerCase();
+            const mimeTypes = {
+                'pdf': 'application/pdf',
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg',
+                'png': 'image/png',
+                'gif': 'image/gif',
+                'doc': 'application/msword',
+                'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'xls': 'application/vnd.ms-excel',
+                'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            };
+            contentType = mimeTypes[ext] || 'application/octet-stream';
+        }
+
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `inline; filename="${studentDoc.fileName}"`);
+
+        const downloadStream = gridFSDocumentBucket.openDownloadStream(fileId);
+
+        downloadStream.on('error', (err) => {
+            console.error('Error downloading document:', err);
+            res.status(500).json({ error: 'Error downloading document' });
+        });
+
+        downloadStream.pipe(res);
+    } catch (err) {
+        console.error('Error downloading document:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/get-student-documents/:studentId - Get all documents for a specific student
+app.get('/api/get-student-documents/:studentId', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const studentDocs = await StudentDocument.find({ student: req.params.studentId })
+            .populate('documentType', 'title fileType')
+            .sort({ uploadedAt: -1 });
+
+        res.json(studentDocs);
+    } catch (err) {
+        console.error('Error fetching student documents:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/check-document-notifications - Check if student has new document requirements
+app.get('/api/check-document-notifications', isAuthenticated, async (req, res) => {
+    try {
+        if (req.session.user.role !== 'student') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const userId = req.session.user._id;
+
+        // Get all document types
+        const allDocTypes = await DocumentType.find();
+
+        // Get student's submitted documents
+        const submittedDocs = await StudentDocument.find({ student: userId });
+
+        // Find documents that haven't been submitted yet
+        const submittedTypeIds = submittedDocs.map(doc => doc.documentType.toString());
+        const pendingDocs = allDocTypes.filter(doc => !submittedTypeIds.includes(doc._id.toString()));
+
+        res.json({
+            hasPendingDocuments: pendingDocs.length > 0,
+            pendingCount: pendingDocs.length,
+            totalDocuments: allDocTypes.length,
+            submittedCount: allDocTypes.length - pendingDocs.length
+        });
+    } catch (err) {
+        console.error('Error checking document notifications:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/get-all-students - Fetch all students for document management
+app.get('/api/get-all-students', isAuthenticated, async (req, res) => {
+    try {
+        // Only officers and advisers can access this
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const students = await User.find({ role: 'student' }).select('_id firstName lastName yearLevel email mmId');
+        res.json(students);
+    } catch (err) {
+        console.error('Error fetching students:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/get-all-student-documents - Fetch all student documents for document management
+app.get('/api/get-all-student-documents', isAuthenticated, async (req, res) => {
+    try {
+        // Only officers and advisers can access this
+        if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const studentDocs = await StudentDocument.find()
+            .populate('student', 'firstName lastName yearLevel mmId')
+            .populate('documentType', '_id title fileType maxUploads');
+        
+        res.json(studentDocs);
+    } catch (err) {
+        console.error('Error fetching student documents:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
