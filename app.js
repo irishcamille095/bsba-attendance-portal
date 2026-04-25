@@ -1326,6 +1326,51 @@ app.post('/api/submit-payment', isAuthenticated, async (req, res) => {
         if (!['cash', 'service'].includes(paymentMethod)) {
             return res.status(400).json({ message: 'Invalid payment method' });
         }
+
+        // Calculate remaining balance to validate against
+        const fineRecords = await Attendance.find({
+            studentId: user.mmId,
+            eventName: { $ne: null, $ne: 'undefined', $ne: '' }
+        });
+
+        const allEvents = await AttendanceSession.find();
+        const eventTypeMap = {};
+        allEvents.forEach(event => {
+            eventTypeMap[event.eventName] = event.eventType;
+        });
+
+        let totalFines = 0;
+        fineRecords.forEach(record => {
+            if (eventTypeMap[record.eventName]) {
+                let fine = record.fine || 0;
+                if (!fine || fine === 0) {
+                    const eventType = eventTypeMap[record.eventName] || 'Whole Day';
+                    if (record.status === 'Absent') {
+                        fine = eventType === 'Half Day' ? 50 : 30;
+                    }
+                }
+                totalFines += fine;
+            }
+        });
+
+        const student = await User.findOne({ mmId: user.mmId });
+        const initialFine = student?.initialFine || 0;
+        totalFines += initialFine;
+
+        // Get verified payments
+        const verifiedPayments = await Payment.find({
+            studentId: user.mmId,
+            status: 'verified'
+        });
+        const totalVerified = verifiedPayments.reduce((sum, p) => sum + p.amount, 0);
+        const remainingBalance = Math.max(0, totalFines - totalVerified);
+
+        // Check if payment exceeds remaining balance
+        if (amount > remainingBalance) {
+            return res.status(400).json({
+                message: `Payment amount cannot exceed remaining balance of ₱${remainingBalance.toFixed(2)}`
+            });
+        }
         
         // Create payment record
         const payment = new Payment({
@@ -1557,7 +1602,7 @@ app.post('/verify-payment/:paymentId', isAuthenticated, async (req, res) => {
         }
 
         // Get student info for audit log
-        const student = await User.findOne({ mmId: payment.mmId });
+        const student = await User.findOne({ mmId: payment.studentId });
 
         // Update payment to verified
         payment.status = 'verified';
@@ -1571,15 +1616,15 @@ app.post('/verify-payment/:paymentId', isAuthenticated, async (req, res) => {
             performedBy: user.mmId || user.id,
             performedByName: `${user.lastName}, ${user.firstName}`,
             performedByRole: user.role,
-            studentId: payment.mmId,
+            studentId: payment.studentId,
             studentName: student ? `${student.lastName}, ${student.firstName}` : 'Unknown Student',
             details: {
                 paymentId: paymentId,
                 amount: payment.amount,
-                purpose: payment.purpose,
-                referenceNumber: payment.referenceNumber
+                paymentMethod: payment.paymentMethod,
+                description: payment.description || ''
             },
-            description: `Payment verified for student ${payment.mmId}: ₱${payment.amount} for ${payment.purpose}`,
+            description: `Payment verified for student ${payment.studentId}: ₱${payment.amount}`,
             timestamp: new Date()
         });
 
@@ -1620,6 +1665,58 @@ app.post('/reject-payment/:paymentId', isAuthenticated, async (req, res) => {
     } catch (err) {
         console.error("Payment Rejection Error:", err);
         res.status(500).json({ success: false, message: 'Error rejecting payment' });
+    }
+});
+
+// Undo Verification - Officer reverts a verified payment back to pending
+app.post('/undo-verify-payment/:paymentId', isAuthenticated, async (req, res) => {
+    try {
+        const user = req.session.user;
+
+        if (user.role !== 'officer' && user.role !== 'adviser') {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const { paymentId } = req.params;
+        const payment = await Payment.findById(paymentId);
+
+        if (!payment) {
+            return res.status(404).json({ success: false, message: 'Payment not found' });
+        }
+
+        if (payment.status !== 'verified') {
+            return res.status(400).json({ success: false, message: 'Only verified payments can be undone.' });
+        }
+
+        payment.status = 'pending';
+        payment.verifiedBy = undefined;
+        payment.verifiedAt = undefined;
+        payment.rejectionReason = undefined;
+        await payment.save();
+
+        const student = await User.findOne({ mmId: payment.studentId });
+
+        await AuditLog.create({
+            actionType: 'undo_verify_payment',
+            performedBy: user.mmId || user.id,
+            performedByName: `${user.lastName}, ${user.firstName}`,
+            performedByRole: user.role,
+            studentId: payment.studentId,
+            studentName: student ? `${student.lastName}, ${student.firstName}` : 'Unknown Student',
+            details: {
+                paymentId: paymentId,
+                amount: payment.amount,
+                paymentMethod: payment.paymentMethod,
+                description: payment.description || ''
+            },
+            description: `Payment verification undone for student ${payment.studentId}: ₱${payment.amount}`,
+            timestamp: new Date()
+        });
+
+        res.json({ success: true, message: 'Payment verification undone. Payment is now pending again.' });
+    } catch (err) {
+        console.error('Undo Verification Error:', err);
+        res.status(500).json({ success: false, message: 'Error undoing verification' });
     }
 });
 
@@ -1706,7 +1803,8 @@ app.get('/api/audit-logs', isAuthenticated, async (req, res) => {
             $or: [
                 { actionType: 'override_fines' },
                 { actionType: 'verify_payment' },
-                { actionType: 'initial_fine' }
+                { actionType: 'initial_fine' },
+                { actionType: 'undo_verify_payment' }
             ]
         };
 
@@ -1717,6 +1815,8 @@ app.get('/api/audit-logs', isAuthenticated, async (req, res) => {
                 filter = { actionType: 'initial_fine' };
             } else if (type === 'override_fines') {
                 filter = { actionType: 'override_fines' };
+            } else if (type === 'undo_verify_payment') {
+                filter = { actionType: 'undo_verify_payment' };
             }
         }
 
@@ -3474,13 +3574,23 @@ app.post('/update-profile', upload.single('profilePhoto'), async (req, res) => {
 
         const userId = req.session.user._id;
 
+        const allowedGenders = ['', 'Male', 'Female', 'Other'];
+        if (gender && !allowedGenders.includes(gender)) {
+            return res.status(400).send('Invalid gender selection.');
+        }
+
+        const parsedDob = dateOfBirth ? new Date(dateOfBirth) : null;
+        if (dateOfBirth && isNaN(parsedDob)) {
+            return res.status(400).send('Invalid date of birth.');
+        }
+
         // Build update object
         const updateData = {
             firstName: firstName || req.session.user.firstName,
             lastName: lastName || req.session.user.lastName,
             middleName: middleName || '',
             mobileNumber: mobileNumber || '',
-            dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+            dateOfBirth: parsedDob,
             gender: gender || '',
             address: address || '',
             // Update legacy name field for compatibility
@@ -3516,7 +3626,7 @@ app.post('/update-profile', upload.single('profilePhoto'), async (req, res) => {
         }
 
         // Update session with new user data
-        req.session.user = updatedUser;
+        req.session.user = updatedUser.toObject();
 
         // Redirect back with success message
         res.redirect('/my-account?success=profile');

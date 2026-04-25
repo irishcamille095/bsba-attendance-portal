@@ -201,6 +201,20 @@
             transition: all 0.3s ease;
             margin-top: 8px;
         }
+
+        .profile-photo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .profile-photo-container img,
+        .profile-photo-placeholder {
+            margin: 0 auto;
+        }
         
         .file-input-label:hover {
             background: #FFC700;
@@ -221,10 +235,12 @@
         @media (max-width: 768px) {
             body { 
                 display: block; 
+                overflow-x: hidden;
             }
 
             .sidebar {
-                width: 66.67% !important;
+                width: 100% !important;
+                max-width: 100vw;
                 height: 100vh !important;
                 position: fixed;
                 left: 0;
@@ -260,11 +276,25 @@
             .content {
                 margin-left: 0;
                 padding: 15px;
+                overflow-x: hidden;
+                width: 100vw;
+                max-width: 100vw;
+                box-sizing: border-box;
+            }
+
+            header {
+                margin: 0;
+                width: 100%;
+                max-width: 100vw;
+                box-sizing: border-box;
             }
 
             .card {
                 padding: 20px;
                 margin: 20px auto;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
             }
             
             h2 {
@@ -424,11 +454,11 @@
 
             <!-- Display View -->
             <div id="displayView">
-                <div style="text-align: center; margin-bottom: 20px;">
+                <div class="profile-photo-container">
                     <% if (user.profilePhoto) { %>
                         <img src="<%= user.profilePhoto %>" alt="Profile Photo" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700;">
                     <% } else { %>
-                        <div style="width: 120px; height: 120px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 3px solid #FFD700;">
+                        <div class="profile-photo-placeholder" style="width: 120px; height: 120px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; border: 3px solid #FFD700;">
                             <i class="fas fa-user" style="font-size: 3rem; color: #999;"></i>
                         </div>
                     <% } %>
@@ -491,13 +521,13 @@
             <div id="editView" style="display: none;">
                 <form action="/update-profile" method="POST" enctype="multipart/form-data" onsubmit="return validateEditForm(event)">
                     <!-- Profile Photo Upload -->
-                    <div class="info-group" style="text-align: center; margin-bottom: 20px;">
+                    <div class="info-group profile-photo-container">
                         <label>Profile Photo:</label>
                         <div style="margin-bottom: 10px;">
                             <% if (user.profilePhoto) { %>
                                 <img id="profilePhotoPreview" src="<%= user.profilePhoto %>" alt="Profile Photo" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700;">
                             <% } else { %>
-                                <div id="profilePhotoPreview" style="width: 120px; height: 120px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 3px solid #FFD700;">
+                                <div id="profilePhotoPreview" class="profile-photo-placeholder" style="width: 120px; height: 120px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; border: 3px solid #FFD700;">
                                     <i class="fas fa-user" style="font-size: 3rem; color: #999;"></i>
                                 </div>
                             <% } %>
@@ -529,7 +559,7 @@
 
                         <div class="info-group">
                             <label>Date of Birth:</label>
-                            <input type="date" name="dateOfBirth" value="<%= user.dateOfBirth ? user.dateOfBirth.toISOString().split('T')[0] : '' %>">
+                            <input type="date" name="dateOfBirth" value="<%= user.dateOfBirth ? (function() { const d = new Date(user.dateOfBirth); return !isNaN(d) ? d.toISOString().split('T')[0] : ''; })() : '' %>">
                         </div>
 
                         <div class="info-group">

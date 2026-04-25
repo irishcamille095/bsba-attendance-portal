@@ -22,7 +22,6 @@
             min-height: 100vh;
             margin: 0;
             padding: 0;
-            padding-bottom: 140px;
         }
         
         /* Sidebar */
@@ -119,7 +118,7 @@
             padding: 30px 30px 30px 30px;
             width: 100%;
             overflow-x: hidden;
-            min-height: 100vh;
+            box-sizing: border-box;
         }
         
         /* Header */
@@ -350,13 +349,36 @@
             text-decoration: underline;
         }
 
+        .initial-cell,
+        .verified-cell,
+        .total-fine-cell,
+        .pending-payment-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .initial-edit-btn,
+        .history-btn-cell,
+        .override-btn,
+        .verify-btn-cell {
+            padding: 8px 10px;
+            font-size: 12px;
+            width: auto;
+            min-width: 0;
+        }
+
         /* Button styling */
         .btn-records {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: auto;
+            text-align: center;
             background: #FFD700;
             color: #000;
             border: none;
-            padding: 8px 12px;
+            padding: 8px 10px;
             margin: 2px;
             border-radius: 4px;
             cursor: pointer;
@@ -692,11 +714,9 @@
                 padding: 5px 6px;
             }
 
-            /* Hide Attendance Fines and Remaining Balance on phones - keep essentials */
+            /* Hide Attendance Fines on phones - keep Remaining Balance visible */
             table th:nth-child(4),
-            table td:nth-child(4),
-            table th:nth-child(6),
-            table td:nth-child(6) {
+            table td:nth-child(4) {
                 display: none;
             }
 
@@ -846,10 +866,9 @@
                                 <th>Initial Fine</th>
                                 <th>Attendance Fines</th>
                                 <th>Total Fines</th>
-                                <th>Pending Payment</th>
-                                <th>Verified Fines</th>
+                                <th>Requests to Verify</th>
+                                <th>Verified Payments</th>
                                 <th>Remaining Balance</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -857,23 +876,37 @@
                                 <tr data-student="<%= student.mmId %>" data-name="<%= student.name %>">
                                     <td><strong><%= student.mmId %></strong></td>
                                     <td><%= student.name %></td>
-                                    <td><span class="initial-fine-display" data-student-id="<%= student.mmId %>" data-student-name="<%= student.name %>" data-initial-fine="<%= student.initialFine %>" onclick="openEditInitialFineModal(this)">₱<%= student.initialFine.toFixed(2) %></span></td>
-                                    <td>₱<%= student.attendanceFines.toFixed(2) %></td>
-                                    <td><strong>₱<%= student.totalFines.toFixed(2) %></strong></td>
-                                    <td><% if (student.pendingAmount > 0) { %><span style="color: #FF9800;">₱<%= student.pendingAmount.toFixed(2) %></span><% } else { %>₱0.00<% } %></td>
-                                    <td><% if (student.verifiedAmount > 0) { %><span style="color: #4CAF50;">₱<%= student.verifiedAmount.toFixed(2) %></span><% } else { %>₱0.00<% } %></td>
-                                    <td><% if (student.remainingBalance > 0) { %><span class="balance-red">₱<%= student.remainingBalance.toFixed(2) %></span><% } else { %>₱<%= student.remainingBalance.toFixed(2) %><% } %></td>
                                     <td>
-                                        <button class="btn btn-records" title="Edit Initial Fine" data-student-id="<%= student.mmId %>" data-student-name="<%= student.name %>" data-initial-fine="<%= student.initialFine %>" onclick="openEditInitialFineModal(this)">
-                                            ✏️ Initial
-                                        </button>
-                                        <button class="btn btn-records" title="View Payment History" data-student-id="<%= student.mmId %>" onclick="viewPaymentRecords(this)">
-                                            📋 History
-                                        </button>
-                                        <button class="btn btn-records" title="Override Fines" data-student-id="<%= student.mmId %>" data-student-name="<%= student.name %>" onclick="openOverrideModal(this)">
-                                            🔓 Override
-                                        </button>
+                                        <div class="initial-cell">
+                                            <div class="initial-fine-display">₱<%= student.initialFine.toFixed(2) %></div>
+                                            <button class="btn btn-records initial-edit-btn" title="Edit Initial Fine" data-student-id="<%= student.mmId %>" data-student-name="<%= student.name %>" data-initial-fine="<%= student.initialFine %>" onclick="openEditInitialFineModal(this)">Initial</button>
+                                        </div>
                                     </td>
+                                    <td>₱<%= student.attendanceFines.toFixed(2) %></td>
+                                    <td>
+                                        <div class="total-fine-cell">
+                                            <strong>₱<%= student.totalFines.toFixed(2) %></strong>
+                                            <button class="btn btn-records override-btn" title="Override Fines" data-student-id="<%= student.mmId %>" data-student-name="<%= student.name %>" onclick="openOverrideModal(this)">Override</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <% if (student.pendingAmount > 0) { %>
+                                            <div class="pending-payment-cell">
+                                                <span style="color: #FF9800; font-weight: 600;">₱<%= student.pendingAmount.toFixed(2) %></span>
+                                                <button class="btn btn-records verify-btn-cell" title="Verify Payment Request" data-student-id="<%= student.mmId %>" onclick="openPaymentRequestModal(this)">Verify</button>
+                                                <script type="application/json" id="pending-payments-<%= student.mmId %>"><%- JSON.stringify(student.pendingPayments) %></script>
+                                            </div>
+                                        <% } else { %>
+                                            No Request
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <div class="verified-cell">
+                                            <span style="color: #4CAF50; font-weight: bold;"><% if (student.verifiedAmount > 0) { %>₱<%= student.verifiedAmount.toFixed(2) %><% } else { %>₱0.00<% } %></span>
+                                            <button class="btn btn-records history-btn-cell" title="View Payment History" data-student-id="<%= student.mmId %>" onclick="viewPaymentRecords(this)">History</button>
+                                        </div>
+                                    </td>
+                                    <td><% if (student.remainingBalance > 0) { %><span class="balance-red">₱<%= student.remainingBalance.toFixed(2) %></span><% } else { %>₱<%= student.remainingBalance.toFixed(2) %><% } %></td>
                                 </tr>
                             <% }); %>
                         </tbody>
@@ -889,7 +922,7 @@
     </div>
 
     <!-- Rejection Reason Modal -->
-    <div id="rejectModal" class="modal">
+    <div id="rejectModal" class="modal" style="z-index: 2000;">
         <div class="modal-content">
             <span class="close" onclick="closeRejectModal()">&times;</span>
             <div class="modal-header">
@@ -901,8 +934,27 @@
                 <textarea id="rejectReason" placeholder="Enter reason for rejection..."></textarea>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-reject" onclick="submitRejection()">Reject</button>
-                <button class="btn" style="background: #444; color: white;" onclick="closeRejectModal()">Cancel</button>
+                <button type="button" class="btn btn-reject" onclick="submitRejection()">Reject</button>
+                <button type="button" class="btn" style="background: #444; color: white;" onclick="closeRejectModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Request Modal -->
+    <div id="paymentRequestModal" class="modal" style="z-index: 1500;">
+        <div class="modal-content">
+            <span class="close" onclick="closePaymentRequestModal()">&times;</span>
+            <div class="modal-header">
+                <h2>Payment Request Review</h2>
+            </div>
+            <div class="modal-body">
+                <p>Student: <strong id="paymentRequestStudentName"></strong></p>
+                <p>MM-ID: <strong id="paymentRequestStudentId"></strong></p>
+                <div id="paymentRequestList" style="margin-top: 20px; display: flex; flex-direction: column; gap: 15px;"></div>
+                <p id="noPendingMessage" style="color: #999; display: none;">No pending payment requests found.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background: #444; color: white;" onclick="closePaymentRequestModal()">Close</button>
             </div>
         </div>
     </div>
@@ -1038,19 +1090,119 @@
             window.location.href = `/payment-records/${studentId}`;
         }
 
+        function openPaymentRequestModal(button) {
+            const studentId = button.getAttribute('data-student-id');
+            const pendingData = document.getElementById(`pending-payments-${studentId}`);
+            const pendingPayments = pendingData ? JSON.parse(pendingData.textContent || '[]') : [];
+
+            document.getElementById('paymentRequestStudentId').innerText = studentId;
+            document.getElementById('paymentRequestStudentName').innerText = button.closest('tr').getAttribute('data-name');
+
+            const listContainer = document.getElementById('paymentRequestList');
+            listContainer.innerHTML = '';
+
+            if (pendingPayments.length === 0) {
+                document.getElementById('noPendingMessage').style.display = 'block';
+            } else {
+                document.getElementById('noPendingMessage').style.display = 'none';
+                pendingPayments.forEach(payment => {
+                    const entry = document.createElement('div');
+                    entry.style.cssText = 'background: #1a1a1a; border: 1px solid #444; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px;';
+                    const submittedAt = payment.submittedAt ? new Date(payment.submittedAt).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Unknown date';
+                    entry.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <p style="margin: 0; font-weight: bold; color: #FFD700;">₱${payment.amount.toFixed(2)}</p>
+                                <p style="margin: 4px 0 0; color: #ccc; font-size: 0.95em;">Type: ${payment.paymentMethod === 'service' ? 'Service' : 'Cash'}</p>
+                                <p style="margin: 4px 0 0; color: #ccc; font-size: 0.95em;">Description: ${payment.description || 'No description provided'}</p>
+                                <p style="margin: 4px 0 0; color: #999; font-size: 0.85em;">Submitted: ${submittedAt}</p>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end;">
+                                <button class="btn btn-records" style="background: #4CAF50; color: #000;" onclick="verifyPendingPayment('${payment._id}')">Verify</button>
+                                <button class="btn btn-records" style="background: #ff4444; color: white;" onclick="openRejectModal('${payment._id}')">Reject</button>
+                            </div>
+                        </div>
+                    `;
+                    listContainer.appendChild(entry);
+                });
+            }
+
+            document.getElementById('paymentRequestModal').style.display = 'block';
+        }
+
+        function closePaymentRequestModal() {
+            document.getElementById('paymentRequestModal').style.display = 'none';
+        }
+
+        function verifyPendingPayment(paymentId) {
+            fetch(`/verify-payment/${paymentId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closePaymentRequestModal();
+                    showSuccessMessage('Payment verified successfully');
+                    setTimeout(() => {
+                        document.getElementById('successModal').style.display = 'none';
+                        location.reload();
+                    }, 1400);
+                } else {
+                    showErrorMessage('Error verifying payment: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                console.error('Error verifying payment:', err);
+                showErrorMessage('Error verifying payment');
+            });
+        }
+
+        function showSuccessMessage(message) {
+            const modal = document.getElementById('successModal');
+            const messageEl = document.getElementById('successMessage');
+            if (messageEl) {
+                messageEl.textContent = message;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function showErrorMessage(message) {
+            const modal = document.getElementById('successModal');
+            const messageEl = document.getElementById('successMessage');
+            if (messageEl) {
+                messageEl.textContent = message;
+            }
+            modal.style.borderColor = '#ff4444';
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modal.style.borderColor = '#4CAF50';
+            }, 1800);
+        }
+
         function openRejectModal(paymentId) {
-            document.getElementById('rejectModal').style.display = 'block';
+            document.getElementById('paymentRequestModal').style.display = 'none';
+            document.getElementById('rejectModal').style.display = 'flex';
             document.getElementById('rejectPaymentId').innerText = paymentId;
             document.getElementById('rejectReason').value = '';
+            document.getElementById('rejectReason').focus();
         }
 
         function closeRejectModal() {
             document.getElementById('rejectModal').style.display = 'none';
+            document.getElementById('paymentRequestModal').style.display = 'block';
         }
 
         function submitRejection() {
             const paymentId = document.getElementById('rejectPaymentId').innerText;
             const reason = document.getElementById('rejectReason').value;
+            const rejectButton = document.querySelector('#rejectModal .btn.btn-reject');
+
+            rejectButton.disabled = true;
+            rejectButton.textContent = 'Rejecting...';
 
             fetch(`/reject-payment/${paymentId}`, {
                 method: 'POST',
@@ -1061,14 +1213,31 @@
             })
             .then(response => response.json())
             .then(data => {
+                rejectButton.disabled = false;
+                rejectButton.textContent = 'Reject';
                 if (data.success) {
-                    alert('Payment rejected successfully');
-                    location.reload();
+                    // Close all modals
+                    document.getElementById('rejectModal').style.display = 'none';
+                    document.getElementById('paymentRequestModal').style.display = 'none';
+                    
+                    // Show success message
+                    showSuccessMessage('Payment rejected successfully');
+                    
+                    // Reload page after success modal timeout
+                    setTimeout(() => {
+                        document.getElementById('successModal').style.display = 'none';
+                        location.reload();
+                    }, 1400);
                 } else {
-                    alert('Error rejecting payment');
+                    alert('Error rejecting payment: ' + (data.message || 'Unknown error'));
                 }
             })
-            .catch(err => console.error('Error:', err));
+            .catch(err => {
+                rejectButton.disabled = false;
+                rejectButton.textContent = 'Reject';
+                console.error('Error:', err);
+                alert('Error rejecting payment');
+            });
         }
 
         // Override Modal Functions
@@ -1205,6 +1374,10 @@
                 actionIcon = '✓';
                 const amount = log.details?.amount || 0;
                 actionDetail = `Verified payment of ₱${amount.toFixed(2)}`;
+            } else if (log.actionType === 'undo_verify_payment') {
+                actionIcon = '↩️';
+                const amount = log.details?.amount || 0;
+                actionDetail = `Reverted verified payment of ₱${amount.toFixed(2)} back to pending`;
             } else if (log.actionType === 'initial_fine') {
                 actionIcon = '✏️';
                 const oldFine = log.details?.oldAmount || 0;
@@ -1216,7 +1389,7 @@
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
                     <div>
                         <p style="margin: 0 0 5px 0; color: #FFD700; font-weight: bold;">
-                            ${actionIcon} ${log.actionType === 'override_fines' ? 'Fines Override' : log.actionType === 'initial_fine' ? 'Initial Fine Change' : 'Payment Verification'}
+                            ${actionIcon} ${log.actionType === 'override_fines' ? 'Fines Override' : log.actionType === 'initial_fine' ? 'Initial Fine Change' : log.actionType === 'undo_verify_payment' ? 'Undo Verification' : 'Payment Verification'}
                         </p>
                         <p style="margin: 0 0 3px 0; color: #999; font-size: 0.9em;">
                             <strong>Officer/Adviser:</strong> ${log.performedByName} (${log.performedByRole})
@@ -1446,6 +1619,5 @@
             }
         }
     </style>
-<%- include('./_footer.ejs') %>
 </body>
 </html>

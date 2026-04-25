@@ -60,6 +60,24 @@
         .info-box div { font-family: 'Courier New', monospace; font-size: 1.3em; font-weight: 700; color: #000; }
         .input-group { margin-bottom: 15px; }
         .signup-link a { color: #800000; }
+        .privacy-box {
+            max-width: 100%;
+        }
+        .privacy-box label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            line-height: 1.4;
+        }
+        .privacy-box input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            min-height: 18px;
+            margin-top: 0;
+            accent-color: #FFD700;
+            flex-shrink: 0;
+        }
         
         /* Mobile responsive */
         @media (max-width: 480px) {
@@ -140,8 +158,8 @@
             <!-- Privacy & Consent -->
             <h3 style="color: #FFD700; margin-top: 20px; margin-bottom: 15px;">Privacy & Terms</h3>
             <div class="privacy-box" style="background: #222; padding: 12px; border-radius: 4px; margin-bottom: 15px; border-left: 3px solid #FFD700;">
-                <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; color: #e0e0e0; font-size: 0.95em;">
-                    <input type="checkbox" name="privacyConsent" value="true" required style="margin-top: 3px; accent-color: #FFD700;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #e0e0e0; font-size: 0.95em;">
+                    <input type="checkbox" name="privacyConsent" value="true" required style="width: 18px; height: 18px; accent-color: #FFD700;">
                     <span>I have read and agree to the <a href="/privacy-policy" target="_blank" style="color: #FFD700; text-decoration: none;">Privacy Policy</a>. I consent to the collection and processing of my personal data as described.</span>
                 </label>
             </div>

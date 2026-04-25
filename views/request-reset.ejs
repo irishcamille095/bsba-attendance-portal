@@ -8,13 +8,30 @@
     <link rel="stylesheet" href="/style.css">
     <style>
         /* Request-reset-specific overrides */
+        html, body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
         body {
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;
             min-height: 100vh;
-            padding: 20px;
+            padding: 20px 20px 0;
+            gap: 20px;
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 40px 0 20px;
         }
 
         .reset-container {
@@ -156,8 +173,9 @@
     </style>
 </head>
 <body>
-    <div class="reset-container">
-        <div class="reset-header">
+    <main class="main-wrapper">
+        <div class="reset-container">
+            <div class="reset-header">
             <h1><i class="fas fa-lock"></i> Forgot Password</h1>
             <p>Reset your password securely</p>
         </div>
@@ -199,7 +217,7 @@
             </div>
         </div>
     </div>
-<%- include('./_footer.ejs') %>
+    </main>
+    <%- include('./_footer.ejs') %>
 </body>
-
 </html>

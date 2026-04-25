@@ -13,8 +13,10 @@
     <link rel="stylesheet" href="/style.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        html, body { min-height: 100vh; }
         body { 
+            display: flex;
+            flex-direction: column;
             font-family: 'Segoe UI', sans-serif; 
             background: #121212;
         }
@@ -90,6 +92,7 @@
         
         /* Main Content */
         .content { 
+            flex: 1;
             margin-left: 290px; 
             padding: 30px;
         }
@@ -579,8 +582,8 @@
             
             <form id="paymentForm" style="display: none;">
                 <div class="form-group">
-                    <label for="amount">Amount (PHP) *</label>
-                    <input type="number" id="amount" name="amount" placeholder="Enter amount" step="0.01" min="0" required>
+                    <label for="amount">Amount (PHP) * <span style="color: #999; font-size: 0.9em;">(Max: ₱<%= remainingBalance.toFixed(2) %>)</span></label>
+                    <input type="number" id="amount" name="amount" placeholder="Enter amount" step="0.01" min="0" max="<%= remainingBalance.toFixed(2) %>" required>
                 </div>
 
                 <div class="form-group">
@@ -747,9 +750,15 @@
                 const amount = parseFloat(document.getElementById('amount').value);
                 const paymentMethod = document.getElementById('paymentMethod').value;
                 const description = document.getElementById('description').value;
+                const maxAllowed = <%= remainingBalance %>;
 
                 if (!amount || amount <= 0) {
                     alert('Please enter a valid amount');
+                    return;
+                }
+
+                if (amount > maxAllowed) {
+                    alert(`Payment amount cannot exceed your remaining balance of ₱${maxAllowed.toFixed(2)}`);
                     return;
                 }
 

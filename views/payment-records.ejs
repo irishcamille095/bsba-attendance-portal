@@ -206,6 +206,7 @@
             padding: 12px 15px;
             border-bottom: 1px solid #333;
             color: white;
+            vertical-align: middle;
         }
 
         table tbody tr:hover {
@@ -234,6 +235,134 @@
         .status-rejected {
             background: #f44336;
             color: white;
+        }
+
+        .message-box {
+            margin-bottom: 20px;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .success-msg {
+            background: #203620;
+            color: #b4f0b4;
+            border: 1px solid #4CAF50;
+        }
+
+        .error-msg {
+            background: #3a1f1f;
+            color: #ffb4b4;
+            border: 1px solid #f44336;
+        }
+
+        .btn-undo {
+            background: transparent;
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.35);
+            border-radius: 999px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+            font-size: 0.82rem;
+            white-space: nowrap;
+            box-shadow: none;
+            line-height: 1.2;
+        }
+
+        .btn-undo:hover {
+            background: rgba(76, 175, 80, 0.12);
+            border-color: #4CAF50;
+            transform: translateY(-1px);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9998;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 420px;
+            width: 90%;
+            padding: 0;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+        }
+
+        .modal-overlay.show .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            background: #800000;
+            color: #FFD700;
+            padding: 20px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .modal-body {
+            color: #fff;
+            padding: 24px;
+            line-height: 1.6;
+            background: #121212;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding: 16px 24px;
+            background: #0d0d0d;
+            border-top: 1px solid #333;
+        }
+
+        .modal-footer button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cancel-modal {
+            background: #333;
+            color: #fff;
+        }
+
+        .btn-cancel-modal:hover {
+            background: #444;
+        }
+
+        .btn-confirm-undo {
+            background: #4CAF50;
+            color: #000;
+        }
+
+        .btn-confirm-undo:hover {
+            background: #43a047;
         }
 
         /* No Records Message */
@@ -494,6 +623,8 @@
             <p><strong>Remaining Balance:</strong> ₱<%= (paymentRecords.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0)).toFixed(2) %></p>
         </div>
 
+        <div id="messageContainer"></div>
+
         <!-- Payment Records Table -->
         <% if (paymentRecords && paymentRecords.length > 0) { %>
             <div class="table-wrapper">
@@ -523,13 +654,16 @@
                                 <% } %>
                             </td>
                             <td>
-                                <% if (payment.status === 'pending') { %>
-                                    <span class="status-badge status-pending">Pending</span>
-                                <% } else if (payment.status === 'verified') { %>
-                                    <span class="status-badge status-verified">Verified</span>
-                                <% } else if (payment.status === 'rejected') { %>
-                                    <span class="status-badge status-rejected">Rejected</span>
-                                <% } %>
+                                <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+                                    <% if (payment.status === 'pending') { %>
+                                        <span class="status-badge status-pending">Pending</span>
+                                    <% } else if (payment.status === 'verified') { %>
+                                        <span class="status-badge status-verified">Verified</span>
+                                        <button type="button" class="btn-undo" onclick="showUndoConfirmModal('<%= payment._id %>')">Undo</button>
+                                    <% } else if (payment.status === 'rejected') { %>
+                                        <span class="status-badge status-rejected">Rejected</span>
+                                    <% } %>
+                                </div>
                             </td>
                             <td>
                                 <% if (payment.verifiedBy) { %>
@@ -547,6 +681,10 @@
                                         <p><strong>Rejection Reason:</strong></p>
                                         <p><%= payment.rejectionReason %></p>
                                     </div>
+                                <% } else if (payment.status === 'verified') { %>
+                                    <% if (payment.verifiedAt) { %>
+                                        <p><strong>Verified on:</strong> <%= new Date(payment.verifiedAt).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) %></p>
+                                    <% } %>
                                 <% } %>
                             </td>
                         </tr>
@@ -580,7 +718,93 @@
         document.querySelectorAll('.sidebar a').forEach(link => {
             link.addEventListener('click', closeMobileMenu);
         });
+
+        function showUndoConfirmModal(paymentId) {
+            const modal = document.getElementById('undoConfirmModal');
+            if (!modal) return;
+            modal.dataset.paymentId = paymentId;
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => {
+                modal.classList.add('show');
+            });
+        }
+
+        function closeUndoConfirmModal() {
+            const modal = document.getElementById('undoConfirmModal');
+            if (!modal) return;
+            modal.classList.remove('show');
+            modal.dataset.paymentId = '';
+            modal.addEventListener('transitionend', () => {
+                modal.style.display = 'none';
+            }, { once: true });
+        }
+
+        async function confirmUndoPayment() {
+            const modal = document.getElementById('undoConfirmModal');
+            const paymentId = modal ? modal.dataset.paymentId : null;
+
+            if (!paymentId) {
+                alert('Unable to locate payment ID for undo.');
+                return;
+            }
+
+            const confirmButton = document.querySelector('.btn-confirm-undo');
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Undoing...';
+
+            try {
+                const response = await fetch(`/undo-verify-payment/${paymentId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (parseError) {
+                    result = { success: false, message: 'Server returned invalid response.' };
+                }
+
+                const messageContainer = document.getElementById('messageContainer');
+                messageContainer.innerHTML = '';
+
+                if (!response.ok || !result.success) {
+                    messageContainer.innerHTML = `<div class="message-box error-msg">${result.message || 'Unable to undo verification.'}</div>`;
+                    return;
+                }
+
+                messageContainer.innerHTML = `<div class="message-box success-msg">${result.message || 'Verification undone successfully.'}</div>`;
+                closeUndoConfirmModal();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 900);
+            } catch (err) {
+                const messageContainer = document.getElementById('messageContainer');
+                messageContainer.innerHTML = `<div class="message-box error-msg">${err.message || 'Network error while undoing verification.'}</div>`;
+            } finally {
+                confirmButton.disabled = false;
+                confirmButton.textContent = 'Undo Verification';
+            }
+        }
     </script>
-<%- include('./_footer.ejs') %>
+
+    <!-- Undo Confirmation Modal -->
+    <div class="modal-overlay" id="undoConfirmModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                Undo Payment Verification
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to undo this payment verification?</p>
+                <p style="margin-top: 12px; font-size: 0.95rem; color: #ccc;">The payment will be returned to pending status and the amount will be added back to the student's fine balance.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel-modal" onclick="closeUndoConfirmModal()">Cancel</button>
+                <button type="button" class="btn-confirm-undo" onclick="confirmUndoPayment()">Undo Verification</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
