@@ -1965,7 +1965,7 @@ app.post('/signup', async (req, res) => {
             console.error("Warning: Could not fetch QR code from StudentIDPool:", e);
         }
 
-        // 7. Process name fields (support both new separate fields and legacy single name field)
+        // 6. Process name fields (support both new separate fields and legacy single name field)
         let processedFirstName = firstName ? sanitizeName(firstName) : null;
         let processedLastName = lastName ? sanitizeName(lastName) : null;
         let processedMiddleName = middleName ? sanitizeName(middleName) : '';
@@ -1986,7 +1986,7 @@ app.post('/signup', async (req, res) => {
             return res.status(400).send(`❌ ${nameErrors[0]}`);
         }
 
-        // 8. Create the new user with the specified MM-ID and consent tracking
+        // 7. Create the new user with the specified MM-ID and consent tracking
         const newUser = new User({ 
             firstName: processedFirstName,
             lastName: processedLastName,
@@ -2004,45 +2004,30 @@ app.post('/signup', async (req, res) => {
             consentRevoked: false
         });
 
-        // 9. Save the user
+        // 8. Save the user
         await newUser.save();
 
-        // 10. Create or update consent record for audit trail
-        const consentDoc = {
+        // 9. Create consent record for audit trail
+        const consentRecord = new Consent({
             studentId: mmId,
             studentName: `${processedFirstName} ${processedLastName}`.trim(),
             hasConsent: true,
             consentDate: new Date(),
             consentIp: req.ip || req.connection.remoteAddress,
             consentText: 'I accept the Data Privacy Policy and consent to data processing as outlined in the policy',
-            consentRevoked: false,
-            revokedDate: null,
             history: [{
                 action: 'given',
                 date: new Date(),
                 ipAddress: req.ip || req.connection.remoteAddress,
                 reason: 'Initial account creation'
             }]
-        };
+        });
+        await consentRecord.save();
 
-        try {
-            await Consent.create(consentDoc);
-        } catch (err) {
-            if (err.code === 11000 && err.message && err.message.includes('studentId')) {
-                await Consent.findOneAndUpdate(
-                    { studentId: mmId },
-                    consentDoc,
-                    { upsert: true, new: true, setDefaultsOnInsert: true }
-                );
-            } else {
-                throw err;
-            }
-        }
-
-        // 11. Mark the reservation as used
+        // 10. Mark the reservation as used
         await MMIDReservation.findByIdAndUpdate(reservation._id, { isUsed: true });
 
-        // 12. Update StudentIDPool
+        // 11. Update StudentIDPool
         try {
             await StudentIDPool.findOneAndUpdate(
                 { mmId },
@@ -2055,19 +2040,14 @@ app.post('/signup', async (req, res) => {
             console.error("Warning: Could not update StudentIDPool:", e);
         }
 
-        // 13. Clear the session variables
+        // 12. Clear the session variables
         delete req.session.mmIdSessionId;
         delete req.session.mmIdReserved;
 
-        return res.redirect('/login');
+        res.redirect('/login');
     } catch (err) {
         console.error("Signup Error:", err);
-
-        if (err.code === 11000 && err.keyValue && (err.keyValue.email || err.keyValue.username)) {
-            return res.status(400).send("❌ This email is already registered. Please use a different email or login if you already have an account.");
-        }
-
-        return res.status(500).send("Error creating account. Please try again.");
+        res.status(500).send("Error creating account. Email might already be taken.");
     }
 });
 
@@ -4513,7 +4493,14 @@ app.post('/admin/remove-student', isAuthenticated, async (req, res) => {
         }
 
         // 1. Delete the user to wipe their profile
+        const userEmail = user.email;
         await User.findByIdAndDelete(user._id);
+
+        // 1b. Also remove any stale user records using the same email if they exist
+        const duplicateDeletionResult = await User.deleteMany({ email: userEmail, _id: { $ne: user._id } });
+        if (duplicateDeletionResult.deletedCount > 0) {
+            console.log(`⚠️ Removed ${duplicateDeletionResult.deletedCount} stale user record(s) with email ${userEmail}`);
+        }
 
         // 2. Clear all attendance records for this student
         await Attendance.deleteMany({ studentId: mmId });
