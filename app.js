@@ -624,12 +624,57 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Privacy Policy Route (Public - No Auth Required)
-app.get('/privacy-policy', (req, res) => {
-    res.render('privacy-policy');
+// Debug route: verify whether a user/email/mmId still exists
+app.get('/debug/user', async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).send('Not found');
+    }
+
+    const clientIp = req.ip || req.connection.remoteAddress;
+    const allowedLocalIps = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+    if (!allowedLocalIps.includes(clientIp) && req.hostname !== 'localhost') {
+        return res.status(403).send('Forbidden');
+    }
+
+    const { email, mmId, username } = req.query;
+    if (!email && !mmId && !username) {
+        return res.status(400).json({ error: 'Provide email, mmId, or username as a query parameter.' });
+    }
+
+    const query = {};
+    if (email) {
+        query.email = { $regex: `^${email}$`, $options: 'i' };
+    }
+    if (mmId) {
+        query.mmId = mmId;
+    }
+    if (username) {
+        query.username = username;
+    }
+
+    try {
+        const user = await User.findOne(query).lean();
+        const result = {
+            found: !!user,
+            query: { email, mmId, username }
+        };
+
+        if (user) {
+            result.user = user;
+        }
+
+        if (mmId) {
+            const poolEntry = await StudentIDPool.findOne({ mmId }).lean();
+            result.studentIDPool = poolEntry || null;
+        }
+
+        return res.json(result);
+    } catch (err) {
+        console.error('Debug route error:', err);
+        return res.status(500).json({ error: 'Debug lookup failed' });
+    }
 });
 
-// Data Request Endpoints (for DPA compliance)
 app.post('/api/submit-data-request', isAuthenticated, async (req, res) => {
     try {
         const user = req.session.user;
@@ -1913,141 +1958,178 @@ app.post('/logout', (req, res) => {
 });
 
 app.post('/signup', async (req, res) => {
+    let session = null;
+
     try {
         const { mmId, name, firstName, lastName, middleName, email, password, role, yearLevel, privacyConsent } = req.body;
-        
+
         // CHECK CONSENT FIRST (Data Privacy Act requirement) - STRICT CHECK
         if (!privacyConsent || privacyConsent !== 'true') {
             return res.status(400).send("❌ You must accept the Data Privacy Policy to create an account.");
         }
-        
+
         // 1. Validate MM-ID format
         if (!mmId || !/^MM-[0-9]{3}$/.test(mmId)) {
             return res.status(400).send("❌ Invalid Student ID format.");
         }
 
-        // 2. Check for duplicate email BEFORE any database writes
-        const existingEmail = await User.findOne({ email: { $regex: `^${email}$`, $options: 'i' } });
-        if (existingEmail) {
-            return res.status(400).send("❌ This email is already registered. Please use a different email or login if you already have an account.");
-        }
-
-        // 3. Verify the MM-ID matches the reservation in the session
-        if (req.session.mmIdReserved !== mmId || !req.session.mmIdSessionId) {
-            return res.status(400).send("❌ This MM-ID is not reserved for you. Please go back to the registration page to get a new MM-ID.");
-        }
-
-        // 4. Verify the reservation still exists and hasn't expired
-        const reservation = await MMIDReservation.findOne({
-            mmId: mmId,
-            sessionId: req.session.mmIdSessionId,
-            isUsed: false
-        });
-
-        if (!reservation) {
-            return res.status(400).send("❌ Your MM-ID reservation has expired. Please refresh the page to get a new MM-ID.");
-        }
-
-        // 5. Check if the MM-ID is already claimed in the User collection (extra safety check)
-        const existingUser = await User.findOne({ mmId });
-        if (existingUser) {
-            return res.status(400).send("❌ This Student ID is already assigned. Please contact an admin.");
-        }
-
-        // 6. Get QR code from StudentIDPool if available
-        let qrCode = null;
-        try {
-            const studentID = await StudentIDPool.findOne({ mmId });
-            if (studentID) {
-                qrCode = studentID.qrCode;
-            }
-        } catch (e) {
-            console.error("Warning: Could not fetch QR code from StudentIDPool:", e);
-        }
-
-        // 6. Process name fields (support both new separate fields and legacy single name field)
+        // 2. Process name fields (support both new separate fields and legacy single name field)
         let processedFirstName = firstName ? sanitizeName(firstName) : null;
         let processedLastName = lastName ? sanitizeName(lastName) : null;
         let processedMiddleName = middleName ? sanitizeName(middleName) : '';
-        
-        // If only legacy 'name' field is provided, split it
+
         if (!processedFirstName && !processedLastName && name) {
             const nameParts = name.trim().split(/\s+/);
-            processedLastName = nameParts.pop(); // Last part is last name
-            processedFirstName = nameParts.shift() || ''; // First part is first name
+            processedLastName = nameParts.pop();
+            processedFirstName = nameParts.shift() || '';
             if (nameParts.length > 0) {
-                processedMiddleName = nameParts.join(' '); // Middle parts are middle name
+                processedMiddleName = nameParts.join(' ');
             }
         }
-        
-        // Validate name fields
+
         const nameErrors = validateNames(processedFirstName, processedLastName, processedMiddleName);
         if (nameErrors.length > 0) {
             return res.status(400).send(`❌ ${nameErrors[0]}`);
         }
 
-        // 7. Create the new user with the specified MM-ID and consent tracking
-        const newUser = new User({ 
-            firstName: processedFirstName,
-            lastName: processedLastName,
-            middleName: processedMiddleName,
-            name: `${processedFirstName} ${processedMiddleName} ${processedLastName}`.trim(), // Keep for backward compatibility
-            username: email, // Use email as username
-            email,
-            password, 
-            role: role || 'student',
-            mmId: mmId,
-            qrCode: qrCode,
-            yearLevel: role === 'adviser' ? '' : (yearLevel || '1st Year'),
-            hasConsent: true,
-            consentDate: new Date(),
-            consentRevoked: false
-        });
+        session = await mongoose.startSession();
+        await session.withTransaction(async () => {
+            // 3. Check for duplicate email BEFORE writing
+            const existingEmail = await User.findOne({ email: { $regex: `^${email}$`, $options: 'i' } }).session(session);
+            if (existingEmail) {
+                const error = new Error("❌ This email is already registered. Please use a different email or login if you already have an account.");
+                error.status = 400;
+                throw error;
+            }
 
-        // 8. Save the user
-        await newUser.save();
+            // 4. Verify the MM-ID matches the reservation in the session
+            if (req.session.mmIdReserved !== mmId || !req.session.mmIdSessionId) {
+                const error = new Error("❌ This MM-ID is not reserved for you. Please go back to the registration page to get a new MM-ID.");
+                error.status = 400;
+                throw error;
+            }
 
-        // 9. Create consent record for audit trail
-        const consentRecord = new Consent({
-            studentId: mmId,
-            studentName: `${processedFirstName} ${processedLastName}`.trim(),
-            hasConsent: true,
-            consentDate: new Date(),
-            consentIp: req.ip || req.connection.remoteAddress,
-            consentText: 'I accept the Data Privacy Policy and consent to data processing as outlined in the policy',
-            history: [{
-                action: 'given',
-                date: new Date(),
-                ipAddress: req.ip || req.connection.remoteAddress,
-                reason: 'Initial account creation'
-            }]
-        });
-        await consentRecord.save();
+            // 5. Verify the reservation still exists and hasn't expired
+            const reservation = await MMIDReservation.findOne({
+                mmId: mmId,
+                sessionId: req.session.mmIdSessionId,
+                isUsed: false
+            }).session(session);
 
-        // 10. Mark the reservation as used
-        await MMIDReservation.findByIdAndUpdate(reservation._id, { isUsed: true });
+            if (!reservation) {
+                const error = new Error("❌ Your MM-ID reservation has expired. Please refresh the page to get a new MM-ID.");
+                error.status = 400;
+                throw error;
+            }
 
-        // 11. Update StudentIDPool
-        try {
+            // 6. Check if the MM-ID is already claimed in the User collection (extra safety check)
+            const existingUser = await User.findOne({ mmId }).session(session);
+            if (existingUser) {
+                const error = new Error("❌ This Student ID is already assigned. Please contact an admin.");
+                error.status = 400;
+                throw error;
+            }
+
+            // 7. Get QR code from StudentIDPool if available
+            let qrCode = null;
+            try {
+                const studentID = await StudentIDPool.findOne({ mmId }).session(session);
+                if (studentID) {
+                    qrCode = studentID.qrCode;
+                }
+            } catch (e) {
+                console.error("Warning: Could not fetch QR code from StudentIDPool:", e);
+            }
+
+            // 8. Create the new user with the specified MM-ID and consent tracking
+            const newUser = new User({ 
+                firstName: processedFirstName,
+                lastName: processedLastName,
+                middleName: processedMiddleName,
+                name: `${processedFirstName} ${processedMiddleName} ${processedLastName}`.trim(),
+                username: email,
+                email,
+                password,
+                role: role || 'student',
+                mmId: mmId,
+                qrCode: qrCode,
+                yearLevel: role === 'adviser' ? '' : (yearLevel || '1st Year'),
+                hasConsent: true,
+                consentDate: new Date(),
+                consentRevoked: false
+            });
+
+            await newUser.save({ session });
+
+            // 9. Create or update consent record for audit trail
+            const consentData = {
+                studentId: mmId,
+                studentName: `${processedFirstName} ${processedLastName}`.trim(),
+                hasConsent: true,
+                consentDate: new Date(),
+                consentIp: req.ip || req.connection.remoteAddress,
+                consentText: 'I accept the Data Privacy Policy and consent to data processing as outlined in the policy',
+            };
+
+            const existingConsent = await Consent.findOne({ studentId: mmId }).session(session);
+            if (existingConsent) {
+                existingConsent.studentName = consentData.studentName;
+                existingConsent.hasConsent = true;
+                existingConsent.consentDate = consentData.consentDate;
+                existingConsent.consentIp = consentData.consentIp;
+                existingConsent.consentText = consentData.consentText;
+                existingConsent.consentRevoked = false;
+                existingConsent.revokedDate = null;
+                existingConsent.revokedReason = '';
+                existingConsent.history.push({
+                    action: 'given',
+                    date: new Date(),
+                    ipAddress: consentData.consentIp,
+                    reason: 'Re-consent after account re-creation'
+                });
+                await existingConsent.save({ session });
+            } else {
+                const consentRecord = new Consent({
+                    ...consentData,
+                    history: [{
+                        action: 'given',
+                        date: new Date(),
+                        ipAddress: consentData.consentIp,
+                        reason: 'Initial account creation'
+                    }]
+                });
+                await consentRecord.save({ session });
+            }
+
+            // 10. Mark the reservation as used
+            await MMIDReservation.findByIdAndUpdate(reservation._id, { isUsed: true }, { session });
+
+            // 11. Update StudentIDPool
             await StudentIDPool.findOneAndUpdate(
                 { mmId },
                 { 
                     isAssigned: true,
                     assignedToUsername: email
-                }
+                },
+                { session }
             );
-        } catch (e) {
-            console.error("Warning: Could not update StudentIDPool:", e);
-        }
+        });
 
-        // 12. Clear the session variables
         delete req.session.mmIdSessionId;
         delete req.session.mmIdReserved;
 
         res.redirect('/login');
     } catch (err) {
         console.error("Signup Error:", err);
-        res.status(500).send("Error creating account. Email might already be taken.");
+        const status = err.status || 500;
+        const message = status === 400
+            ? err.message
+            : "Error creating account. Please try again or contact an administrator.";
+        res.status(status).send(message);
+    } finally {
+        if (session) {
+            session.endSession();
+        }
     }
 });
 
