@@ -624,57 +624,12 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Debug route: verify whether a user/email/mmId still exists
-app.get('/debug/user', async (req, res) => {
-    if (process.env.NODE_ENV === 'production') {
-        return res.status(404).send('Not found');
-    }
-
-    const clientIp = req.ip || req.connection.remoteAddress;
-    const allowedLocalIps = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
-    if (!allowedLocalIps.includes(clientIp) && req.hostname !== 'localhost') {
-        return res.status(403).send('Forbidden');
-    }
-
-    const { email, mmId, username } = req.query;
-    if (!email && !mmId && !username) {
-        return res.status(400).json({ error: 'Provide email, mmId, or username as a query parameter.' });
-    }
-
-    const query = {};
-    if (email) {
-        query.email = { $regex: `^${email}$`, $options: 'i' };
-    }
-    if (mmId) {
-        query.mmId = mmId;
-    }
-    if (username) {
-        query.username = username;
-    }
-
-    try {
-        const user = await User.findOne(query).lean();
-        const result = {
-            found: !!user,
-            query: { email, mmId, username }
-        };
-
-        if (user) {
-            result.user = user;
-        }
-
-        if (mmId) {
-            const poolEntry = await StudentIDPool.findOne({ mmId }).lean();
-            result.studentIDPool = poolEntry || null;
-        }
-
-        return res.json(result);
-    } catch (err) {
-        console.error('Debug route error:', err);
-        return res.status(500).json({ error: 'Debug lookup failed' });
-    }
+// Privacy Policy Route (Public - No Auth Required)
+app.get('/privacy-policy', (req, res) => {
+    res.render('privacy-policy');
 });
 
+// Data Request Endpoints (for DPA compliance)
 app.post('/api/submit-data-request', isAuthenticated, async (req, res) => {
     try {
         const user = req.session.user;
@@ -2010,7 +1965,7 @@ app.post('/signup', async (req, res) => {
             console.error("Warning: Could not fetch QR code from StudentIDPool:", e);
         }
 
-        // 6. Process name fields (support both new separate fields and legacy single name field)
+        // 7. Process name fields (support both new separate fields and legacy single name field)
         let processedFirstName = firstName ? sanitizeName(firstName) : null;
         let processedLastName = lastName ? sanitizeName(lastName) : null;
         let processedMiddleName = middleName ? sanitizeName(middleName) : '';
@@ -2031,91 +1986,88 @@ app.post('/signup', async (req, res) => {
             return res.status(400).send(`❌ ${nameErrors[0]}`);
         }
 
-        // 7. Create the new user and consent record in a transaction to avoid partial signup
-        const session = await mongoose.startSession();
-        try {
-            session.startTransaction();
+        // 8. Create the new user with the specified MM-ID and consent tracking
+        const newUser = new User({ 
+            firstName: processedFirstName,
+            lastName: processedLastName,
+            middleName: processedMiddleName,
+            name: `${processedFirstName} ${processedMiddleName} ${processedLastName}`.trim(), // Keep for backward compatibility
+            username: email, // Use email as username
+            email,
+            password, 
+            role: role || 'student',
+            mmId: mmId,
+            qrCode: qrCode,
+            yearLevel: role === 'adviser' ? '' : (yearLevel || '1st Year'),
+            hasConsent: true,
+            consentDate: new Date(),
+            consentRevoked: false
+        });
 
-            const newUser = new User({ 
-                firstName: processedFirstName,
-                lastName: processedLastName,
-                middleName: processedMiddleName,
-                name: `${processedFirstName} ${processedMiddleName} ${processedLastName}`.trim(), // Keep for backward compatibility
-                username: email, // Use email as username
-                email,
-                password, 
-                role: role || 'student',
-                mmId: mmId,
-                qrCode: qrCode,
-                yearLevel: role === 'adviser' ? '' : (yearLevel || '1st Year'),
-                hasConsent: true,
-                consentDate: new Date(),
-                consentRevoked: false
-            });
-            await newUser.save({ session });
+        // 9. Save the user
+        await newUser.save();
 
-            let consentRecord = await Consent.findOne({ studentId: mmId }).session(session);
-            if (!consentRecord) {
-                consentRecord = new Consent({
-                    studentId: mmId,
-                    studentName: `${processedFirstName} ${processedLastName}`.trim(),
-                    history: []
-                });
-            } else {
-                consentRecord.studentName = `${processedFirstName} ${processedLastName}`.trim();
-            }
-
-            consentRecord.hasConsent = true;
-            consentRecord.consentDate = new Date();
-            consentRecord.consentRevoked = false;
-            consentRecord.revokedDate = null;
-            consentRecord.revokedReason = '';
-            consentRecord.consentIp = req.ip || req.connection.remoteAddress;
-            consentRecord.consentText = 'I accept the Data Privacy Policy and consent to data processing as outlined in the policy';
-            consentRecord.history.push({
+        // 10. Create or update consent record for audit trail
+        const consentDoc = {
+            studentId: mmId,
+            studentName: `${processedFirstName} ${processedLastName}`.trim(),
+            hasConsent: true,
+            consentDate: new Date(),
+            consentIp: req.ip || req.connection.remoteAddress,
+            consentText: 'I accept the Data Privacy Policy and consent to data processing as outlined in the policy',
+            consentRevoked: false,
+            revokedDate: null,
+            history: [{
                 action: 'given',
                 date: new Date(),
                 ipAddress: req.ip || req.connection.remoteAddress,
                 reason: 'Initial account creation'
-            });
-            await consentRecord.save({ session });
+            }]
+        };
 
-            await MMIDReservation.findByIdAndUpdate(reservation._id, { isUsed: true }, { session });
+        try {
+            await Consent.create(consentDoc);
+        } catch (err) {
+            if (err.code === 11000 && err.message && err.message.includes('studentId')) {
+                await Consent.findOneAndUpdate(
+                    { studentId: mmId },
+                    consentDoc,
+                    { upsert: true, new: true, setDefaultsOnInsert: true }
+                );
+            } else {
+                throw err;
+            }
+        }
+
+        // 11. Mark the reservation as used
+        await MMIDReservation.findByIdAndUpdate(reservation._id, { isUsed: true });
+
+        // 12. Update StudentIDPool
+        try {
             await StudentIDPool.findOneAndUpdate(
                 { mmId },
                 { 
                     isAssigned: true,
                     assignedToUsername: email
-                },
-                { session }
+                }
             );
-
-            await session.commitTransaction();
         } catch (e) {
-            await session.abortTransaction();
-            throw e;
-        } finally {
-            session.endSession();
+            console.error("Warning: Could not update StudentIDPool:", e);
         }
 
-        // 10. Clear the session variables
+        // 13. Clear the session variables
         delete req.session.mmIdSessionId;
         delete req.session.mmIdReserved;
 
-        res.redirect('/login');
+        return res.redirect('/login');
     } catch (err) {
         console.error("Signup Error:", err);
 
-        if (err.code === 11000) {
-            if (err.keyPattern && err.keyPattern.email) {
-                return res.status(400).send("❌ This email is already registered. Please use a different email or login if you already have an account.");
-            }
-            if (err.keyPattern && err.keyPattern.mmId) {
-                return res.status(400).send("❌ This Student ID is already assigned. Please refresh the page and try again.");
-            }
+        if (err.code === 11000 && err.keyValue && (err.keyValue.email || err.keyValue.username)) {
+            return res.status(400).send("❌ This email is already registered. Please use a different email or login if you already have an account.");
         }
 
-        res.status(500).send("❌ Unable to create account right now. Please try again or contact support.");
+        return res.status(500).send("Error creating account. Please try again.");
     }
 });
 
