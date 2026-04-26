@@ -2007,22 +2007,29 @@ app.post('/signup', async (req, res) => {
         // 8. Save the user
         await newUser.save();
 
-        // 9. Create consent record for audit trail
-        const consentRecord = new Consent({
-            studentId: mmId,
-            studentName: `${processedFirstName} ${processedLastName}`.trim(),
-            hasConsent: true,
-            consentDate: new Date(),
-            consentIp: req.ip || req.connection.remoteAddress,
-            consentText: 'I accept the Data Privacy Policy and consent to data processing as outlined in the policy',
-            history: [{
-                action: 'given',
-                date: new Date(),
-                ipAddress: req.ip || req.connection.remoteAddress,
-                reason: 'Initial account creation'
-            }]
-        });
-        await consentRecord.save();
+        // 9. Create or update consent record for audit trail
+        await Consent.findOneAndUpdate(
+            { studentId: mmId },
+            {
+                studentName: `${processedFirstName} ${processedLastName}`.trim(),
+                hasConsent: true,
+                consentDate: new Date(),
+                consentIp: req.ip || req.connection.remoteAddress,
+                consentText: 'I accept the Data Privacy Policy and consent to data processing as outlined in the policy',
+                consentRevoked: false,
+                revokedDate: null,
+                revokedReason: '',
+                $push: {
+                    history: {
+                        action: 'given',
+                        date: new Date(),
+                        ipAddress: req.ip || req.connection.remoteAddress,
+                        reason: 'Initial account creation'
+                    }
+                }
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
 
         // 10. Mark the reservation as used
         await MMIDReservation.findByIdAndUpdate(reservation._id, { isUsed: true });
@@ -2047,7 +2054,7 @@ app.post('/signup', async (req, res) => {
         res.redirect('/login');
     } catch (err) {
         console.error("Signup Error:", err);
-        res.status(500).send("Error creating account. Email might already be taken.");
+        res.status(500).send("Error completing signup. If your account was created, please try logging in or contact an administrator.");
     }
 });
 
