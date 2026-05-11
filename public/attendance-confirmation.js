@@ -8,6 +8,7 @@ class AttendanceConfirmation {
         this.modalId = modalId;
         this.modal = null;
         this.pendingCallback = null;
+        this.pendingContinueCallback = null;
         this.pendingData = null;
         this.ensureModalExists();
     }
@@ -44,6 +45,7 @@ class AttendanceConfirmation {
             studentInfo = null,
             warning = null,
             onConfirm = null,
+            onContinue = null,
             data = null
         } = options;
 
@@ -71,8 +73,9 @@ class AttendanceConfirmation {
             document.getElementById('attendanceConfirmWarning').innerHTML = '';
         }
 
-        // Store callback and data
+        // Store callbacks and data
         this.pendingCallback = onConfirm;
+        this.pendingContinueCallback = onContinue;
         this.pendingData = data;
 
         // Show modal
@@ -87,8 +90,11 @@ class AttendanceConfirmation {
         this.cancel();
     }
 
-    // Continue scanning (just close the modal)
+    // Continue scanning and execute continue callback if provided
     continueScan() {
+        if (typeof this.pendingContinueCallback === 'function') {
+            this.pendingContinueCallback(this.pendingData);
+        }
         this.cancel();
     }
 
@@ -96,6 +102,7 @@ class AttendanceConfirmation {
     cancel() {
         this.modal.classList.remove('active');
         this.pendingCallback = null;
+        this.pendingContinueCallback = null;
         this.pendingData = null;
     }
 }
@@ -118,7 +125,7 @@ if (document.readyState === 'loading') {
         if (modal) {
             window.addEventListener('click', function(event) {
                 if (event.target === modal) {
-                    window.attendanceConfirmation.cancel();
+                    window.attendanceConfirmation.continueScan();
                 }
             });
         }
@@ -131,8 +138,9 @@ if (document.readyState === 'loading') {
     if (modal) {
         window.addEventListener('click', function(event) {
             if (event.target === modal) {
-                window.attendanceConfirmation.cancel();
+                window.attendanceConfirmation.continueScan();
             }
         });
     }
 }
+

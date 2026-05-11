@@ -286,6 +286,9 @@
                         onConfirm: () => {
                             // Redirect to attendance page when done
                             window.location.href = `/attendance?folderId=${folderId}&eventName=${eventName}&sessionType=${sessionType}`;
+                        },
+                        onContinue: () => {
+                            scanInProgress = false;
                         }
                     });
                 } else {
@@ -297,6 +300,9 @@
                         title: title,
                         description: warning,
                         onConfirm: () => {
+                            scanInProgress = false;
+                        },
+                        onContinue: () => {
                             scanInProgress = false;
                         }
                     });

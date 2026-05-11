@@ -457,8 +457,8 @@
             const sessionTypeSelect = document.querySelector('select[name="sessionType"]');
             const renderSessionOptions = (eventType) => {
                 const sessionOptions = [
-                    { value: 'AM_IN', label: 'Morning Check-In (AM IN)' },
-                    { value: 'AM_OUT', label: 'Morning Check-Out (AM OUT)' }
+                    { value: 'AM_IN', label: eventType === 'Half Day' ? 'IN' : 'Morning Check-In (AM IN)' },
+                    { value: 'AM_OUT', label: eventType === 'Half Day' ? 'OUT' : 'Morning Check-Out (AM OUT)' }
                 ];
 
                 if (eventType === 'Whole Day') {

@@ -286,9 +286,11 @@ mongoose.connect(mongoURI)
                 // Get the file from GridFS
                 const fileId = new mongoose.Types.ObjectId(studentDoc.gridFSFileId);
 
-                // Set download filename as: "originalFilename-lastName,firstName"
+                // Preserve original extension while appending student name
                 const student = studentDoc.student;
-                const downloadFilename = `${studentDoc.fileName}-${student.lastName},${student.firstName}`;
+                const fileExt = path.extname(studentDoc.fileName);
+                const baseFileName = path.basename(studentDoc.fileName, fileExt);
+                const downloadFilename = `${baseFileName}-${student.lastName},${student.firstName}${fileExt}`;
 
                 res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
                 res.setHeader('Content-Type', 'application/octet-stream');
@@ -1157,9 +1159,12 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
             const verifiedPayments = paymentHistory
                 .filter(p => p.status === 'verified')
                 .reduce((sum, p) => sum + p.amount, 0);
+
+            const studentRecord = await User.findOne({ mmId: user.mmId });
+            const initialFine = studentRecord?.initialFine || 0;
             
             // Sidebar should show remaining balance due (not already paid)
-            studentTotalFine = Math.max(0, totalFinesBalance - verifiedPayments);
+            studentTotalFine = Math.max(0, totalFinesBalance + initialFine - verifiedPayments);
         }
 
         // 4. Count notification items
@@ -1236,6 +1241,10 @@ app.get('/wallet', isAuthenticated, async (req, res) => {
             };
         });
         
+        // Get student's initial fine
+        const student = await User.findOne({ mmId: user.mmId });
+        const initialFine = student?.initialFine || 0;
+
         // Calculate total fines for ALL events (not filtered by folder)
         let totalAllEventsFines = 0;
         const allEnhancedRecords = fineRecords
@@ -1260,20 +1269,18 @@ app.get('/wallet', isAuthenticated, async (req, res) => {
                     folderId: record.folderId || eventMap[record.eventName].folderId
                 };
             });
+        totalAllEventsFines += initialFine;
         
         // If a folder is selected, filter records for that folder
         let selectedFolder = null;
         let finesBreakdown = [];
-        let totalFinesBalance = 0;
+        let totalFinesBalance = totalAllEventsFines;
         
         if (folderId) {
             selectedFolder = await Folder.findById(folderId);
             finesBreakdown = allEnhancedRecords.filter(record => {
                 return record.folderId && record.folderId.toString() === folderId;
             });
-            totalFinesBalance = finesBreakdown.reduce((sum, record) => sum + record.fine, 0);
-        } else {
-            totalFinesBalance = totalAllEventsFines;
         }
         
         // Get payment history
@@ -1290,8 +1297,9 @@ app.get('/wallet', isAuthenticated, async (req, res) => {
             user: user,
             folders: allFolders,
             selectedFolder: selectedFolder,
-            totalFinesBalance: folderId ? totalFinesBalance : totalAllEventsFines,
+            totalFinesBalance: totalFinesBalance,
             totalAllEventsFines: totalAllEventsFines,
+            initialFine: initialFine,
             verifiedPayments: verifiedPayments,
             remainingBalance: remainingBalance,
             paymentHistory: paymentHistory,
@@ -2753,27 +2761,32 @@ app.get('/folder-details/:folderId', isAuthenticated, async (req, res) => {
         const selectedEvent = req.query.event;
         let records = [];
         let attendanceData = [];
+        let selectedEventType = null;
 
         if (selectedEvent) {
             // Get the event details to check event type
             const eventSession = await AttendanceSession.findOne({ eventName: selectedEvent });
+            selectedEventType = eventSession?.eventType || null;
 
             // Utility function to calculate fine based on event type and status
             const calculateFineForDisplay = (eventType, status, sessionType) => {
                 if (status === 'Present' || status === 'Excused') {
                     return 0;
                 }
-                
+
                 if (status === 'Absent') {
-                    // Default to 'Whole Day' if eventType is missing/undefined
                     const type = eventType || 'Whole Day';
                     if (type === 'Half Day') {
+                        // Half Day events only use AM_IN / AM_OUT sessions, so PM sessions should not generate fines
+                        if (sessionType.startsWith('PM_')) {
+                            return 0;
+                        }
                         return 50;
                     } else if (type === 'Whole Day') {
                         return 30;
                     }
                 }
-                
+
                 return 0;
             };
 
@@ -2958,7 +2971,8 @@ app.get('/folder-details/:folderId', isAuthenticated, async (req, res) => {
             sessions, 
             records, 
             attendanceData,
-            selectedEvent, 
+            selectedEvent,
+            selectedEventType,
             user: req.session.user,
             formatPhilippinesTime
         });
@@ -3436,8 +3450,11 @@ app.get('/my-attendance/:folderId', isAuthenticated, async (req, res) => {
         const selectedEvent = req.query.event;
         let records = [];
         let attendanceData = [];
+        let selectedEventType = null;
 
         if (selectedEvent) {
+            const eventSession = await AttendanceSession.findOne({ eventName: selectedEvent });
+            selectedEventType = eventSession?.eventType || null;
             // For officers/advisers: get all attendance records for this event
             // For students: get only their own attendance
             if (student.role === 'officer' || student.role === 'adviser') {
@@ -3518,12 +3535,13 @@ app.get('/my-attendance/:folderId', isAuthenticated, async (req, res) => {
         const formatPhilippinesTime = formatToPhilippinesTime;
 
         // Render folder-details (same template for both students and officers)
-        res.render('folder-details', { 
+        res.render('folder-details', {
             folder, 
             sessions, 
             records, 
             attendanceData,
-            selectedEvent, 
+            selectedEvent,
+            selectedEventType,
             user: req.session.user,
             formatPhilippinesTime
         });

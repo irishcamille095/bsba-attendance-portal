@@ -1191,6 +1191,7 @@
 
             <div id="message"></div>
             
+            <% const isHalfDay = selectedEventType === 'Half Day'; %>
             <% if (user.role === 'student') { %>
                 <% const myRecord = (attendanceData || []).find(r => r.studentId === user.mmId); %>
                 <% if (myRecord) { %>
@@ -1200,20 +1201,24 @@
                             <tr>
                                 <th>Student ID</th>
                                 <th>Student Name</th>
-                                <th>AM IN</th>
-                                <th>AM OUT</th>
-                                <th>PM IN</th>
-                                <th>PM OUT</th>
+                                <th><%= isHalfDay ? 'IN' : 'AM IN' %></th>
+                                <th><%= isHalfDay ? 'OUT' : 'AM OUT' %></th>
+                                <% if (!isHalfDay) { %>
+                                    <th>PM IN</th>
+                                    <th>PM OUT</th>
+                                <% } %>
                             </tr>
                         </thead>
                         <tbody id="attendanceTable">
                             <tr class="attendance-row" data-student-id="<%= myRecord.studentId %>" data-student-name="<%= myRecord.studentName %>" data-year-level="<%= myRecord.yearLevel %>">
                                 <td data-label="Student ID"><strong><%= myRecord.studentId %></strong></td>
                                 <td data-label="Student Name"><%= myRecord.studentName %></td>
-                                <td data-label="AM IN"><%= formatPhilippinesTime(myRecord.amIn) %></td>
-                                <td data-label="AM OUT"><%= formatPhilippinesTime(myRecord.amOut) %></td>
-                                <td data-label="PM IN"><%= formatPhilippinesTime(myRecord.pmIn) %></td>
-                                <td data-label="PM OUT"><%= formatPhilippinesTime(myRecord.pmOut) %></td>
+                                <td data-label="<%= isHalfDay ? 'IN' : 'AM IN' %>"><%= formatPhilippinesTime(myRecord.amIn) %></td>
+                                <td data-label="<%= isHalfDay ? 'OUT' : 'AM OUT' %>"><%= formatPhilippinesTime(myRecord.amOut) %></td>
+                                <% if (!isHalfDay) { %>
+                                    <td data-label="PM IN"><%= formatPhilippinesTime(myRecord.pmIn) %></td>
+                                    <td data-label="PM OUT"><%= formatPhilippinesTime(myRecord.pmOut) %></td>
+                                <% } %>
                             </tr>
                         </tbody>
                     </table>
@@ -1273,17 +1278,21 @@
                                                 <th>Student ID</th>
                                                 <th>Student Name</th>
                                                 <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                                                    <th>AM IN</th>
-                                                    <th>AM OUT</th>
-                                                    <th>PM IN</th>
-                                                    <th>PM OUT</th>
+                                                    <th><%= isHalfDay ? 'IN' : 'AM IN' %></th>
+                                                    <th><%= isHalfDay ? 'OUT' : 'AM OUT' %></th>
+                                                    <% if (!isHalfDay) { %>
+                                                        <th>PM IN</th>
+                                                        <th>PM OUT</th>
+                                                    <% } %>
                                                     <th>Total Fine</th>
                                                     <th>Actions</th>
                                                 <% } else { %>
-                                                    <th>AM IN</th>
-                                                    <th>AM OUT</th>
-                                                    <th>PM IN</th>
-                                                    <th>PM OUT</th>
+                                                    <th><%= isHalfDay ? 'IN' : 'AM IN' %></th>
+                                                    <th><%= isHalfDay ? 'OUT' : 'AM OUT' %></th>
+                                                    <% if (!isHalfDay) { %>
+                                                        <th>PM IN</th>
+                                                        <th>PM OUT</th>
+                                                    <% } %>
                                                 <% } %>
                                             </tr>
                                         </thead>
@@ -1293,7 +1302,7 @@
                                                     <td data-label="Student ID"><strong><%= record.studentId %></strong></td>
                                                     <td data-label="Student Name"><%= record.studentName %></td>
                                                     <% if (user.role === 'officer' || user.role === 'adviser') { %>
-                                                        <td data-label="AM IN" style="text-align: center;">
+                                                        <td data-label="<%= isHalfDay ? 'IN' : 'AM IN' %>" style="text-align: center;">
                                                             <div>
                                                                 <% if (record.amInStatus === 'Present' && record.amIn) { %>
                                                                     <small><%= formatPhilippinesTime(record.amIn) %></small>
@@ -1307,7 +1316,7 @@
                                                                 <% } %>
                                                             </div>
                                                         </td>
-                                                        <td data-label="AM OUT" style="text-align: center;">
+                                                        <td data-label="<%= isHalfDay ? 'OUT' : 'AM OUT' %>" style="text-align: center;">
                                                             <div>
                                                                 <% if (record.amOutStatus === 'Present' && record.amOut) { %>
                                                                     <small><%= formatPhilippinesTime(record.amOut) %></small>
@@ -1321,36 +1330,38 @@
                                                                 <% } %>
                                                             </div>
                                                         </td>
-                                                        <td data-label="PM IN" style="text-align: center;">
-                                                            <div>
-                                                                <% if (record.pmInStatus === 'Present' && record.pmIn) { %>
-                                                                    <small><%= formatPhilippinesTime(record.pmIn) %></small>
-                                                                <% } else if (record.pmInStatus === 'Absent' || record.pmInStatus === 'Excused') { %>
-                                                                    <span class="status-<%= record.pmInStatus.toLowerCase() %>"><%= record.pmInStatus %></span><br/>
-                                                                    <% if (record.pmInStatus === 'Absent') { %>
-                                                                        <a href="#" onclick="openExcusedModal('<%= record.pmInRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'PM IN', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
-                                                                    <% } else if (record.pmInStatus === 'Excused') { %>
-                                                                        <a href="#" onclick="undoExcused('<%= record.pmInRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                        <% if (!isHalfDay) { %>
+                                                            <td data-label="PM IN" style="text-align: center;">
+                                                                <div>
+                                                                    <% if (record.pmInStatus === 'Present' && record.pmIn) { %>
+                                                                        <small><%= formatPhilippinesTime(record.pmIn) %></small>
+                                                                    <% } else if (record.pmInStatus === 'Absent' || record.pmInStatus === 'Excused') { %>
+                                                                        <span class="status-<%= record.pmInStatus.toLowerCase() %>"><%= record.pmInStatus %></span><br/>
+                                                                        <% if (record.pmInStatus === 'Absent') { %>
+                                                                            <a href="#" onclick="openExcusedModal('<%= record.pmInRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'PM IN', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
+                                                                        <% } else if (record.pmInStatus === 'Excused') { %>
+                                                                            <a href="#" onclick="undoExcused('<%= record.pmInRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                        <% } %>
                                                                     <% } %>
-                                                                <% } %>
-                                                            </div>
-                                                        </td>
-                                                        <td data-label="PM OUT" style="text-align: center;">
-                                                            <div>
-                                                                <% if (record.pmOutStatus === 'Present' && record.pmOut) { %>
-                                                                    <small><%= formatPhilippinesTime(record.pmOut) %></small>
-                                                                <% } else if (record.pmOutStatus === 'Absent' || record.pmOutStatus === 'Excused') { %>
-                                                                    <span class="status-<%= record.pmOutStatus.toLowerCase() %>"><%= record.pmOutStatus %></span><br/>
-                                                                    <% if (record.pmOutStatus === 'Absent') { %>
-                                                                        <a href="#" onclick="openExcusedModal('<%= record.pmOutRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'PM OUT', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
-                                                                    <% } else if (record.pmOutStatus === 'Excused') { %>
-                                                                        <a href="#" onclick="undoExcused('<%= record.pmOutRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                </div>
+                                                            </td>
+                                                            <td data-label="PM OUT" style="text-align: center;">
+                                                                <div>
+                                                                    <% if (record.pmOutStatus === 'Present' && record.pmOut) { %>
+                                                                        <small><%= formatPhilippinesTime(record.pmOut) %></small>
+                                                                    <% } else if (record.pmOutStatus === 'Absent' || record.pmOutStatus === 'Excused') { %>
+                                                                        <span class="status-<%= record.pmOutStatus.toLowerCase() %>"><%= record.pmOutStatus %></span><br/>
+                                                                        <% if (record.pmOutStatus === 'Absent') { %>
+                                                                            <a href="#" onclick="openExcusedModal('<%= record.pmOutRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'PM OUT', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
+                                                                        <% } else if (record.pmOutStatus === 'Excused') { %>
+                                                                            <a href="#" onclick="undoExcused('<%= record.pmOutRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                        <% } %>
                                                                     <% } %>
-                                                                <% } %>
-                                                            </div>
-                                                        </td>
+                                                                </div>
+                                                            </td>
+                                                        <% } %>
                                                         <td data-label="Total Fine" style="text-align: center;">
-                                                            <span class="fine-amount">₱<%= record.amInFine + record.amOutFine + record.pmInFine + record.pmOutFine %></span>
+                                                            <span class="fine-amount">₱<%= record.amInFine + record.amOutFine + (isHalfDay ? 0 : record.pmInFine + record.pmOutFine) %></span>
                                                         </td>
                                                         <td class="action-cell" data-label="Actions">
                                                             <button type="button" class="btn-delete" onclick="openDeleteModal('<%= record.studentId %>', '<%= record.studentName %>', '<%= selectedEvent %>')">
@@ -1358,10 +1369,12 @@
                                                             </button>
                                                         </td>
                                                     <% } else { %>
-                                                        <td data-label="AM IN"><%= formatPhilippinesTime(record.amIn) %></td>
-                                                        <td data-label="AM OUT"><%= formatPhilippinesTime(record.amOut) %></td>
-                                                        <td data-label="PM IN"><%= formatPhilippinesTime(record.pmIn) %></td>
-                                                        <td data-label="PM OUT"><%= formatPhilippinesTime(record.pmOut) %></td>
+                                                        <td data-label="<%= isHalfDay ? 'IN' : 'AM IN' %>"><%= formatPhilippinesTime(record.amIn) %></td>
+                                                        <td data-label="<%= isHalfDay ? 'OUT' : 'AM OUT' %>"><%= formatPhilippinesTime(record.amOut) %></td>
+                                                        <% if (!isHalfDay) { %>
+                                                            <td data-label="PM IN"><%= formatPhilippinesTime(record.pmIn) %></td>
+                                                            <td data-label="PM OUT"><%= formatPhilippinesTime(record.pmOut) %></td>
+                                                        <% } %>
                                                     <% } %>
                                                 </tr>
                                             <% }) %>
