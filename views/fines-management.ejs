@@ -675,8 +675,8 @@
 
         @media (max-width: 768px) {
             /* Hide Attendance Fines column on tablets and below - use Total Fines for clarity */
-            table th:nth-child(4),
-            table td:nth-child(4) {
+            table th:nth-child(5),
+            table td:nth-child(5) {
                 display: none;
             }
         }
@@ -715,8 +715,8 @@
             }
 
             /* Hide Attendance Fines on phones - keep Remaining Balance visible */
-            table th:nth-child(4),
-            table td:nth-child(4) {
+            table th:nth-child(5),
+            table td:nth-child(5) {
                 display: none;
             }
 
@@ -863,12 +863,12 @@
                             <tr>
                                 <th>MM-ID</th>
                                 <th>Name</th>
+                                <th>Remaining Balance</th>
                                 <th>Initial Fine</th>
                                 <th>Attendance Fines</th>
                                 <th>Total Fines</th>
                                 <th>Requests to Verify</th>
                                 <th>Verified Payments</th>
-                                <th>Remaining Balance</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -876,6 +876,7 @@
                                 <tr data-student="<%= student.mmId %>" data-name="<%= student.name %>">
                                     <td><strong><%= student.mmId %></strong></td>
                                     <td><%= student.name %></td>
+                                    <td><% if (student.remainingBalance > 0) { %><span class="balance-red">₱<%= student.remainingBalance.toFixed(2) %></span><% } else { %>₱<%= student.remainingBalance.toFixed(2) %><% } %></td>
                                     <td>
                                         <div class="initial-cell">
                                             <div class="initial-fine-display">₱<%= student.initialFine.toFixed(2) %></div>
@@ -906,7 +907,6 @@
                                             <button class="btn btn-records history-btn-cell" title="View Payment History" data-student-id="<%= student.mmId %>" onclick="viewPaymentRecords(this)">History</button>
                                         </div>
                                     </td>
-                                    <td><% if (student.remainingBalance > 0) { %><span class="balance-red">₱<%= student.remainingBalance.toFixed(2) %></span><% } else { %>₱<%= student.remainingBalance.toFixed(2) %><% } %></td>
                                 </tr>
                             <% }); %>
                         </tbody>
