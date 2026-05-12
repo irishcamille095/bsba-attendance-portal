@@ -453,6 +453,36 @@ app.use((req, res, next) => {
     next();
 });
 
+const maintenanceMode = process.env.MAINTENANCE_MODE === 'true';
+const maintenanceMessage = process.env.MAINTENANCE_MESSAGE || 'The portal is temporarily under repair. Please check back soon.';
+
+app.get('/maintenance', (req, res) => {
+    return res.status(maintenanceMode ? 503 : 200).render('maintenance', {
+        message: maintenanceMessage
+    });
+});
+
+app.use((req, res, next) => {
+    if (!maintenanceMode) {
+        return next();
+    }
+
+    // Allow the maintenance page itself and static asset requests to pass through.
+    if (req.path === '/maintenance') {
+        return next();
+    }
+
+    if (req.accepts('html')) {
+        return res.status(503).render('maintenance', { message: maintenanceMessage });
+    }
+
+    if (req.accepts('json')) {
+        return res.status(503).json({ error: maintenanceMessage });
+    }
+
+    return res.status(503).type('text').send(maintenanceMessage);
+});
+
 // Ensure upload directories exist
 const uploadDirs = ['public/uploads', 'public/uploads/cor'];
 uploadDirs.forEach(dir => {
