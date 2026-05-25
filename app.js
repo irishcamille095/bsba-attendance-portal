@@ -47,6 +47,20 @@ function sanitizeName(name) {
     return name.trim().replace(/\s+/g, ' '); // Trim and collapse multiple spaces
 }
 
+function normalizeProfilePhotoPath(user) {
+    if (!user || typeof user.profilePhoto !== 'string') {
+        return user;
+    }
+
+    let photoPath = user.profilePhoto.trim();
+    if (photoPath && !photoPath.startsWith('/') && !photoPath.startsWith('http://') && !photoPath.startsWith('https://')) {
+        photoPath = `/${photoPath}`;
+    }
+
+    user.profilePhoto = photoPath;
+    return user;
+}
+
 // Utility function to validate name fields
 function validateNames(firstName, lastName, middleName = '') {
     const errors = [];
@@ -73,6 +87,10 @@ function validateNames(firstName, lastName, middleName = '') {
     return errors;
 }
 
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 const app = express();
 
 // Paste your link here. 
@@ -96,15 +114,15 @@ mongoose.connect(mongoURI)
         async function initializeStudentIDPool() {
             try {
                 const existingCount = await StudentIDPool.countDocuments();
-                if (existingCount >= 300) {
+                if (existingCount >= TOTAL_MM_ID_SLOTS) {
                     console.log("[SUCCESS] Student ID pool already initialized!");
                     return;
                 }
 
-                console.log("[INFO] Initializing Student ID Pool (MM-001 to MM-300)...");
+                console.log("[INFO] Initializing Student ID Pool (MM-001 to MM-999)...");
                 const idsToCreate = [];
 
-                for (let i = 1; i <= 300; i++) {
+                for (let i = 1; i <= TOTAL_MM_ID_SLOTS; i++) {
                     const mmId = `MM-${String(i).padStart(3, '0')}`;
                     const exists = await StudentIDPool.findOne({ mmId });
                     if (!exists) {
@@ -334,14 +352,15 @@ let currentEventQR = ''; // Make sure this exists
 let currentSession = ''; // ADD THIS LINE RIGHT HERE
 
 // --- CACHING FOR PERFORMANCE ---
-let cachedAvailableIDs = null; // Cache for MM-001 to MM-300 available list
+let cachedAvailableIDs = null; // Cache for MM-001 to MM-999 available list
 let lastAvailableIDsUpdate = null; // Track when cache was last updated
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const TOTAL_MM_ID_SLOTS = 999; // Total MM-ID slots available
 
 // Function to refresh available IDs cache
 async function refreshAvailableIDsCache() {
     try {
-        const fullRange = Array.from({ length: 300 }, (_, i) => `MM-${String(i + 1).padStart(3, '0')}`);
+        const fullRange = Array.from({ length: TOTAL_MM_ID_SLOTS }, (_, i) => `MM-${String(i + 1).padStart(3, '0')}`);
         const usersWithMM = await User.find({ mmId: { $exists: true } }).select('mmId').lean();
         const assignedIDs = new Set(usersWithMM.map(u => u.mmId));
         cachedAvailableIDs = fullRange.filter(id => !assignedIDs.has(id));
@@ -388,8 +407,8 @@ const Attendance = mongoose.model('Attendance', AttendanceSchema);
 app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static('uploads')); // This lets the browser see your photos
-app.use(express.static('public'));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'))); // Serve uploaded profile photos from public/uploads
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --- Web Push / Service Worker Support ---
 let vapidKeys = {
@@ -641,7 +660,8 @@ app.post('/login', async (req, res) => {
         // Check if the user exists and the password matches
         if (user && user.password === password) {
             // Save the user data (including their role!) into the session
-            req.session.user = user;
+            const userObj = normalizeProfilePhotoPath(user.toObject());
+            req.session.user = userObj;
             return res.redirect('/dashboard');
         } else if (!user) {
             // No account with this email
@@ -1886,8 +1906,8 @@ app.get('/api/audit-logs', isAuthenticated, async (req, res) => {
 // Registration route - Automatically assign MM-ID from pool
 app.get('/register', async (req, res) => {
     try {
-        // Generate the reference list: Create an array of strings representing MM-001 to MM-300
-        const fullRange = Array.from({ length: 300 }, (_, i) => `MM-${String(i + 1).padStart(3, '0')}`);
+        // Generate the reference list: Create an array of strings representing MM-001 to MM-999
+        const fullRange = Array.from({ length: TOTAL_MM_ID_SLOTS }, (_, i) => `MM-${String(i + 1).padStart(3, '0')}`);
 
         // Scan the database: Query the User collection to get all currently assigned studentID values
         const usersWithMM = await User.find({ mmId: { $exists: true } }).select('mmId');
@@ -1965,17 +1985,58 @@ app.post('/signup', async (req, res) => {
         }
 
         // 2. Check for duplicate email BEFORE any database writes
-        const existingEmail = await User.findOne({ email: { $regex: `^${email}$`, $options: 'i' } });
+        const existingEmail = await User.findOne({ email: { $regex: `^${escapeRegex(email)}$`, $options: 'i' } });
         if (existingEmail) {
             return res.status(400).send("❌ This email is already registered. Please use a different email or login if you already have an account.");
         }
 
-        // 3. Verify the MM-ID matches the reservation in the session
+        // 3. Process name fields (support both new separate fields and legacy single name field)
+        let processedFirstName = firstName ? sanitizeName(firstName) : null;
+        let processedLastName = lastName ? sanitizeName(lastName) : null;
+        let processedMiddleName = middleName ? sanitizeName(middleName) : '';
+        
+        // If only legacy 'name' field is provided, split it
+        if (!processedFirstName && !processedLastName && name) {
+            const nameParts = name.trim().split(/\s+/);
+            processedLastName = nameParts.pop(); // Last part is last name
+            processedFirstName = nameParts.shift() || ''; // First part is first name
+            if (nameParts.length > 0) {
+                processedMiddleName = nameParts.join(' '); // Middle parts are middle name
+            }
+        }
+        
+        // Validate name fields
+        const nameErrors = validateNames(processedFirstName, processedLastName, processedMiddleName);
+        if (nameErrors.length > 0) {
+            return res.status(400).send(`❌ ${nameErrors[0]}`);
+        }
+
+        // 4. Prevent creating a second account for the same name
+        const existingName = await User.findOne({
+            firstName: { $regex: `^${escapeRegex(processedFirstName)}$`, $options: 'i' },
+            lastName: { $regex: `^${escapeRegex(processedLastName)}$`, $options: 'i' }
+        });
+        if (existingName) {
+            const duplicateName = `${processedFirstName} ${processedLastName}`.trim();
+            return res.render('signup', {
+                mmId,
+                error: undefined,
+                duplicateName,
+                duplicateModalMessage: 'An account with that name already exists. Please log in if this is your account.',
+                firstName: processedFirstName,
+                lastName: processedLastName,
+                email,
+                yearLevel,
+                role
+            });
+        }
+
+        // 5. Verify the MM-ID matches the reservation in the session
         if (req.session.mmIdReserved !== mmId || !req.session.mmIdSessionId) {
             return res.status(400).send("❌ This MM-ID is not reserved for you. Please go back to the registration page to get a new MM-ID.");
         }
 
-        // 4. Verify the reservation still exists and hasn't expired
+        // 6. Verify the reservation still exists and hasn't expired
         const reservation = await MMIDReservation.findOne({
             mmId: mmId,
             sessionId: req.session.mmIdSessionId,
@@ -2001,27 +2062,6 @@ app.post('/signup', async (req, res) => {
             }
         } catch (e) {
             console.error("Warning: Could not fetch QR code from StudentIDPool:", e);
-        }
-
-        // 6. Process name fields (support both new separate fields and legacy single name field)
-        let processedFirstName = firstName ? sanitizeName(firstName) : null;
-        let processedLastName = lastName ? sanitizeName(lastName) : null;
-        let processedMiddleName = middleName ? sanitizeName(middleName) : '';
-        
-        // If only legacy 'name' field is provided, split it
-        if (!processedFirstName && !processedLastName && name) {
-            const nameParts = name.trim().split(/\s+/);
-            processedLastName = nameParts.pop(); // Last part is last name
-            processedFirstName = nameParts.shift() || ''; // First part is first name
-            if (nameParts.length > 0) {
-                processedMiddleName = nameParts.join(' '); // Middle parts are middle name
-            }
-        }
-        
-        // Validate name fields
-        const nameErrors = validateNames(processedFirstName, processedLastName, processedMiddleName);
-        if (nameErrors.length > 0) {
-            return res.status(400).send(`❌ ${nameErrors[0]}`);
         }
 
         // 7. Create the new user with the specified MM-ID and consent tracking
@@ -2103,8 +2143,8 @@ app.get('/signup', async (req, res) => {
             expiresAt: { $lt: new Date() }
         });
 
-        // 2. Generate the reference list: MM-001 to MM-300
-        const fullRange = Array.from({ length: 300 }, (_, i) => `MM-${String(i + 1).padStart(3, '0')}`);
+        // 2. Generate the reference list: MM-001 to MM-999
+        const fullRange = Array.from({ length: TOTAL_MM_ID_SLOTS }, (_, i) => `MM-${String(i + 1).padStart(3, '0')}`);
 
         // 3. Get all assigned MM-IDs from User collection
         const usersWithMM = await User.find({ mmId: { $exists: true } }).select('mmId');
@@ -2651,7 +2691,7 @@ app.get('/api/student-qr/:mmId', isAuthenticated, async (req, res) => {
     }
 });
 
-// Route: Download a PDF containing all 300 student QR cards (MM-001 to MM-300)
+// Route: Download a PDF containing all 999 student QR cards (MM-001 to MM-999)
 app.get('/download-all-qrs', isAuthenticated, async (req, res) => {
     // Only Officers and Advisers can download the master PDF
     if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
@@ -2659,8 +2699,8 @@ app.get('/download-all-qrs', isAuthenticated, async (req, res) => {
     }
 
     try {
-        // Fetch ALL 300 MM IDs from the pool (regardless of assignment status)
-        const allIDs = await StudentIDPool.find().sort({ mmId: 1 });
+        // Fetch up to 999 MM IDs from the pool (regardless of assignment status)
+        const allIDs = await StudentIDPool.find().sort({ mmId: 1 }).limit(TOTAL_MM_ID_SLOTS);
 
         if (!allIDs || allIDs.length === 0) {
             return res.send('No student ID pool found. Please contact an administrator.');
@@ -3680,8 +3720,8 @@ app.post('/update-profile', upload.single('profilePhoto'), async (req, res) => {
             return res.status(404).send("User not found in the database.");
         }
 
-        // Update session with new user data
-        req.session.user = updatedUser.toObject();
+        // Update session with new user data and normalize the photo URL
+        req.session.user = normalizeProfilePhotoPath(updatedUser.toObject());
 
         // Redirect back with success message
         res.redirect('/my-account?success=profile');
@@ -4226,8 +4266,18 @@ app.get('/admin/students', isAuthenticated, async (req, res) => {
         // Parse page number (default to 1)
         const page = Math.max(1, parseInt(req.query.page || 1));
         const pageSize = 50; // Show 50 students per page
-        const totalSlots = 300; // Total MM-IDs: MM-001 to MM-300
-        const totalPages = Math.ceil(totalSlots / pageSize); // Should be 6 pages
+
+        // Get all users with assigned MM-IDs from database
+        const assignedUsers = await User.find({ mmId: { $exists: true, $ne: null } })
+            .select('name username mmId role corPath yearLevel _id firstName lastName middleName')
+            .lean();
+
+        // Sort assigned students by MM-ID ascending
+        const assignedStudents = assignedUsers.sort((a, b) => a.mmId.localeCompare(b.mmId));
+
+        const totalAssigned = assignedStudents.length;
+        const totalSlots = TOTAL_MM_ID_SLOTS; // Total MM-IDs: MM-001 to MM-999
+        const totalPages = Math.max(1, Math.ceil(totalAssigned / pageSize));
         
         // Validate page number
         if (page > totalPages) {
@@ -4235,80 +4285,16 @@ app.get('/admin/students', isAuthenticated, async (req, res) => {
         }
 
         const skip = (page - 1) * pageSize;
-        const startSlot = skip + 1;
-        const endSlot = Math.min(skip + pageSize, totalSlots);
+        const students = assignedStudents.slice(skip, skip + pageSize).map(student => ({
+            ...student,
+            isAssigned: true
+        }));
 
-        // Get all students from database
-        const allUsersInDb = await User.find()
-            .select('name username mmId role corPath yearLevel _id firstName lastName middleName')
-            .lean();
-
-        // Create a map for quick lookup
-        const userMap = {};
-        allUsersInDb.forEach(user => {
-            if (user.mmId) {
-                userMap[user.mmId] = user;
-            }
-        });
-
-        // Build the complete list for this page (both assigned and empty slots)
-        const students = [];
-        for (let i = startSlot; i <= endSlot; i++) {
-            const mmId = `MM-${String(i).padStart(3, '0')}`;
-            if (userMap[mmId]) {
-                // Student is assigned
-                students.push({
-                    ...userMap[mmId],
-                    isAssigned: true
-                });
-            } else {
-                // Empty slot
-                students.push({
-                    _id: null,
-                    mmId: mmId,
-                    name: '',
-                    username: '',
-                    firstName: '',
-                    lastName: '',
-                    middleName: '',
-                    role: '',
-                    corPath: null,
-                    yearLevel: '',
-                    isAssigned: false
-                });
-            }
-        }
-
-        // Get total count of assigned students
-        const totalAssigned = allUsersInDb.length;
-
-        // Build complete list of all 300 slots for sorting (both assigned and empty)
-        const allStudents = [];
-        for (let i = 1; i <= totalSlots; i++) {
-            const mmId = `MM-${String(i).padStart(3, '0')}`;
-            if (userMap[mmId]) {
-                // Student is assigned
-                allStudents.push({
-                    ...userMap[mmId],
-                    isAssigned: true
-                });
-            } else {
-                // Empty slot
-                allStudents.push({
-                    _id: null,
-                    mmId: mmId,
-                    name: '',
-                    username: '',
-                    firstName: '',
-                    lastName: '',
-                    middleName: '',
-                    role: '',
-                    corPath: null,
-                    yearLevel: '',
-                    isAssigned: false
-                });
-            }
-        }
+        // Build complete assigned list for client-side sorting
+        const allStudents = assignedStudents.map(student => ({
+            ...student,
+            isAssigned: true
+        }));
 
         // Count pending reset requests for notification badge
         let pendingResetRequestsCount = 0;
@@ -4324,6 +4310,7 @@ app.get('/admin/students', isAuthenticated, async (req, res) => {
             pageSize: pageSize,
             totalPages: totalPages,
             totalAssigned: totalAssigned,
+            totalSlots: totalSlots,
             pendingResetRequestsCount: pendingResetRequestsCount
         });
     } catch (err) {
@@ -4332,7 +4319,7 @@ app.get('/admin/students', isAuthenticated, async (req, res) => {
     }
 });
 
-// API: Search across all 300 student slots
+// API: Search across assigned MM-ID students
 app.get('/api/search-students', isAuthenticated, async (req, res) => {
     try {
         if (req.session.user.role !== 'officer' && req.session.user.role !== 'adviser') {
@@ -4344,42 +4331,32 @@ app.get('/api/search-students', isAuthenticated, async (req, res) => {
             return res.json({ results: [] });
         }
 
-        // Get all users from database
-        const allUsers = await User.find()
+        // Get all assigned users from database
+        const assignedUsers = await User.find({ mmId: { $exists: true, $ne: null } })
             .select('name username mmId role corPath yearLevel _id')
             .lean();
 
-        // Create a map for quick lookup
-        const userMap = {};
-        allUsers.forEach(user => {
-            if (user.mmId) {
-                userMap[user.mmId] = user;
-            }
-        });
+        // Sort assigned users by MM-ID ascending
+        const assignedStudents = assignedUsers.sort((a, b) => a.mmId.localeCompare(b.mmId));
 
-        // Search across all 300 slots
         const results = [];
-        for (let i = 1; i <= 300; i++) {
-            const mmId = `MM-${String(i).padStart(3, '0')}`;
-            const name = userMap[mmId]?.name || '';
-            
-            // Check if search query matches mmId or name
+        assignedStudents.forEach((user, index) => {
+            const mmId = user.mmId;
+            const name = user.name || '';
             if (mmId.toLowerCase().includes(searchQuery) || name.toLowerCase().includes(searchQuery)) {
-                const pageSize = 50;
-                const page = Math.ceil(i / pageSize);
-                
+                const page = Math.ceil((index + 1) / 50);
                 results.push({
                     mmId: mmId,
                     name: name,
                     page: page,
-                    isAssigned: !!userMap[mmId],
-                    role: userMap[mmId]?.role || '',
-                    yearLevel: userMap[mmId]?.yearLevel || '',
-                    username: userMap[mmId]?.username || '',
-                    _id: userMap[mmId]?._id || null
+                    isAssigned: true,
+                    role: user.role || '',
+                    yearLevel: user.yearLevel || '',
+                    username: user.username || '',
+                    _id: user._id || null
                 });
             }
-        }
+        });
 
         res.json({ results });
     } catch (err) {
@@ -4400,12 +4377,12 @@ app.get('/api/master-students', isAuthenticated, async (req, res) => {
         const pageSize = 50; // 50 results per page
         const skip = (page - 1) * pageSize;
 
-        // Get total count
-        const totalAssigned = await User.countDocuments();
-        const totalPages = Math.ceil(totalAssigned / pageSize);
+        // Get total count of assigned MM IDs
+        const totalAssigned = await User.countDocuments({ mmId: { $exists: true, $ne: null } });
+        const totalPages = Math.max(1, Math.ceil(totalAssigned / pageSize));
 
-        // Get paginated students (no QR codes)
-        const assignedStudents = await User.find()
+        // Get paginated students with assigned MM-IDs (no QR codes)
+        const assignedStudents = await User.find({ mmId: { $exists: true, $ne: null } })
             .select('name username mmId role corPath yearLevel')
             .sort({ mmId: 1 })
             .skip(skip)
@@ -5068,10 +5045,10 @@ app.get('/generate-qr-pdf', isAuthenticated, async (req, res) => {
             return res.status(403).send('Unauthorized');
         }
 
-        // Get all student IDs with their QR codes
-        const studentIds = await StudentIDPool.find().sort({ mmId: 1 });
+        // Get the first 999 student IDs with their QR codes
+        const studentIds = await StudentIDPool.find().sort({ mmId: 1 }).limit(TOTAL_MM_ID_SLOTS);
 
-        if (studentIds.length === 0) {
+        if (!studentIds || studentIds.length === 0) {
             return res.status(404).send('No student IDs found');
         }
 

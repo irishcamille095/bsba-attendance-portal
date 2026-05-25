@@ -381,6 +381,9 @@
                             </span>
                         <% } %>
                     </a>
+                    <button type="button" onclick="openScannerSelectionModal()" style="position: relative; border: none; background: transparent; color: #121212; text-decoration: none; font-size: 1.3rem; transition: all 0.3s; padding: 4px 8px; border-radius: 8px; cursor: pointer;" title="Open Scanner">
+                        <i class="fas fa-qrcode"></i>
+                    </button>
                 <% } %>
                 <a href="/wallet" style="position: relative; color: #121212; text-decoration: none; font-size: 1.3rem; transition: all 0.3s; padding: 4px 8px; border-radius: 8px;" title="Wallet & Fines">
                     <i class="fas fa-wallet"></i>
@@ -424,12 +427,12 @@
         <% if (user.role === 'officer' || user.role === 'adviser') { %>
             <div style="display: flex; gap: 10px; margin-bottom: 8px; justify-content: flex-end;">
                 <button type="button" 
-                        onclick="openEditAnnouncementModal('<%= post._id %>', '<%= post.title.replace(/'/g, "\\'") %>', '<%= post.message.replace(/'/g, "\\'").replace(/\n/g, '\\n') %>')"
-                        style="background:none; border:none; cursor:pointer; font-size: 1.2em; color: #e0e0e0; transition: all 0.3s ease; padding: 5px 10px;"
+                        onclick='openEditAnnouncementModal(<%- JSON.stringify(post._id) %>, <%- JSON.stringify(post.title || '') %>, <%- JSON.stringify(post.message || '') %>)'
+                        style="background:none; border:none; cursor:pointer; font-size: 1.2em; color: #ffffff; transition: all 0.3s ease; padding: 5px 10px;"
                         onmouseover="this.style.color='#4da6ff'"
-                        onmouseout="this.style.color='#e0e0e0'"
+                        onmouseout="this.style.color='#ffffff'"
                         title="Edit announcement">
-                    <i class="fas fa-edit"></i>
+                    <i class="fas fa-edit" style="color: #ffffff;"></i>
                 </button>
                 <button type="button" 
                         onclick="showDeleteAnnouncementConfirmation('<%= post._id %>')"
@@ -462,7 +465,10 @@
 <div id="attendance" class="portal-section" style="display: none;">
         <h2>📸 Attendance System</h2>
        <% if (user.role === 'officer' || user.role === 'adviser') { %>
-    <form id="scanForm" style="background: #1e1e1e; padding: 20px; border-radius: 12px; border-left: 5px solid #FFD700; margin-bottom: 20px; border: 1px solid #2d2d2d;">
+    <button type="button" id="toggleScanSectionBtn" onclick="toggleScanSection()" style="background: #FFD700; color: #121212; border: none; padding: 12px 18px; margin-bottom: 20px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: all 0.3s;">
+        <i class="fas fa-search"></i> Start Scanning Attendance
+    </button>
+    <form id="scanForm" style="display: none; background: #1e1e1e; padding: 20px; border-radius: 12px; border-left: 5px solid #FFD700; margin-bottom: 20px; border: 1px solid #2d2d2d;">
         <h3 style="color: #FFD700; margin-top: 0;"><i class="fas fa-mobile-alt"></i> Start Scanning Students</h3>
         
         <div style="display: flex; flex-direction: column; gap: 15px;">
@@ -485,11 +491,8 @@
 
             <div>
                 <label style="display: block; font-weight: bold; margin-bottom: 5px; color: #e0e0e0;">Session Type:</label>
-                <select name="sessionType" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #2d2d2d; background: #252525; color: #e0e0e0;">
-                    <option value="AM_IN">Morning Check-In (AM IN)</option>
-                    <option value="AM_OUT">Morning Check-Out (AM OUT)</option>
-                    <option value="PM_IN">Afternoon Check-In (PM IN)</option>
-                    <option value="PM_OUT">Afternoon Check-Out (PM OUT)</option>
+                <select name="sessionType" id="dashboardSessionTypeSelect" required disabled style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #2d2d2d; background: #252525; color: #e0e0e0;">
+                    <option value="" disabled selected>-- Select Event First --</option>
                 </select>
             </div>
 
@@ -606,6 +609,46 @@
     </div>
 </div>
 <% } %>
+
+<div id="scannerSelectionModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); justify-content: center; align-items: center; z-index: 2100; padding: 20px;">
+    <div style="background: #121212; color: #e0e0e0; padding: 24px; border-radius: 18px; width: min(560px, 100%); border: 2px solid #FFD700; box-shadow: 0 0 30px rgba(0,0,0,0.45);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.3rem; color: #FFD700;"><i class="fas fa-qrcode"></i> Scan Attendance</h2>
+                <p style="margin: 6px 0 0; color: #c0c0c0; font-size: 0.95rem;">Select a semester folder, event, and session to open the scanner.</p>
+            </div>
+            <button type="button" onclick="closeScannerSelectionModal()" style="background: transparent; border: none; color: #e0e0e0; font-size: 1.6rem; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+        <form id="scannerSelectionForm" style="display: grid; gap: 16px;">
+            <label style="display: grid; gap: 8px; font-weight: 600; color: #e0e0e0;">
+                Semester / Folder
+                <select id="scannerModalFolderSelect" required style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #2d2d2d; background: #171717; color: #f0f0f0;">
+                    <option value="" disabled selected>-- Select a Folder --</option>
+                    <% folders.forEach(folder => { %>
+                        <option value="<%= folder._id %>"><%= folder.name %></option>
+                    <% }); %>
+                </select>
+            </label>
+            <label style="display: grid; gap: 8px; font-weight: 600; color: #e0e0e0;">
+                Event
+                <select id="scannerModalEventSelect" required disabled style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #2d2d2d; background: #171717; color: #f0f0f0;">
+                    <option value="" disabled selected>-- Select Folder First --</option>
+                </select>
+            </label>
+            <label style="display: grid; gap: 8px; font-weight: 600; color: #e0e0e0;">
+                Session Type
+                <select id="scannerModalSessionSelect" required disabled style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #2d2d2d; background: #171717; color: #f0f0f0;">
+                    <option value="" disabled selected>-- Select Event First --</option>
+                </select>
+            </label>
+            <input type="hidden" id="scannerModalFolderIdInput" name="folderId">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+                <button type="button" onclick="closeScannerSelectionModal()" style="background: transparent; border: 1px solid #555; color: #e0e0e0; padding: 12px 18px; border-radius: 10px; cursor: pointer; min-width: 120px;">Cancel</button>
+                <button type="submit" style="background: #FFD700; border: none; color: #121212; padding: 12px 18px; border-radius: 10px; cursor: pointer; font-weight: bold; min-width: 160px;">Open Scanner</button>
+            </div>
+        </form>
+    </div>
+</div>
 
  <script>
     const userRole = '<%= user.role %>';
@@ -815,6 +858,20 @@
         }
     }
 
+    function toggleScanSection() {
+        const scanForm = document.getElementById('scanForm');
+        const toggleBtn = document.getElementById('toggleScanSectionBtn');
+        if (!scanForm || !toggleBtn) return;
+
+        if (scanForm.style.display === 'none' || scanForm.style.display === '') {
+            scanForm.style.display = 'block';
+            toggleBtn.innerHTML = '<i class="fas fa-search"></i> Hide Scanning Section';
+        } else {
+            scanForm.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="fas fa-search"></i> Start Scanning Attendance';
+        }
+    }
+
     // This closes the sidebar if you tap anywhere on the dashboard while it's open
     document.addEventListener('click', function(event) {
         const sidebar = document.querySelector('.sidebar');
@@ -877,6 +934,7 @@
                     const option = document.createElement('option');
                     option.value = event.eventName;
                     option.textContent = event.eventName;
+                    option.dataset.eventType = event.eventType || 'Whole Day';
                     eventSelect.appendChild(option);
                 });
                 eventSelect.disabled = false;
@@ -891,6 +949,38 @@
         }
     });
 
+    const dashboardSessionTypeSelect = document.getElementById('dashboardSessionTypeSelect');
+    const isHalfDayType = (eventType) => String(eventType || '').toLowerCase().includes('half');
+    const renderDashboardSessionOptions = (eventType) => {
+        const halfDay = isHalfDayType(eventType);
+        const sessionOptions = [
+            { value: 'AM_IN', label: halfDay ? 'IN' : 'Morning Check-In (AM IN)' },
+            { value: 'AM_OUT', label: halfDay ? 'OUT' : 'Morning Check-Out (AM OUT)' }
+        ];
+
+        if (!halfDay) {
+            sessionOptions.push(
+                { value: 'PM_IN', label: 'Afternoon Check-In (PM IN)' },
+                { value: 'PM_OUT', label: 'Afternoon Check-Out (PM OUT)' }
+            );
+        }
+
+        dashboardSessionTypeSelect.innerHTML = '';
+        sessionOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            dashboardSessionTypeSelect.appendChild(option);
+        });
+        dashboardSessionTypeSelect.disabled = false;
+    };
+
+    eventSelect.addEventListener('change', () => {
+        const selectedOption = eventSelect.options[eventSelect.selectedIndex];
+        const selectedEventType = selectedOption?.dataset?.eventType || 'Whole Day';
+        renderDashboardSessionOptions(selectedEventType);
+    });
+
     // Handle form submission
     document.getElementById('scanForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -900,7 +990,112 @@
         const sessionType = this.querySelector('select[name="sessionType"]').value;
 
         // Redirect to scanner with data
-        window.location.href = `/attendance?folderId=${folderId}&eventName=${eventName}&sessionType=${sessionType}`;
+        window.location.href = `/scanner?folderId=${encodeURIComponent(folderId)}&eventName=${encodeURIComponent(eventName)}&sessionType=${encodeURIComponent(sessionType)}`;
+    });
+
+    function openScannerSelectionModal() {
+        const modal = document.getElementById('scannerSelectionModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+    }
+
+    function closeScannerSelectionModal() {
+        const modal = document.getElementById('scannerSelectionModal');
+        if (!modal) return;
+        modal.style.display = 'none';
+    }
+
+    document.getElementById('scannerSelectionModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeScannerSelectionModal();
+        }
+    });
+
+    document.getElementById('scannerModalFolderSelect')?.addEventListener('change', async function() {
+        const folderId = this.value;
+        const eventSelect = document.getElementById('scannerModalEventSelect');
+        const folderIdInput = document.getElementById('scannerModalFolderIdInput');
+        
+        folderIdInput.value = folderId || '';
+        if (!folderId) {
+            eventSelect.innerHTML = '<option value="" disabled selected>-- Select Folder First --</option>';
+            eventSelect.disabled = true;
+            scannerModalSessionSelect.innerHTML = '<option value="" disabled selected>-- Select Event First --</option>';
+            scannerModalSessionSelect.disabled = true;
+            return;
+        }
+
+        scannerModalSessionSelect.innerHTML = '<option value="" disabled selected>-- Select Event First --</option>';
+        scannerModalSessionSelect.disabled = true;
+
+        try {
+            const response = await fetch(`/api/folder-events/${folderId}`);
+            const events = await response.json();
+
+            eventSelect.innerHTML = '<option value="" disabled selected>-- Select an Event --</option>';
+            if (Array.isArray(events) && events.length > 0) {
+                events.forEach(event => {
+                    const option = document.createElement('option');
+                    option.value = event.eventName;
+                    option.textContent = event.eventName;
+                    option.dataset.eventType = event.eventType || 'Whole Day';
+                    eventSelect.appendChild(option);
+                });
+                eventSelect.disabled = false;
+            } else {
+                eventSelect.innerHTML = '<option value="" disabled selected>No events in this folder yet</option>';
+                eventSelect.disabled = true;
+            }
+        } catch (error) {
+            console.error('Error loading events:', error);
+            eventSelect.innerHTML = '<option value="" disabled selected>Error loading events</option>';
+            eventSelect.disabled = true;
+        }
+    });
+
+    const scannerModalSessionSelect = document.getElementById('scannerModalSessionSelect');
+    const renderScannerModalSessionOptions = (eventType) => {
+        const halfDay = isHalfDayType(eventType);
+        const sessionOptions = [
+            { value: 'AM_IN', label: halfDay ? 'IN' : 'Morning Check-In (AM IN)' },
+            { value: 'AM_OUT', label: halfDay ? 'OUT' : 'Morning Check-Out (AM OUT)' }
+        ];
+
+        if (!halfDay) {
+            sessionOptions.push(
+                { value: 'PM_IN', label: 'Afternoon Check-In (PM IN)' },
+                { value: 'PM_OUT', label: 'Afternoon Check-Out (PM OUT)' }
+            );
+        }
+
+        scannerModalSessionSelect.innerHTML = '';
+        sessionOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            scannerModalSessionSelect.appendChild(option);
+        });
+        scannerModalSessionSelect.disabled = false;
+    };
+
+    document.getElementById('scannerModalEventSelect')?.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const selectedEventType = selectedOption?.dataset?.eventType || 'Whole Day';
+        renderScannerModalSessionOptions(selectedEventType);
+    });
+
+    document.getElementById('scannerSelectionForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const folderId = document.getElementById('scannerModalFolderIdInput').value;
+        const eventName = document.getElementById('scannerModalEventSelect').value;
+        const sessionType = document.getElementById('scannerModalSessionSelect').value;
+
+        if (!folderId || !eventName || !sessionType) {
+            return;
+        }
+
+        window.location.href = `/scanner?folderId=${encodeURIComponent(folderId)}&eventName=${encodeURIComponent(eventName)}&sessionType=${encodeURIComponent(sessionType)}`;
     });
 </script>
 </body>
@@ -1005,8 +1200,6 @@ function validateAnnouncementForm(event) {
 
 // Delete announcement confirmation
 function openEditAnnouncementModal(announcementId, title, message) {
-    message = message.replace(/\\n/g, '\n');
-    
     const modal = document.createElement('div');
     modal.id = 'editAnnouncementModal';
     modal.style.cssText = `
@@ -1021,23 +1214,41 @@ function openEditAnnouncementModal(announcementId, title, message) {
         justify-content: center;
         z-index: 2000;
     `;
-    
+
     modal.innerHTML = `
-        <div style="background: #1e1e1e; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; border: 2px solid #FFD700;">
+        <div style="background: #1e1e1e; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; border: 2px solid #FFD700; color: #ffffff;">
             <h2 style="color: #FFD700; margin-top: 0; margin-bottom: 20px;">Edit Announcement</h2>
-            <form id="editForm" onsubmit="submitEditAnnouncement(event, '${announcementId}')">
-                <input type="text" id="editTitle" placeholder="Announcement Title" required style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; font-size: 1em; color: #000; box-sizing: border-box;" value="${title}">
-                <textarea id="editMessage" placeholder="Write your message here..." required style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; font-size: 1em; color: #000; box-sizing: border-box; min-height: 120px;">${message}</textarea>
+            <form id="editForm" style="display: grid; gap: 10px;">
+                <input type="text" id="editTitle" placeholder="Announcement Title" required style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #444; border-radius: 5px; font-family: inherit; font-size: 1em; color: #ffffff; background: #121212; box-sizing: border-box;">
+                <textarea id="editMessage" placeholder="Write your message here..." required style="width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #444; border-radius: 5px; font-family: inherit; font-size: 1em; color: #ffffff; background: #121212; box-sizing: border-box; min-height: 120px;"></textarea>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button type="submit" style="flex: 1; background: #FFD700; color: #121212; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='#FFC700'" onmouseout="this.style.background='#FFD700'">Update Announcement</button>
-                    <button type="button" onclick="closeEditAnnouncementModal()" style="flex: 1; background: #555; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='#777'" onmouseout="this.style.background='#555'">Cancel</button>
+                    <button type="button" id="cancelEditAnnouncementBtn" style="flex: 1; background: #555; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='#777'" onmouseout="this.style.background='#555'">Cancel</button>
                 </div>
             </form>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
+    const titleInput = modal.querySelector('#editTitle');
+    const messageTextarea = modal.querySelector('#editMessage');
+    const form = modal.querySelector('#editForm');
+    const cancelBtn = modal.querySelector('#cancelEditAnnouncementBtn');
+
+    if (titleInput) titleInput.value = title;
+    if (messageTextarea) messageTextarea.value = message;
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            submitEditAnnouncement(e, announcementId);
+        });
+    }
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeEditAnnouncementModal);
+    }
+
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
             closeEditAnnouncementModal();
@@ -1056,15 +1267,31 @@ function submitEditAnnouncement(e, announcementId) {
     e.preventDefault();
     const title = document.getElementById('editTitle').value;
     const message = document.getElementById('editMessage').value;
-    
+
     const form = document.createElement('form');
     form.action = '/edit-announcement';
     form.method = 'POST';
-    form.innerHTML = `
-        <input type="hidden" name="announcementId" value="${announcementId}">
-        <input type="hidden" name="title" value="${title}">
-        <textarea name="message" style="display: none;">${message}</textarea>
-    `;
+    form.style.display = 'none';
+
+    const idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.name = 'announcementId';
+    idInput.value = announcementId;
+    
+    const titleInput = document.createElement('input');
+    titleInput.type = 'hidden';
+    titleInput.name = 'title';
+    titleInput.value = title;
+
+    const messageTextarea = document.createElement('textarea');
+    messageTextarea.name = 'message';
+    messageTextarea.style.display = 'none';
+    messageTextarea.value = message;
+
+    form.appendChild(idInput);
+    form.appendChild(titleInput);
+    form.appendChild(messageTextarea);
+
     document.body.appendChild(form);
     form.submit();
 }

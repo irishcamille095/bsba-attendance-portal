@@ -1284,7 +1284,7 @@
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-label">Total Slots</div>
-                <div class="stat-value">300</div>
+                <div class="stat-value"><%= totalSlots %></div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Assigned</div>
@@ -1292,7 +1292,7 @@
             </div>
             <div class="stat-card">
                 <div class="stat-label">Available</div>
-                <div class="stat-value"><%= 300 - totalAssigned %></div>
+                <div class="stat-value"><%= totalSlots - totalAssigned %></div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Page</div>
@@ -1625,19 +1625,7 @@
             const input = document.getElementById('searchInput');
             const filter = input.value.toLowerCase();
             
-            // If search box is empty, show all rows on current page
-            if (!filter) {
-                const table = document.getElementById('studentTable');
-                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-                for (let i = 0; i < rows.length; i++) {
-                    rows[i].style.display = '';
-                }
-                document.getElementById('searchResults').style.display = 'none';
-                document.querySelector('.table-container').style.display = 'block';
-                return;
-            }
-
-            // Search across all 300 slots using API
+            // Search across assigned MM-ID students using API
             fetch(`/api/search-students?q=${encodeURIComponent(filter)}`)
                 .then(response => response.json())
                 .then(data => {

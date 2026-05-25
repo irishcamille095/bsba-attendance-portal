@@ -69,6 +69,59 @@
             gap: 10px;
             line-height: 1.4;
         }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.65);
+            z-index: 9999;
+            padding: 20px;
+        }
+        .modal-box {
+            background: #111;
+            border: 1px solid #FFD700;
+            border-radius: 14px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            max-width: 420px;
+            width: 100%;
+            padding: 24px;
+            color: #fff;
+            text-align: center;
+        }
+        .modal-box h2 {
+            margin-top: 0;
+            color: #FFD700;
+        }
+        .modal-box p {
+            margin: 16px 0;
+            line-height: 1.5;
+            color: #e8e8e8;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .modal-actions button {
+            min-width: 130px;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .modal-close-btn {
+            background: #444;
+            color: #fff;
+        }
+        .modal-login-btn {
+            background: #FFD700;
+            color: #000;
+        }
         .privacy-box input[type="checkbox"] {
             width: 18px;
             height: 18px;
@@ -130,16 +183,16 @@
         
         <form action="/signup" method="POST">
             <input type="hidden" name="mmId" value="<%= mmId %>">
-            <input type="text" name="firstName" placeholder="First Name" required>
-            <input type="text" name="lastName" placeholder="Last Name" required>
-            <input type="email" name="email" placeholder="Email Address" required>
+            <input type="text" name="firstName" placeholder="First Name" required value="<%= typeof firstName !== 'undefined' ? firstName : '' %>">
+            <input type="text" name="lastName" placeholder="Last Name" required value="<%= typeof lastName !== 'undefined' ? lastName : '' %>">
+            <input type="email" name="email" placeholder="Email Address" required value="<%= typeof email !== 'undefined' ? email : '' %>">
 
             <select name="yearLevel" required style="background: #222; color: #FFD700;">
-                <option value="" disabled selected>Select your year level</option>
-                <option value="1st Year">1st Year</option>
-                <option value="2nd Year">2nd Year</option>
-                <option value="3rd Year">3rd Year</option>
-                <option value="4th Year">4th Year</option>
+                <option value="" disabled <%= typeof yearLevel === 'undefined' || !yearLevel ? 'selected' : '' %>>Select your year level</option>
+                <option value="1st Year" <%= typeof yearLevel !== 'undefined' && yearLevel === '1st Year' ? 'selected' : '' %>>1st Year</option>
+                <option value="2nd Year" <%= typeof yearLevel !== 'undefined' && yearLevel === '2nd Year' ? 'selected' : '' %>>2nd Year</option>
+                <option value="3rd Year" <%= typeof yearLevel !== 'undefined' && yearLevel === '3rd Year' ? 'selected' : '' %>>3rd Year</option>
+                <option value="4th Year" <%= typeof yearLevel !== 'undefined' && yearLevel === '4th Year' ? 'selected' : '' %>>4th Year</option>
             </select>
 
             <div class="password-container">
@@ -149,10 +202,10 @@
                 </button>
             </div>
             <select name="role" required style="background: #222; color: #FFD700;">
-                <option value="" disabled selected>Select your role</option>
-                <option value="student">Student</option>
-                <option value="officer">Officer</option>
-                <option value="adviser">Adviser</option>
+                <option value="" disabled <%= typeof role === 'undefined' || !role ? 'selected' : '' %>>Select your role</option>
+                <option value="student" <%= typeof role !== 'undefined' && role === 'student' ? 'selected' : '' %>>Student</option>
+                <option value="officer" <%= typeof role !== 'undefined' && role === 'officer' ? 'selected' : '' %>>Officer</option>
+                <option value="adviser" <%= typeof role !== 'undefined' && role === 'adviser' ? 'selected' : '' %>>Adviser</option>
             </select>
 
             <!-- Privacy & Consent -->
@@ -173,8 +226,37 @@
         </div>
     </div>
 
+    <div id="duplicateAccountModal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-box">
+            <h2>Account Already Exists</h2>
+            <p>An account for <strong id="duplicateStudentName"><%= typeof duplicateName !== 'undefined' ? duplicateName : '' %></strong> already exists.</p>
+            <p id="duplicateModalMessage"><%= typeof duplicateModalMessage !== 'undefined' && duplicateModalMessage ? duplicateModalMessage : 'Please log in if this is your account.' %></p>
+            <div class="modal-actions">
+                <button type="button" class="modal-close-btn" onclick="closeDuplicateAccountModal()">Close</button>
+                <button type="button" class="modal-login-btn" onclick="window.location.href='/login'">Go to Login</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/pwa-install.js"></script>
     <script>
+        const duplicateSignupName = <%- JSON.stringify(typeof duplicateName !== 'undefined' ? duplicateName : null) %>;
+        const duplicateSignupMessage = <%- JSON.stringify(typeof duplicateModalMessage !== 'undefined' ? duplicateModalMessage : '') %>;
+
+        function openDuplicateAccountModal() {
+            const overlay = document.getElementById('duplicateAccountModal');
+            if (!overlay) return;
+            overlay.style.display = 'flex';
+            overlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeDuplicateAccountModal() {
+            const overlay = document.getElementById('duplicateAccountModal');
+            if (!overlay) return;
+            overlay.style.display = 'none';
+            overlay.setAttribute('aria-hidden', 'true');
+        }
+
         function togglePasswordVisibility() {
             const passwordInput = document.getElementById('passwordInput');
             const passwordIcon = document.getElementById('passwordIcon');
@@ -191,7 +273,11 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Any additional initialization can go here
+            if (duplicateSignupName) {
+                document.getElementById('duplicateStudentName').textContent = duplicateSignupName;
+                document.getElementById('duplicateModalMessage').textContent = duplicateSignupMessage || 'Please log in if this is your account.';
+                openDuplicateAccountModal();
+            }
         });
     </script>
 <%- include('./_footer.ejs') %>

@@ -1309,9 +1309,9 @@
                                                                 <% } else if (record.amInStatus === 'Absent' || record.amInStatus === 'Excused') { %>
                                                                     <span class="status-<%= record.amInStatus.toLowerCase() %>"><%= record.amInStatus %></span><br/>
                                                                     <% if (record.amInStatus === 'Absent') { %>
-                                                                        <a href="#" onclick="openExcusedModal('<%= record.amInRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'AM IN', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
+                                                                        <a href="#" onclick='openExcusedModal(<%- JSON.stringify(record.amInRecordId) %>, <%- JSON.stringify(record.studentId) %>, <%- JSON.stringify(record.studentName) %>, "AM IN", <%- JSON.stringify(selectedEvent) %>); return false;' style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
                                                                     <% } else if (record.amInStatus === 'Excused') { %>
-                                                                        <a href="#" onclick="undoExcused('<%= record.amInRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                        <a href="#" onclick='undoExcused(<%- JSON.stringify(record.amInRecordId) %>, <%- JSON.stringify(selectedEvent) %>); return false;' style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
                                                                     <% } %>
                                                                 <% } %>
                                                             </div>
@@ -1323,9 +1323,9 @@
                                                                 <% } else if (record.amOutStatus === 'Absent' || record.amOutStatus === 'Excused') { %>
                                                                     <span class="status-<%= record.amOutStatus.toLowerCase() %>"><%= record.amOutStatus %></span><br/>
                                                                     <% if (record.amOutStatus === 'Absent') { %>
-                                                                        <a href="#" onclick="openExcusedModal('<%= record.amOutRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'AM OUT', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
+                                                                        <a href="#" onclick='openExcusedModal(<%- JSON.stringify(record.amOutRecordId) %>, <%- JSON.stringify(record.studentId) %>, <%- JSON.stringify(record.studentName) %>, "AM OUT", <%- JSON.stringify(selectedEvent) %>); return false;' style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
                                                                     <% } else if (record.amOutStatus === 'Excused') { %>
-                                                                        <a href="#" onclick="undoExcused('<%= record.amOutRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                        <a href="#" onclick='undoExcused(<%- JSON.stringify(record.amOutRecordId) %>, <%- JSON.stringify(selectedEvent) %>); return false;' style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
                                                                     <% } %>
                                                                 <% } %>
                                                             </div>
@@ -1338,9 +1338,9 @@
                                                                     <% } else if (record.pmInStatus === 'Absent' || record.pmInStatus === 'Excused') { %>
                                                                         <span class="status-<%= record.pmInStatus.toLowerCase() %>"><%= record.pmInStatus %></span><br/>
                                                                         <% if (record.pmInStatus === 'Absent') { %>
-                                                                            <a href="#" onclick="openExcusedModal('<%= record.pmInRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'PM IN', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
+                                                                            <a href="#" onclick='openExcusedModal(<%- JSON.stringify(record.pmInRecordId) %>, <%- JSON.stringify(record.studentId) %>, <%- JSON.stringify(record.studentName) %>, "PM IN", <%- JSON.stringify(selectedEvent) %>); return false;' style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
                                                                         <% } else if (record.pmInStatus === 'Excused') { %>
-                                                                            <a href="#" onclick="undoExcused('<%= record.pmInRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                            <a href="#" onclick='undoExcused(<%- JSON.stringify(record.pmInRecordId) %>, <%- JSON.stringify(selectedEvent) %>); return false;' style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
                                                                         <% } %>
                                                                     <% } %>
                                                                 </div>
@@ -1352,9 +1352,9 @@
                                                                     <% } else if (record.pmOutStatus === 'Absent' || record.pmOutStatus === 'Excused') { %>
                                                                         <span class="status-<%= record.pmOutStatus.toLowerCase() %>"><%= record.pmOutStatus %></span><br/>
                                                                         <% if (record.pmOutStatus === 'Absent') { %>
-                                                                            <a href="#" onclick="openExcusedModal('<%= record.pmOutRecordId %>', '<%= record.studentId %>', '<%= record.studentName %>', 'PM OUT', '<%= selectedEvent %>'); return false;" style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
+                                                                            <a href="#" onclick='openExcusedModal(<%- JSON.stringify(record.pmOutRecordId) %>, <%- JSON.stringify(record.studentId) %>, <%- JSON.stringify(record.studentName) %>, "PM OUT", <%- JSON.stringify(selectedEvent) %>); return false;' style="color: #fbbf24; text-decoration: underline; cursor: pointer; font-weight: 600;">Excuse</a>
                                                                         <% } else if (record.pmOutStatus === 'Excused') { %>
-                                                                            <a href="#" onclick="undoExcused('<%= record.pmOutRecordId %>', '<%= selectedEvent %>'); return false;" style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
+                                                                            <a href="#" onclick='undoExcused(<%- JSON.stringify(record.pmOutRecordId) %>, <%- JSON.stringify(selectedEvent) %>); return false;' style="color: #6b7280; text-decoration: underline; cursor: pointer; font-weight: 600;">Undo</a>
                                                                         <% } %>
                                                                     <% } %>
                                                                 </div>

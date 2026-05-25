@@ -142,7 +142,9 @@
         }
         
         .btn-back { 
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             margin-bottom: 20px;
             color: #FFD700;
             text-decoration: none;
@@ -153,6 +155,9 @@
             border: 2px solid #FFD700;
             padding: 12px 20px;
             border-radius: 8px;
+            width: auto;
+            max-width: fit-content;
+            white-space: nowrap;
         }
         
         .btn-back:hover {
@@ -227,11 +232,163 @@
             width: 100%;
         }
 
-        .profile-photo-container img,
+        .profile-avatar {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 4px solid #FFD700;
+            object-fit: cover;
+            background: #222;
+            display: block;
+        }
+
         .profile-photo-placeholder {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid #FFD700;
+            color: #999;
+            font-size: 2.2rem;
+        }
+
+        .profile-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 24px;
+            padding: 24px;
+            background: linear-gradient(180deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02));
+            border: 1px solid rgba(255,215,0,0.15);
+            border-radius: 18px;
+            margin-bottom: 24px;
+        }
+
+        .profile-meta {
+            flex: 1;
+            min-width: 220px;
+            color: #e8e8e8;
+        }
+
+        .profile-meta h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .profile-meta .subtitle {
+            color: #c8c8c8;
+            font-size: 0.98rem;
+            line-height: 1.6;
+        }
+
+        .profile-title {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .profile-title .role-badge {
+            margin: 0;
+            font-size: 0.85rem;
+        }
+
+        .info-card {
+            background: #181818;
+            border: 1px solid rgba(255, 215, 0, 0.12);
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 24px;
+        }
+
+        .field-value {
+            padding: 14px;
+            background: #111;
+            border-radius: 12px;
+            color: #e8e8e8;
+            min-height: 46px;
+            display: flex;
+            align-items: center;
+            font-size: 0.98rem;
+            line-height: 1.5;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 18px;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #FFD700;
+            border: 1px solid #FFD700;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 215, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .edit-grid {
+            display: grid;
+            grid-template-columns: minmax(260px, 320px) 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .photo-upload-panel {
+            background: #121212;
+            border: 1px dashed rgba(255, 215, 0, 0.35);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .photo-upload-panel p {
+            color: #c8c8c8;
+            margin: 0;
+            font-size: 0.95rem;
+            max-width: 240px;
+            line-height: 1.5;
+        }
+
+        .photo-upload-panel .profile-avatar {
             margin: 0 auto;
         }
-        
+
+        .password-section-hidden {
+            display: none;
+        }
+
+        .photo-upload-panel .file-input-label {
+            margin-top: 18px;
+            width: 100%;
+            display: inline-flex;
+            justify-content: center;
+        }
+
         .file-input-label:hover {
             background: #FFC700;
             transform: translateY(-2px);
@@ -319,7 +476,47 @@
             }
 
             .btn-back {
-                max-width: 100%;
+                max-width: fit-content;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 20px;
+            }
+
+            .profile-meta {
+                width: 100%;
+            }
+
+            .profile-meta h1 {
+                font-size: 1.6rem;
+            }
+
+            .action-row {
+                justify-content: stretch;
+                width: 100%;
+            }
+
+            .action-row .btn-update,
+            .action-row .btn-secondary {
+                width: 100%;
+            }
+
+            .edit-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .photo-upload-panel {
+                padding: 18px;
+            }
+
+            .info-grid {
+                gap: 16px;
+            }
+
+            .field-value {
+                min-height: auto;
             }
 
             header {
@@ -461,168 +658,174 @@
         <div class="card">
             <a href="/dashboard" class="btn-back">← Back to Menu</a>
             
-            <!-- My Account Header with Edit Icon -->
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                <h2 style="margin: 0;">My Account</h2>
-                <button type="button" onclick="toggleEditMode()" style="background: #FFD700; border: none; color: #121212; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s;" onmouseover="this.style.background='#FFC700'" onmouseout="this.style.background='#FFD700'">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-            </div>
-
-            <!-- Display View -->
-            <div id="displayView">
+            <div class="profile-header">
                 <div class="profile-photo-container">
                     <% if (user.profilePhoto) { %>
-                        <img src="<%= user.profilePhoto %>" alt="Profile Photo" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700;">
+                        <img class="profile-avatar" src="<%= user.profilePhoto %>" alt="Profile Photo">
                     <% } else { %>
-                        <div class="profile-photo-placeholder" style="width: 120px; height: 120px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; border: 3px solid #FFD700;">
-                            <i class="fas fa-user" style="font-size: 3rem; color: #999;"></i>
+                        <div class="profile-avatar profile-photo-placeholder">
+                            <i class="fas fa-user"></i>
                         </div>
                     <% } %>
                 </div>
 
-                <div class="info-grid">
-                    <div class="info-group">
-                        <label>First Name:</label>
-                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000; min-width: 0; word-break: break-word; overflow-wrap: anywhere;"> <%= user.firstName || '-' %></div>
+                <div class="profile-meta">
+                    <div class="profile-title">
+                        <h1><%= user.firstName ? user.firstName + ' ' + user.lastName : user.username %></h1>
+                        <span class="role-badge"><%= user.role %></span>
                     </div>
-                    
-                    <div class="info-group">
-                        <label>Last Name:</label>
-                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000; min-width: 0; word-break: break-word; overflow-wrap: anywhere;"> <%= user.lastName || '-' %></div>
-                    </div>
+                    <p class="subtitle"><i class="fas fa-id-badge"></i> <%= user.mmId || 'No MM-ID assigned' %></p>
+                    <p class="subtitle"><i class="fas fa-envelope"></i> <%= user.username %></p>
+                    <% if (user.mobileNumber) { %>
+                        <p class="subtitle"><i class="fas fa-phone"></i> <%= user.mobileNumber %></p>
+                    <% } %>
+                </div>
 
-                    <div class="info-group">
-                        <label>Middle Name:</label>
-                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.middleName || '-' %></div>
-                    </div>
+                <div class="action-row">
+                    <button type="button" class="btn-update" onclick="toggleEditMode()">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </button>
+                </div>
+            </div>
 
-                    <div class="info-group">
-                        <label>Role:</label>
-                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000; text-transform: capitalize;"><%= user.role %></div>
+            <div id="displayView">
+                <div class="info-card">
+                    <div class="section-title">Personal Information</div>
+                    <div class="info-grid">
+                        <div class="info-group">
+                            <label>First Name</label>
+                            <div class="field-value"><%= user.firstName || '-' %></div>
+                        </div>
+                        <div class="info-group">
+                            <label>Last Name</label>
+                            <div class="field-value"><%= user.lastName || '-' %></div>
+                        </div>
+                        <div class="info-group">
+                            <label>Middle Name</label>
+                            <div class="field-value"><%= user.middleName || '-' %></div>
+                        </div>
+                        <div class="info-group">
+                            <label>Gender</label>
+                            <div class="field-value"><%= user.gender || '-' %></div>
+                        </div>
+                        <div class="info-group">
+                            <label>Date of Birth</label>
+                            <div class="field-value"><%= user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : '-' %></div>
+                        </div>
+                        <div class="info-group">
+                            <label>Mobile Number</label>
+                            <div class="field-value"><%= user.mobileNumber || '-' %></div>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="info-group">
-                        <label>Email Address:</label>
-                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000; min-width: 0; word-break: break-word; overflow-wrap: anywhere;"> <%= user.username %></div>
-                    </div>
-
-                    <div class="info-group">
-                        <label>Student ID (MM-ID):</label>
-                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.mmId || '-' %></div>
-                    </div>
-
-                    <div class="info-group">
-                        <label>Mobile Number:</label>
-                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.mobileNumber || '-' %></div>
-                    </div>
-
-                    <div class="info-group">
-                        <label>Date of Birth:</label>
-                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : '-' %></div>
-                    </div>
-
-                    <div class="info-group">
-                        <label>Gender:</label>
-                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.gender || '-' %></div>
-                    </div>
-
-                    <div class="info-group">
-                        <label>Year Level:</label>
-                        <div style="padding: 12px; background: #f5f5f5; border-radius: 5px; color: #000;"><%= user.yearLevel || (user.role === 'adviser' ? 'N/A' : '1st Year') %></div>
+                <div class="info-card">
+                    <div class="section-title">Account Details</div>
+                    <div class="info-grid">
+                        <div class="info-group">
+                            <label>Email Address</label>
+                            <div class="field-value"><%= user.username %></div>
+                        </div>
+                        <div class="info-group">
+                            <label>Role</label>
+                            <div class="field-value" style="text-transform: capitalize;"><%= user.role %></div>
+                        </div>
+                        <div class="info-group">
+                            <label>Student ID (MM-ID)</label>
+                            <div class="field-value"><%= user.mmId || '-' %></div>
+                        </div>
+                        <div class="info-group">
+                            <label>Year Level</label>
+                            <div class="field-value"><%= user.yearLevel || '-' %></div>
+                        </div>
+                        <div class="info-group">
+                            <label>Consent Status</label>
+                            <div class="field-value"><%= user.hasConsent ? 'Granted' : 'Not Granted' %></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Edit View -->
             <div id="editView" style="display: none;">
                 <form action="/update-profile" method="POST" enctype="multipart/form-data" onsubmit="return validateEditForm(event)">
-                    <!-- Profile Photo Upload -->
-                    <div class="info-group profile-photo-container">
-                        <label>Profile Photo:</label>
-                        <div style="margin-bottom: 10px;">
-                            <% if (user.profilePhoto) { %>
-                                <img id="profilePhotoPreview" src="<%= user.profilePhoto %>" alt="Profile Photo" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700;">
-                            <% } else { %>
-                                <div id="profilePhotoPreview" class="profile-photo-placeholder" style="width: 120px; height: 120px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; border: 3px solid #FFD700;">
-                                    <i class="fas fa-user" style="font-size: 3rem; color: #999;"></i>
+                    <div class="info-card">
+                        <div class="section-title">Update Profile</div>
+                        <div class="edit-grid">
+                            <div class="photo-upload-panel">
+                                <% if (user.profilePhoto) { %>
+                                    <img id="profilePhotoPreview" class="profile-avatar" src="<%= user.profilePhoto %>" alt="Profile Photo">
+                                <% } else { %>
+                                    <div id="profilePhotoPreview" class="profile-avatar profile-photo-placeholder">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                <% } %>
+
+                                <p>Choose a new photo to update your profile image.</p>
+                                <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*">
+                                <label for="profilePhoto" class="file-input-label">Select Photo</label>
+                            </div>
+
+                            <div>
+                                <div class="info-grid">
+                                    <div class="info-group">
+                                        <label>First Name</label>
+                                        <input type="text" name="firstName" value="<%= user.firstName || '' %>" required>
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Last Name</label>
+                                        <input type="text" name="lastName" value="<%= user.lastName || '' %>" required>
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Middle Name</label>
+                                        <input type="text" name="middleName" value="<%= user.middleName || '' %>">
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Mobile Number</label>
+                                        <input type="tel" name="mobileNumber" value="<%= user.mobileNumber || '' %>" placeholder="e.g., +63 912 345 6789">
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Date of Birth</label>
+                                        <input type="date" name="dateOfBirth" value="<%= user.dateOfBirth ? (function() { const d = new Date(user.dateOfBirth); return !isNaN(d) ? d.toISOString().split('T')[0] : ''; })() : '' %>">
+                                    </div>
+                                    <div class="info-group">
+                                        <label>Gender</label>
+                                        <select name="gender">
+                                            <option value="">Select Gender</option>
+                                            <option value="Male" <%= user.gender === 'Male' ? 'selected' : '' %>>Male</option>
+                                            <option value="Female" <%= user.gender === 'Female' ? 'selected' : '' %>>Female</option>
+                                            <option value="Other" <%= user.gender === 'Other' ? 'selected' : '' %>>Other</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            <% } %>
-                        </div>
-                        <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*" style="display: none;">
-                        <label for="profilePhoto" class="file-input-label">Choose Photo</label>
-                    </div>
-
-                    <div class="info-grid">
-                        <div class="info-group">
-                            <label>First Name:</label>
-                            <input type="text" name="firstName" value="<%= user.firstName || '' %>" required>
-                        </div>
-                        
-                        <div class="info-group">
-                            <label>Last Name:</label>
-                            <input type="text" name="lastName" value="<%= user.lastName || '' %>" required>
-                        </div>
-
-                        <div class="info-group">
-                            <label>Middle Name:</label>
-                            <input type="text" name="middleName" value="<%= user.middleName || '' %>">
-                        </div>
-
-                        <div class="info-group">
-                            <label>Mobile Number:</label>
-                            <input type="tel" name="mobileNumber" value="<%= user.mobileNumber || '' %>" placeholder="e.g., +63 912 345 6789">
-                        </div>
-
-                        <div class="info-group">
-                            <label>Date of Birth:</label>
-                            <input type="date" name="dateOfBirth" value="<%= user.dateOfBirth ? (function() { const d = new Date(user.dateOfBirth); return !isNaN(d) ? d.toISOString().split('T')[0] : ''; })() : '' %>">
-                        </div>
-
-                        <div class="info-group">
-                            <label>Gender:</label>
-                            <select name="gender" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; color: #000;">
-                                <option value="">Select Gender</option>
-                                <option value="Male" <%= user.gender === 'Male' ? 'selected' : '' %>>Male</option>
-                                <option value="Female" <%= user.gender === 'Female' ? 'selected' : '' %>>Female</option>
-                                <option value="Other" <%= user.gender === 'Other' ? 'selected' : '' %>>Other</option>
-                            </select>
-                        </div>
-
-                        <div class="info-group">
-                            <label>Email Address (Read-only):</label>
-                            <input type="text" value="<%= user.username %>" disabled>
-                        </div>
-
-                        <div class="info-group">
-                            <label>Student ID - MM-ID (Read-only):</label>
-                            <input type="text" value="<%= user.mmId || 'N/A' %>" disabled>
+                            </div>
                         </div>
                     </div>
 
-                    <hr style="border: 1px solid #ccc; margin: 30px 0;">
-
-                    <!-- Change Password Section inside Edit View -->
-                    <h3 style="margin-top: 0; margin-bottom: 15px;">Security - Change Password</h3>
-                    <div class="info-grid">
-                        <div class="info-group">
-                            <label>Password:</label>
-                            <input type="password" id="newPass" name="newPassword" placeholder="Enter new password">
-                        </div>
-
-                        <div class="info-group">
-                            <label>Confirm:</label>
-                            <input type="password" id="confirmPass" placeholder="Re-type password">
+                    <div class="info-card">
+                        <div class="section-title">Security</div>
+                        <button type="button" class="btn-secondary" onclick="togglePasswordSection()">Change Password</button>
+                        <div id="passwordSection" class="password-section-hidden" style="margin-top: 18px;">
+                            <div class="info-grid">
+                                <div class="info-group">
+                                    <label>New Password</label>
+                                    <input type="password" id="newPass" name="newPassword" placeholder="Enter new password">
+                                </div>
+                                <div class="info-group">
+                                    <label>Confirm Password</label>
+                                    <input type="password" id="confirmPass" name="confirmPass" placeholder="Re-type password">
+                                </div>
+                            </div>
+                            <p style="color: #c8c8c8; font-size: 0.95rem; margin-top: 12px;">Leave both fields empty if you don’t want to change your password.</p>
                         </div>
                     </div>
-                    <p style="color: #999; font-size: 0.9em; margin-top: 10px;">Leave blank if you don't want to change your password</p>
 
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <div class="action-row">
+                        <button type="button" class="btn-secondary" onclick="toggleEditMode()">Cancel</button>
                         <button type="submit" class="btn-update">Save Changes</button>
-                        <button type="button" onclick="toggleEditMode()" style="flex: 1; background: #999; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">Cancel</button>
                     </div>
                 </form>
             </div>
+        </div>
 
         <% if (showSuccess) { %>
             <div class="success-message">
@@ -840,7 +1043,14 @@
                     const reader = new FileReader();
                     reader.onload = function(event) {
                         const preview = document.getElementById('profilePhotoPreview');
-                        preview.innerHTML = '<img src="' + event.target.result + '" alt="Profile Photo" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700;">';
+                        if (!preview) return;
+
+                        const imageSrc = event.target.result;
+                        if (preview.tagName === 'IMG') {
+                            preview.src = imageSrc;
+                        } else {
+                            preview.innerHTML = '<img src="' + imageSrc + '" alt="Profile Photo" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #FFD700;">';
+                        }
                     };
                     reader.readAsDataURL(file);
                 }
